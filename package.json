@@ -1,0 +1,12 @@
+{
+  "name": "ikey",
+  "version": "1.0.0",
+  "description": "iKey 智慧鑰匙與冷氣卡管理系統",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
