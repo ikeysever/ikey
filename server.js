@@ -1,4 +1,5 @@
 const express = require("express");
+const supabase = require("./config/supabase");
 const healthRoutes = require("./routes/health");
 
 const app = express();
