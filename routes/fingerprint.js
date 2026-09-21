@@ -15,32 +15,24 @@ router.get("/fingerprint/:fingerprintId", async (req, res) => {
       });
     }
 
-    const { data, error } = await supabase
+    // ① 先查指紋
+    const {
+      data: fingerprint,
+      error: fingerprintError
+    } = await supabase
       .from("fingerprints")
       .select(`
         fingerprint_id,
         finger_type,
-        is_active,
         user_id,
-        users!inner (
-          id,
-          name,
-          role,
-          username,
-          class_name,
-          seat_number,
-          student_id,
-          is_factory_leader,
-          is_active
-        )
+        is_active
       `)
       .eq("fingerprint_id", fingerprintId)
       .eq("is_active", true)
-      .eq("users.is_active", true)
       .maybeSingle();
 
-    if (error) {
-      console.error("Fingerprint query error:", error);
+    if (fingerprintError) {
+      console.error("Fingerprint query error:", fingerprintError);
 
       return res.status(500).json({
         status: "error",
@@ -48,20 +40,64 @@ router.get("/fingerprint/:fingerprintId", async (req, res) => {
       });
     }
 
-    if (!data) {
+    if (!fingerprint) {
       return res.status(404).json({
         status: "error",
-        message: "找不到此指紋或使用者帳號未啟用"
+        message: "找不到此指紋"
       });
     }
 
+    // ② 再用 user_id 查使用者
+    const {
+      data: user,
+      error: userError
+    } = await supabase
+      .from("users")
+      .select(`
+        id,
+        name,
+        role,
+        username,
+        class_name,
+        seat_number,
+        student_id,
+        is_factory_leader,
+        is_active
+      `)
+      .eq("id", fingerprint.user_id)
+      .maybeSingle();
+
+    if (userError) {
+      console.error("User query error:", userError);
+
+      return res.status(500).json({
+        status: "error",
+        message: "查詢使用者資料失敗"
+      });
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "找不到此指紋對應的使用者"
+      });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "此使用者帳號未啟用"
+      });
+    }
+
+    // ③ 回傳身份資訊
     res.json({
       status: "ok",
       fingerprint: {
-        fingerprint_id: data.fingerprint_id,
-        finger_type: data.finger_type
+        fingerprint_id: fingerprint.fingerprint_id,
+        finger_type: fingerprint.finger_type
       },
-      user: data.users
+      user: user
     });
 
   } catch (error) {
