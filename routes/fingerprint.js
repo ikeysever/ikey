@@ -22,7 +22,7 @@ router.get("/fingerprint/:fingerprintId", async (req, res) => {
         finger_type,
         is_active,
         user_id,
-        users (
+        users!inner (
           id,
           name,
           role,
@@ -36,6 +36,7 @@ router.get("/fingerprint/:fingerprintId", async (req, res) => {
       `)
       .eq("fingerprint_id", fingerprintId)
       .eq("is_active", true)
+      .eq("users.is_active", true)
       .maybeSingle();
 
     if (error) {
@@ -50,14 +51,7 @@ router.get("/fingerprint/:fingerprintId", async (req, res) => {
     if (!data) {
       return res.status(404).json({
         status: "error",
-        message: "找不到此指紋"
-      });
-    }
-
-    if (!data.users || !data.users.is_active) {
-      return res.status(403).json({
-        status: "error",
-        message: "此使用者帳號未啟用"
+        message: "找不到此指紋或使用者帳號未啟用"
       });
     }
 
