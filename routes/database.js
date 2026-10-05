@@ -4,9 +4,9 @@ const router = express.Router();
 
 
 /*
- * =========================================
- * Database API URL
- * =========================================
+ * ============================================================
+ * Database URL
+ * ============================================================
  */
 
 function getDatabaseApiUrl() {
@@ -17,9 +17,9 @@ function getDatabaseApiUrl() {
 
 
 /*
- * =========================================
+ * ============================================================
  * Apps Script Request
- * =========================================
+ * ============================================================
  */
 
 async function appsScriptRequest(
@@ -41,28 +41,18 @@ async function appsScriptRequest(
     await response.text();
 
 
-  /*
-   * HTTP 錯誤
-   */
-
   if (!response.ok) {
 
     throw new Error(
-      `Apps Script HTTP ${response.status}: ${text.slice(0, 300)}`
+      `Apps Script HTTP ${response.status}: ${text.slice(0, 500)}`
     );
 
   }
 
 
-  /*
-   * 嘗試解析 JSON
-   */
-
   try {
 
-    return JSON.parse(
-      text
-    );
+    return JSON.parse(text);
 
   } catch (error) {
 
@@ -117,79 +107,17 @@ async function appsScriptRequest(
 
 
 /*
- * =========================================
- * GET /api/database/health
- * =========================================
+ * ============================================================
+ * GET Helper
+ * ============================================================
  */
 
-router.get("/health", async (req, res) => {
-
-  try {
-
-    const databaseApiUrl =
-      getDatabaseApiUrl();
-
-
-    if (!databaseApiUrl) {
-
-      return res.status(500).json({
-        success: false,
-        status: "error",
-        message:
-          "IKEY_DATABASE_API_URL is not configured"
-      });
-
-    }
-
-
-    const data =
-      await appsScriptRequest(
-        databaseApiUrl
-      );
-
-
-    return res.json({
-      success:
-        data.success === true,
-
-      status:
-        data.status || "unknown",
-
-      message:
-        "iKey Server connected to database",
-
-      database:
-        data
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "Database Health Error:",
-      error
-    );
-
-
-    return res.status(500).json({
-      success: false,
-      status: "error",
-      message:
-        "Database connection failed"
-    });
-
-  }
-
-});
-
-
-/*
- * =========================================
- * GET /api/database/users
- * =========================================
- */
-
-router.get("/users", async (req, res) => {
+async function databaseGet(
+  req,
+  res,
+  action,
+  message
+) {
 
   try {
 
@@ -217,7 +145,7 @@ router.get("/users", async (req, res) => {
 
     url.searchParams.set(
       "action",
-      "users"
+      action
     );
 
 
@@ -227,16 +155,30 @@ router.get("/users", async (req, res) => {
       );
 
 
+    if (
+      data.success !== true
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        status:
+          data.status || "error",
+        message:
+          data.message ||
+          "Database request failed",
+        database:
+          data
+      });
+
+    }
+
+
     return res.json({
-      success:
-        data.success === true,
-
+      success: true,
       status:
-        data.status || "unknown",
-
+        data.status || "ok",
       message:
-        "Users data received",
-
+        message,
       database:
         data
     });
@@ -245,7 +187,7 @@ router.get("/users", async (req, res) => {
   } catch (error) {
 
     console.error(
-      "Database Users Error:",
+      `Database GET ${action} Error:`,
       error
     );
 
@@ -254,21 +196,28 @@ router.get("/users", async (req, res) => {
       success: false,
       status: "error",
       message:
-        "Failed to read Users data"
+        `Failed to read ${action}`
     });
 
   }
 
-});
+}
 
 
 /*
- * =========================================
- * POST /api/database/users
- * =========================================
+ * ============================================================
+ * POST Helper
+ * ============================================================
  */
 
-router.post("/users", async (req, res) => {
+async function databasePost(
+  req,
+  res,
+  action,
+  payloadKey,
+  payload,
+  successMessage
+) {
 
   try {
 
@@ -288,23 +237,16 @@ router.post("/users", async (req, res) => {
     }
 
 
-    const user =
-      req.body;
+    const body = {
+      action:
+        action
+    };
 
 
-    if (
-      !user ||
-      !user.user_id ||
-      !user.identity ||
-      !user.name
-    ) {
+    if (payloadKey) {
 
-      return res.status(400).json({
-        success: false,
-        status: "error",
-        message:
-          "user_id, identity and name are required"
-      });
+      body[payloadKey] =
+        payload;
 
     }
 
@@ -321,13 +263,9 @@ router.post("/users", async (req, res) => {
           },
 
           body:
-            JSON.stringify({
-              action:
-                "create_user",
-
-              user:
-                user
-            })
+            JSON.stringify(
+              body
+            )
         }
       );
 
@@ -338,106 +276,23 @@ router.post("/users", async (req, res) => {
 
       return res.status(400).json({
         success: false,
-
         status:
           data.status || "error",
-
         message:
           data.message ||
-          "Failed to create user",
-
+          "Database request failed",
         database:
           data
       });
 
     }
-
-
-    return res.status(201).json({
-      success: true,
-      status: "ok",
-      message:
-        "User created successfully",
-
-      database:
-        data
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "Create User Error:",
-      error
-    );
-
-
-    return res.status(500).json({
-      success: false,
-      status: "error",
-      message:
-        "Failed to create user"
-    });
-
-  }
-
-});
-
-
-/*
- * =========================================
- * GET /api/database/classes
- * =========================================
- */
-
-router.get("/classes", async (req, res) => {
-
-  try {
-
-    const databaseApiUrl =
-      getDatabaseApiUrl();
-
-
-    if (!databaseApiUrl) {
-
-      return res.status(500).json({
-        success: false,
-        status: "error",
-        message:
-          "IKEY_DATABASE_API_URL is not configured"
-      });
-
-    }
-
-
-    const url =
-      new URL(
-        databaseApiUrl
-      );
-
-
-    url.searchParams.set(
-      "action",
-      "classes"
-    );
-
-
-    const data =
-      await appsScriptRequest(
-        url.toString()
-      );
 
 
     return res.json({
-      success:
-        data.success === true,
-
-      status:
-        data.status || "unknown",
-
+      success: true,
+      status: "ok",
       message:
-        "Classes data received",
-
+        successMessage,
       database:
         data
     });
@@ -446,7 +301,7 @@ router.get("/classes", async (req, res) => {
   } catch (error) {
 
     console.error(
-      "Database Classes Error:",
+      `Database POST ${action} Error:`,
       error
     );
 
@@ -455,149 +310,573 @@ router.get("/classes", async (req, res) => {
       success: false,
       status: "error",
       message:
-        "Failed to read Classes data"
+        "Database request failed"
     });
 
   }
 
-});
+}
 
 
 /*
- * =========================================
- * POST /api/database/classes
- * =========================================
+ * ============================================================
+ * Health
+ * ============================================================
  */
 
-router.post("/classes", async (req, res) => {
+router.get(
+  "/health",
+  async (req, res) => {
 
-  try {
+    try {
 
-    const databaseApiUrl =
-      getDatabaseApiUrl();
+      const databaseApiUrl =
+        getDatabaseApiUrl();
 
 
-    if (!databaseApiUrl) {
+      if (!databaseApiUrl) {
+
+        return res.status(500).json({
+          success: false,
+          status: "error",
+          message:
+            "IKEY_DATABASE_API_URL is not configured"
+        });
+
+      }
+
+
+      const data =
+        await appsScriptRequest(
+          databaseApiUrl
+        );
+
+
+      return res.json({
+        success:
+          data.success === true,
+        status:
+          data.status || "unknown",
+        message:
+          "iKey Server connected to database",
+        database:
+          data
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Database Health Error:",
+        error
+      );
+
 
       return res.status(500).json({
         success: false,
         status: "error",
         message:
-          "IKEY_DATABASE_API_URL is not configured"
+          "Database connection failed"
       });
 
     }
 
-
-    const classData =
-      req.body;
-
-
-    /*
-     * 基本驗證
-     */
-
-    if (
-      !classData ||
-      !classData.class_id ||
-      !classData.class_name
-    ) {
-
-      return res.status(400).json({
-        success: false,
-        status: "error",
-        message:
-          "class_id and class_name are required"
-      });
-
-    }
+  }
+);
 
 
-    /*
-     * 傳送到 Apps Script
-     */
+/*
+ * ============================================================
+ * Users
+ * ============================================================
+ */
 
-    const data =
-      await appsScriptRequest(
-        databaseApiUrl,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "text/plain;charset=utf-8"
-          },
-
-          body:
-            JSON.stringify({
-              action:
-                "create_class",
-
-              class:
-                classData
-            })
-        }
-      );
+router.get(
+  "/users",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "users",
+      "Users data received"
+    )
+);
 
 
-    /*
-     * Apps Script 拒絕
-     */
-
-    if (
-      data.success !== true
-    ) {
-
-      return res.status(400).json({
-        success: false,
-
-        status:
-          data.status || "error",
-
-        message:
-          data.message ||
-          "Failed to create class",
-
-        database:
-          data
-      });
-
-    }
+router.post(
+  "/users",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "create_user",
+      "user",
+      req.body,
+      "User created successfully"
+    )
+);
 
 
-    /*
-     * 建立成功
-     */
+router.put(
+  "/users/:userId",
+  (req, res) => {
 
-    return res.status(201).json({
-      success: true,
-      status: "ok",
-      message:
-        "Class created successfully",
-
-      database:
-        data
-    });
+    const user = {
+      ...req.body,
+      user_id:
+        req.params.userId
+    };
 
 
-  } catch (error) {
-
-    console.error(
-      "Create Class Error:",
-      error
+    return databasePost(
+      req,
+      res,
+      "update_user",
+      "user",
+      user,
+      "User updated successfully"
     );
 
+  }
+);
 
-    return res.status(500).json({
-      success: false,
-      status: "error",
-      message:
-        "Failed to create class"
+
+/*
+ * ============================================================
+ * Classes
+ * ============================================================
+ */
+
+router.get(
+  "/classes",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "classes",
+      "Classes data received"
+    )
+);
+
+
+router.post(
+  "/classes",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "create_class",
+      "class",
+      req.body,
+      "Class created successfully"
+    )
+);
+
+
+router.put(
+  "/classes/:classId",
+  (req, res) => {
+
+    const classData = {
+      ...req.body,
+      class_id:
+        req.params.classId
+    };
+
+
+    return databasePost(
+      req,
+      res,
+      "update_class",
+      "class",
+      classData,
+      "Class updated successfully"
+    );
+
+  }
+);
+
+
+/*
+ * ============================================================
+ * Classrooms
+ * ============================================================
+ */
+
+router.get(
+  "/classrooms",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "classrooms",
+      "Classrooms data received"
+    )
+);
+
+
+router.post(
+  "/classrooms",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "create_classroom",
+      "classroom",
+      req.body,
+      "Classroom created successfully"
+    )
+);
+
+
+router.put(
+  "/classrooms/:classroomId",
+  (req, res) => {
+
+    const classroom = {
+      ...req.body,
+      classroom_id:
+        req.params.classroomId
+    };
+
+
+    return databasePost(
+      req,
+      res,
+      "update_classroom",
+      "classroom",
+      classroom,
+      "Classroom updated successfully"
+    );
+
+  }
+);
+
+
+/*
+ * ============================================================
+ * Schedules
+ * ============================================================
+ */
+
+router.get(
+  "/schedules",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "schedules",
+      "Schedules data received"
+    )
+);
+
+
+router.post(
+  "/schedules",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "create_schedule",
+      "schedule",
+      req.body,
+      "Schedule created successfully"
+    )
+);
+
+
+router.put(
+  "/schedules/:scheduleId",
+  (req, res) => {
+
+    const schedule = {
+      ...req.body,
+      schedule_id:
+        req.params.scheduleId
+    };
+
+
+    return databasePost(
+      req,
+      res,
+      "update_schedule",
+      "schedule",
+      schedule,
+      "Schedule updated successfully"
+    );
+
+  }
+);
+
+
+router.delete(
+  "/schedules/:scheduleId",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "delete_schedule",
+      "schedule_id",
+      req.params.scheduleId,
+      "Schedule deleted successfully"
+    )
+);
+
+
+/*
+ * ============================================================
+ * Slot Status
+ * ============================================================
+ */
+
+router.get(
+  "/slots",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "slot_status",
+      "Slot status received"
+    )
+);
+
+
+router.put(
+  "/slots/:slotId",
+  (req, res) => {
+
+    const slot = {
+      ...req.body,
+      slot_id:
+        req.params.slotId
+    };
+
+
+    return databasePost(
+      req,
+      res,
+      "set_slot_status",
+      "slot",
+      slot,
+      "Slot status updated successfully"
+    );
+
+  }
+);
+
+
+/*
+ * ============================================================
+ * Borrow Records
+ * ============================================================
+ */
+
+router.get(
+  "/borrow-records",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "borrow_records",
+      "Borrow records received"
+    )
+);
+
+
+router.post(
+  "/borrow-records",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "create_borrow_record",
+      "record",
+      req.body,
+      "Borrow record created successfully"
+    )
+);
+
+
+/*
+ * ============================================================
+ * Devices
+ * ============================================================
+ */
+
+router.get(
+  "/devices",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "devices",
+      "Devices data received"
+    )
+);
+
+
+router.put(
+  "/devices/:deviceId",
+  (req, res) => {
+
+    const device = {
+      ...req.body,
+      device_id:
+        req.params.deviceId
+    };
+
+
+    return databasePost(
+      req,
+      res,
+      "upsert_device",
+      "device",
+      device,
+      "Device updated successfully"
+    );
+
+  }
+);
+
+
+router.post(
+  "/devices",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "upsert_device",
+      "device",
+      req.body,
+      "Device updated successfully"
+    )
+);
+
+
+/*
+ * ============================================================
+ * System Logs
+ * ============================================================
+ */
+
+router.get(
+  "/logs",
+  (req, res) =>
+    databaseGet(
+      req,
+      res,
+      "system_logs",
+      "System logs received"
+    )
+);
+
+
+router.post(
+  "/logs",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "create_system_log",
+      "log",
+      req.body,
+      "System log created successfully"
+    )
+);
+
+
+/*
+ * ============================================================
+ * API Information
+ * ============================================================
+ */
+
+router.get(
+  "/",
+  (req, res) => {
+
+    return res.json({
+      success: true,
+
+      service:
+        "iKey Database API",
+
+      endpoints: {
+
+        health:
+          "GET /api/database/health",
+
+        users: {
+          read:
+            "GET /api/database/users",
+          create:
+            "POST /api/database/users",
+          update:
+            "PUT /api/database/users/:userId"
+        },
+
+        classes: {
+          read:
+            "GET /api/database/classes",
+          create:
+            "POST /api/database/classes",
+          update:
+            "PUT /api/database/classes/:classId"
+        },
+
+        classrooms: {
+          read:
+            "GET /api/database/classrooms",
+          create:
+            "POST /api/database/classrooms",
+          update:
+            "PUT /api/database/classrooms/:classroomId"
+        },
+
+        schedules: {
+          read:
+            "GET /api/database/schedules",
+          create:
+            "POST /api/database/schedules",
+          update:
+            "PUT /api/database/schedules/:scheduleId",
+          delete:
+            "DELETE /api/database/schedules/:scheduleId"
+        },
+
+        slots: {
+          read:
+            "GET /api/database/slots",
+          update:
+            "PUT /api/database/slots/:slotId"
+        },
+
+        borrow_records: {
+          read:
+            "GET /api/database/borrow-records",
+          create:
+            "POST /api/database/borrow-records"
+        },
+
+        devices: {
+          read:
+            "GET /api/database/devices",
+          upsert:
+            "PUT /api/database/devices/:deviceId"
+        },
+
+        logs: {
+          read:
+            "GET /api/database/logs",
+          create:
+            "POST /api/database/logs"
+        }
+
+      }
     });
 
   }
-
-});
+);
 
 
 module.exports = router;
