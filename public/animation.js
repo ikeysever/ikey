@@ -2,15 +2,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Login
+   * 基本元素
    * =========================================
    */
 
   const loginPage =
     document.getElementById("loginPage");
 
-  const appPage =
-    document.getElementById("appPage");
+  const homePage =
+    document.getElementById("homePage");
 
   const loginForm =
     document.getElementById("loginForm");
@@ -21,9 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordInput =
     document.getElementById("password");
 
-  const loginButton =
-    document.getElementById("loginButton");
-
   const loginMessage =
     document.getElementById("loginMessage");
 
@@ -33,17 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Welcome Animation
-   * =========================================
-   */
-
-  const welcomeOverlay =
-    document.getElementById("welcomeOverlay");
-
-
-  /*
-   * =========================================
-   * Pages
+   * 頁面
    * =========================================
    */
 
@@ -62,30 +49,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
+   * Header
+   * =========================================
+   */
+
+  const pageTitle =
+    document.getElementById("pageTitle");
+
+  const pageDescription =
+    document.getElementById("pageDescription");
+
+
+  /*
+   * =========================================
    * Sidebar
    * =========================================
    */
 
-  const homeButton =
-    document.getElementById("homeButton");
+  const sidebarItems =
+    document.querySelectorAll(
+      ".sidebar-item[data-page]"
+    );
 
   const scheduleToggle =
     document.getElementById("scheduleToggle");
 
-  const classroomMenu =
-    document.getElementById("classroomMenu");
-
   const scheduleArrow =
     document.getElementById("scheduleArrow");
 
-  const classroomButtons =
-    document.querySelectorAll(".classroom-button");
+  const classroomMenu =
+    document.getElementById("classroomMenu");
 
-  const slotStatusButton =
-    document.getElementById("slotStatusButton");
-
-  const terminalButton =
-    document.getElementById("terminalButton");
+  const classroomItems =
+    document.querySelectorAll(
+      ".classroom-item"
+    );
 
 
   /*
@@ -108,22 +106,24 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("espRobotStatus");
 
   const lvglTerminalStatus =
-    document.getElementById("lvglTerminalStatus");
+    document.getElementById(
+      "lvglTerminalStatus"
+    );
 
   const connectedDeviceCount =
-    document.getElementById("connectedDeviceCount");
+    document.getElementById(
+      "connectedDeviceCount"
+    );
 
+  const connectionDot =
+    document.getElementById(
+      "connectionDot"
+    );
 
-  /*
-   * =========================================
-   * Device State
-   * =========================================
-   */
-
-  let previousEspRobotOnline = null;
-  let previousLvglTerminalOnline = null;
-
-  let devicePollingStarted = false;
+  const connectionText =
+    document.getElementById(
+      "connectionText"
+    );
 
 
   /*
@@ -135,6 +135,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const systemLog =
     document.getElementById("systemLog");
 
+
+  /*
+   * =========================================
+   * Device State
+   * =========================================
+   */
+
+  let previousEspRobotOnline = null;
+
+  let previousLvglTerminalOnline = null;
+
+  let pollingStarted = false;
+
+
+  /*
+   * =========================================
+   * 系統日誌
+   * =========================================
+   */
 
   function addSystemLog(message) {
 
@@ -153,6 +172,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const line =
       document.createElement("div");
 
+    line.className = "log-line";
+
     line.textContent =
       `[${time}] ${message}`;
 
@@ -163,11 +184,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Page Control
+   * 隱藏所有內容頁
    * =========================================
    */
 
-  function hideAllPages() {
+  function hideAllContentPages() {
 
     if (dashboardPage) {
       dashboardPage.hidden = true;
@@ -188,27 +209,84 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  /*
+   * =========================================
+   * Sidebar Active
+   * =========================================
+   */
+
+  function clearSidebarActive() {
+
+    sidebarItems.forEach(
+      (item) => {
+
+        item.classList.remove(
+          "active"
+        );
+
+      }
+    );
+
+  }
+
+
+  /*
+   * =========================================
+   * 顯示首頁
+   * =========================================
+   */
+
   function showDashboard() {
 
-    hideAllPages();
+    hideAllContentPages();
 
     if (dashboardPage) {
       dashboardPage.hidden = false;
     }
 
+    clearSidebarActive();
+
+    const dashboardButton =
+      document.querySelector(
+        '.sidebar-item[data-page="dashboard"]'
+      );
+
+    if (dashboardButton) {
+
+      dashboardButton.classList.add(
+        "active"
+      );
+
+    }
+
+    if (pageTitle) {
+      pageTitle.textContent = "首頁";
+    }
+
+    if (pageDescription) {
+
+      pageDescription.textContent =
+        "iKey 智慧鑰匙管理系統";
+
+    }
+
   }
 
+
+  /*
+   * =========================================
+   * 顯示教室
+   * =========================================
+   */
 
   function showClassroom(
     classroomNumber
   ) {
 
-    hideAllPages();
+    hideAllContentPages();
 
     if (classroomPage) {
-
       classroomPage.hidden = false;
-
     }
 
     if (classroomTitle) {
@@ -218,26 +296,66 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+    if (pageTitle) {
+
+      pageTitle.textContent =
+        `教室 ${classroomNumber} 課表`;
+
+    }
+
+    if (pageDescription) {
+
+      pageDescription.textContent =
+        `管理教室 ${classroomNumber} 的課程時間`;
+
+    }
+
+    clearSidebarActive();
+
   }
 
 
+  /*
+   * =========================================
+   * 顯示格位狀態
+   * =========================================
+   */
+
   function showSlotStatus() {
 
-    hideAllPages();
+    hideAllContentPages();
 
     if (slotStatusPage) {
       slotStatusPage.hidden = false;
     }
 
-  }
+    clearSidebarActive();
 
+    const button =
+      document.querySelector(
+        '.sidebar-item[data-page="slot-status"]'
+      );
 
-  function showTerminal() {
+    if (button) {
 
-    hideAllPages();
+      button.classList.add(
+        "active"
+      );
 
-    if (terminalPage) {
-      terminalPage.hidden = false;
+    }
+
+    if (pageTitle) {
+
+      pageTitle.textContent =
+        "格位目前狀態";
+
+    }
+
+    if (pageDescription) {
+
+      pageDescription.textContent =
+        "查看目前鑰匙與格位借用狀態";
+
     }
 
   }
@@ -245,11 +363,158 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Device UI
+   * 顯示系統終端機
    * =========================================
    */
 
-  function updateDeviceElement(
+  function showTerminal() {
+
+    hideAllContentPages();
+
+    if (terminalPage) {
+      terminalPage.hidden = false;
+    }
+
+    clearSidebarActive();
+
+    const button =
+      document.querySelector(
+        '.sidebar-item[data-page="terminal"]'
+      );
+
+    if (button) {
+
+      button.classList.add(
+        "active"
+      );
+
+    }
+
+    if (pageTitle) {
+
+      pageTitle.textContent =
+        "系統終端機";
+
+    }
+
+    if (pageDescription) {
+
+      pageDescription.textContent =
+        "查看 iKey 系統與裝置事件";
+
+    }
+
+  }
+
+
+  /*
+   * =========================================
+   * Sidebar Navigation
+   * =========================================
+   */
+
+  sidebarItems.forEach(
+    (item) => {
+
+      item.addEventListener(
+        "click",
+        () => {
+
+          const page =
+            item.dataset.page;
+
+          if (page === "dashboard") {
+
+            showDashboard();
+
+          }
+
+          if (page === "slot-status") {
+
+            showSlotStatus();
+
+          }
+
+          if (page === "terminal") {
+
+            showTerminal();
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  /*
+   * =========================================
+   * 課表展開
+   * =========================================
+   */
+
+  if (
+    scheduleToggle &&
+    classroomMenu
+  ) {
+
+    scheduleToggle.addEventListener(
+      "click",
+      () => {
+
+        classroomMenu.hidden =
+          !classroomMenu.hidden;
+
+        if (scheduleArrow) {
+
+          scheduleArrow.textContent =
+            classroomMenu.hidden
+              ? "▶"
+              : "▼";
+
+        }
+
+      }
+    );
+
+  }
+
+
+  /*
+   * =========================================
+   * 教室按鈕
+   * =========================================
+   */
+
+  classroomItems.forEach(
+    (item) => {
+
+      item.addEventListener(
+        "click",
+        () => {
+
+          const classroomNumber =
+            item.dataset.classroom;
+
+          showClassroom(
+            classroomNumber
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  /*
+   * =========================================
+   * 更新裝置 UI
+   * =========================================
+   */
+
+  function updateDeviceStatus(
     element,
     online
   ) {
@@ -288,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Fetch Device Status
+   * 取得裝置狀態
    * =========================================
    */
 
@@ -321,7 +586,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ) {
 
         throw new Error(
-          "Invalid device status response"
+          "裝置資料格式錯誤"
         );
 
       }
@@ -334,16 +599,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const espRobot =
         data.devices["esp-robot"];
 
-      const espRobotOnline =
+      const espOnline =
         Boolean(
           espRobot &&
           espRobot.online
         );
-
-      updateDeviceElement(
-        espRobotStatus,
-        espRobotOnline
-      );
 
 
       /*
@@ -351,53 +611,84 @@ document.addEventListener("DOMContentLoaded", () => {
        */
 
       const lvglTerminal =
-        data.devices["lvgl-terminal"];
+        data.devices[
+          "lvgl-terminal"
+        ];
 
-      const lvglTerminalOnline =
+      const lvglOnline =
         Boolean(
           lvglTerminal &&
           lvglTerminal.online
         );
 
-      updateDeviceElement(
+
+      /*
+       * 更新畫面
+       */
+
+      updateDeviceStatus(
+        espRobotStatus,
+        espOnline
+      );
+
+      updateDeviceStatus(
         lvglTerminalStatus,
-        lvglTerminalOnline
+        lvglOnline
       );
 
 
       /*
-       * Connected Count
+       * 計算連線數量
        */
 
-      let connectedCount = 0;
+      let connected = 0;
 
-      if (espRobotOnline) {
-        connectedCount++;
+      if (espOnline) {
+        connected++;
       }
 
-      if (lvglTerminalOnline) {
-        connectedCount++;
+      if (lvglOnline) {
+        connected++;
       }
 
       if (connectedDeviceCount) {
 
         connectedDeviceCount.textContent =
-          `${connectedCount} / 2`;
+          `${connected} / 2`;
 
       }
 
 
       /*
-       * ESP Robot Log
+       * 系統連線狀態
+       */
+
+      if (
+        connectionText &&
+        connectionDot
+      ) {
+
+        connectionText.textContent =
+          "系統正常";
+
+        connectionDot.classList.add(
+          "online"
+        );
+
+      }
+
+
+      /*
+       * ESP Robot 狀態變化 Log
        */
 
       if (
         previousEspRobotOnline !== null &&
         previousEspRobotOnline !==
-          espRobotOnline
+          espOnline
       ) {
 
-        if (espRobotOnline) {
+        if (espOnline) {
 
           addSystemLog(
             "ESP Robot 已連線"
@@ -415,16 +706,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       /*
-       * LVGL Terminal Log
+       * LVGL 狀態變化 Log
        */
 
       if (
         previousLvglTerminalOnline !== null &&
         previousLvglTerminalOnline !==
-          lvglTerminalOnline
+          lvglOnline
       ) {
 
-        if (lvglTerminalOnline) {
+        if (lvglOnline) {
 
           addSystemLog(
             "LVGL Terminal 已連線"
@@ -441,22 +732,33 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
 
-      /*
-       * Save Previous State
-       */
-
       previousEspRobotOnline =
-        espRobotOnline;
+        espOnline;
 
       previousLvglTerminalOnline =
-        lvglTerminalOnline;
+        lvglOnline;
 
     } catch (error) {
 
       console.error(
-        "Device status error:",
+        "Device Status Error:",
         error
       );
+
+      if (connectionText) {
+
+        connectionText.textContent =
+          "伺服器連線異常";
+
+      }
+
+      if (connectionDot) {
+
+        connectionDot.classList.remove(
+          "online"
+        );
+
+      }
 
     }
 
@@ -465,17 +767,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Start Device Polling
+   * 開始裝置監測
    * =========================================
    */
 
   function startDevicePolling() {
 
-    if (devicePollingStarted) {
+    if (pollingStarted) {
       return;
     }
 
-    devicePollingStarted = true;
+    pollingStarted = true;
 
     fetchDeviceStatus();
 
@@ -489,103 +791,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Sidebar Events
-   * =========================================
-   */
-
-  if (homeButton) {
-
-    homeButton.addEventListener(
-      "click",
-      () => {
-
-        showDashboard();
-
-      }
-    );
-
-  }
-
-
-  if (
-    scheduleToggle &&
-    classroomMenu
-  ) {
-
-    scheduleToggle.addEventListener(
-      "click",
-      () => {
-
-        classroomMenu.hidden =
-          !classroomMenu.hidden;
-
-        if (scheduleArrow) {
-
-          scheduleArrow.classList.toggle(
-            "open",
-            !classroomMenu.hidden
-          );
-
-        }
-
-      }
-    );
-
-  }
-
-
-  classroomButtons.forEach(
-    (button) => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          const classroomNumber =
-            button.dataset.classroom;
-
-          showClassroom(
-            classroomNumber
-          );
-
-        }
-      );
-
-    }
-  );
-
-
-  if (slotStatusButton) {
-
-    slotStatusButton.addEventListener(
-      "click",
-      () => {
-
-        showSlotStatus();
-
-      }
-    );
-
-  }
-
-
-  if (terminalButton) {
-
-    terminalButton.addEventListener(
-      "click",
-      () => {
-
-        showTerminal();
-
-      }
-    );
-
-  }
-
-
-  /*
-   * =========================================
-   * Login
+   * 登入
    * =========================================
    */
 
@@ -607,10 +813,16 @@ document.addEventListener("DOMContentLoaded", () => {
             ? passwordInput.value
             : "";
 
-        if (loginButton) {
+        const submitButton =
+          loginForm.querySelector(
+            'button[type="submit"]'
+          );
 
-          loginButton.disabled = true;
-          loginButton.textContent =
+        if (submitButton) {
+
+          submitButton.disabled = true;
+
+          submitButton.textContent =
             "登入中...";
 
         }
@@ -655,7 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
           /*
-           * Login Success
+           * 登入成功
            */
 
           if (loginMessage) {
@@ -666,13 +878,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
 
-          if (welcomeOverlay) {
-
-            welcomeOverlay.hidden =
-              false;
-
-          }
-
+          /*
+           * 顯示主系統
+           */
 
           setTimeout(
             () => {
@@ -684,9 +892,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
               }
 
-              if (appPage) {
+              if (homePage) {
 
-                appPage.hidden =
+                homePage.hidden =
                   false;
 
               }
@@ -696,22 +904,7 @@ document.addEventListener("DOMContentLoaded", () => {
               startDevicePolling();
 
             },
-            1200
-          );
-
-
-          setTimeout(
-            () => {
-
-              if (welcomeOverlay) {
-
-                welcomeOverlay.hidden =
-                  true;
-
-              }
-
-            },
-            2200
+            500
           );
 
         } catch (error) {
@@ -725,13 +918,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } finally {
 
-          if (loginButton) {
+          if (submitButton) {
 
-            loginButton.disabled =
+            submitButton.disabled =
               false;
 
-            loginButton.textContent =
-              "登入";
+            submitButton.textContent =
+              "登入系統";
 
           }
 
@@ -745,7 +938,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * =========================================
-   * Logout
+   * 登出
    * =========================================
    */
 
@@ -755,9 +948,9 @@ document.addEventListener("DOMContentLoaded", () => {
       "click",
       () => {
 
-        if (appPage) {
+        if (homePage) {
 
-          appPage.hidden =
+          homePage.hidden =
             true;
 
         }
