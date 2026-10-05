@@ -1,75 +1,42 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  /*
-   * =========================================
-   * 基本元素
-   * =========================================
-   */
+  // =========================================
+  // 基本元素
+  // =========================================
 
-  const loginPage =
-    document.getElementById("loginPage");
+  const loginPage = document.getElementById("loginPage");
+  const homePage = document.getElementById("homePage");
 
-  const homePage =
-    document.getElementById("homePage");
+  const loginForm = document.getElementById("loginForm");
+  const accountInput = document.getElementById("account");
+  const passwordInput = document.getElementById("password");
+  const loginMessage = document.getElementById("loginMessage");
+  const logoutButton = document.getElementById("logoutButton");
 
-  const loginForm =
-    document.getElementById("loginForm");
-
-  const accountInput =
-    document.getElementById("account");
-
-  const passwordInput =
-    document.getElementById("password");
-
-  const loginMessage =
-    document.getElementById("loginMessage");
-
-  const logoutButton =
-    document.getElementById("logoutButton");
+  const animationRoot = document.getElementById("animationRoot");
 
 
-  /*
-   * =========================================
-   * 頁面
-   * =========================================
-   */
+  // =========================================
+  // 內容頁面
+  // =========================================
 
-  const dashboardPage =
-    document.getElementById("dashboardPage");
+  const dashboardPage = document.getElementById("dashboardPage");
+  const classroomPage = document.getElementById("classroomPage");
+  const slotStatusPage = document.getElementById("slotStatusPage");
+  const terminalPage = document.getElementById("terminalPage");
 
-  const classroomPage =
-    document.getElementById("classroomPage");
+  const pageTitle = document.getElementById("pageTitle");
+  const pageDescription = document.getElementById("pageDescription");
 
-  const slotStatusPage =
-    document.getElementById("slotStatusPage");
-
-  const terminalPage =
-    document.getElementById("terminalPage");
+  const classroomTitle = document.getElementById("classroomTitle");
 
 
-  /*
-   * =========================================
-   * Header
-   * =========================================
-   */
-
-  const pageTitle =
-    document.getElementById("pageTitle");
-
-  const pageDescription =
-    document.getElementById("pageDescription");
-
-
-  /*
-   * =========================================
-   * Sidebar
-   * =========================================
-   */
+  // =========================================
+  // Sidebar
+  // =========================================
 
   const sidebarItems =
-    document.querySelectorAll(
-      ".sidebar-item[data-page]"
-    );
+    document.querySelectorAll(".sidebar-item[data-page]");
 
   const scheduleToggle =
     document.getElementById("scheduleToggle");
@@ -81,79 +48,41 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("classroomMenu");
 
   const classroomItems =
-    document.querySelectorAll(
-      ".classroom-item"
-    );
+    document.querySelectorAll(".classroom-item");
 
 
-  /*
-   * =========================================
-   * Classroom
-   * =========================================
-   */
-
-  const classroomTitle =
-    document.getElementById("classroomTitle");
-
-
-  /*
-   * =========================================
-   * Device Status
-   * =========================================
-   */
+  // =========================================
+  // 裝置狀態
+  // =========================================
 
   const espRobotStatus =
     document.getElementById("espRobotStatus");
 
   const lvglTerminalStatus =
-    document.getElementById(
-      "lvglTerminalStatus"
-    );
+    document.getElementById("lvglTerminalStatus");
 
   const connectedDeviceCount =
-    document.getElementById(
-      "connectedDeviceCount"
-    );
+    document.getElementById("connectedDeviceCount");
 
   const connectionDot =
-    document.getElementById(
-      "connectionDot"
-    );
+    document.getElementById("connectionDot");
 
   const connectionText =
-    document.getElementById(
-      "connectionText"
-    );
-
-
-  /*
-   * =========================================
-   * System Log
-   * =========================================
-   */
+    document.getElementById("connectionText");
 
   const systemLog =
     document.getElementById("systemLog");
 
 
-  /*
-   * =========================================
-   * Device State
-   * =========================================
-   */
-
   let previousEspRobotOnline = null;
-
   let previousLvglTerminalOnline = null;
 
   let pollingStarted = false;
 
 
-  /*
-   * =========================================
-   * 系統日誌
-   * =========================================
-   */
+  // =========================================
+  // 系統日誌
+  // =========================================
 
   function addSystemLog(message) {
 
@@ -174,19 +103,322 @@ document.addEventListener("DOMContentLoaded", () => {
 
     line.className = "log-line";
 
-    line.textContent =
-      `[${time}] ${message}`;
+    line.innerHTML =
+      `<span>[${time}]</span> ${message}`;
 
     systemLog.prepend(line);
 
   }
 
 
-  /*
-   * =========================================
-   * 隱藏所有內容頁
-   * =========================================
-   */
+  // =========================================
+  // 歡迎動畫
+  // =========================================
+
+  function playWelcomeAnimation() {
+
+    return new Promise((resolve) => {
+
+      if (!animationRoot) {
+        resolve();
+        return;
+      }
+
+      // 清除舊動畫
+      animationRoot.innerHTML = "";
+
+      // Overlay
+      const overlay =
+        document.createElement("div");
+
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "99999";
+
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+
+      overlay.style.background =
+        "radial-gradient(circle at center, #172033 0%, #0b1020 45%, #05070d 100%)";
+
+      overlay.style.opacity = "0";
+      overlay.style.transition =
+        "opacity 0.45s ease";
+
+      overlay.style.overflow = "hidden";
+
+
+      // 背景光暈
+      const glow =
+        document.createElement("div");
+
+      glow.style.position = "absolute";
+
+      glow.style.width = "420px";
+      glow.style.height = "420px";
+
+      glow.style.borderRadius = "50%";
+
+      glow.style.background =
+        "rgba(255,255,255,0.05)";
+
+      glow.style.filter = "blur(50px)";
+
+      glow.style.transform =
+        "scale(0.5)";
+
+      glow.style.opacity = "0";
+
+      glow.style.transition =
+        "all 1.4s cubic-bezier(.2,.8,.2,1)";
+
+
+      // 中央內容
+      const content =
+        document.createElement("div");
+
+      content.style.position = "relative";
+      content.style.zIndex = "2";
+
+      content.style.display = "flex";
+      content.style.flexDirection = "column";
+      content.style.alignItems = "center";
+
+      content.style.textAlign = "center";
+
+      content.style.transform =
+        "translateY(18px) scale(0.94)";
+
+      content.style.opacity = "0";
+
+      content.style.transition =
+        "all 0.9s cubic-bezier(.2,.8,.2,1)";
+
+
+      // Logo 外框
+      const logoBox =
+        document.createElement("div");
+
+      logoBox.style.width = "110px";
+      logoBox.style.height = "110px";
+
+      logoBox.style.display = "flex";
+      logoBox.style.alignItems = "center";
+      logoBox.style.justifyContent = "center";
+
+      logoBox.style.marginBottom = "26px";
+
+      logoBox.style.borderRadius = "28px";
+
+      logoBox.style.background =
+        "rgba(255,255,255,0.06)";
+
+      logoBox.style.border =
+        "1px solid rgba(255,255,255,0.10)";
+
+      logoBox.style.boxShadow =
+        "0 20px 60px rgba(0,0,0,0.30)";
+
+
+      // Logo
+      const logo =
+        document.createElement("img");
+
+      logo.src = "./assets/ikey-logo.png";
+      logo.alt = "iKey";
+
+      logo.style.width = "76px";
+      logo.style.height = "76px";
+
+      logo.style.objectFit = "contain";
+
+      logo.style.display = "block";
+
+
+      // Welcome
+      const welcome =
+        document.createElement("div");
+
+      welcome.textContent =
+        "WELCOME TO";
+
+      welcome.style.fontSize = "12px";
+      welcome.style.fontWeight = "700";
+      welcome.style.letterSpacing = "5px";
+
+      welcome.style.color =
+        "rgba(255,255,255,0.50)";
+
+      welcome.style.marginBottom =
+        "12px";
+
+
+      // iKey
+      const title =
+        document.createElement("div");
+
+      title.textContent = "iKey";
+
+      title.style.fontSize =
+        "clamp(48px, 8vw, 76px)";
+
+      title.style.fontWeight = "800";
+
+      title.style.letterSpacing =
+        "-3px";
+
+      title.style.lineHeight = "1";
+
+      title.style.color = "#ffffff";
+
+
+      // 中文名稱
+      const subtitle =
+        document.createElement("div");
+
+      subtitle.textContent =
+        "智慧鑰匙管理系統";
+
+      subtitle.style.marginTop =
+        "18px";
+
+      subtitle.style.fontSize =
+        "16px";
+
+      subtitle.style.fontWeight =
+        "500";
+
+      subtitle.style.letterSpacing =
+        "4px";
+
+      subtitle.style.color =
+        "rgba(255,255,255,0.72)";
+
+
+      // Loading line
+      const lineBox =
+        document.createElement("div");
+
+      lineBox.style.width = "180px";
+      lineBox.style.height = "2px";
+
+      lineBox.style.marginTop =
+        "34px";
+
+      lineBox.style.background =
+        "rgba(255,255,255,0.10)";
+
+      lineBox.style.borderRadius =
+        "999px";
+
+      lineBox.style.overflow =
+        "hidden";
+
+
+      const line =
+        document.createElement("div");
+
+      line.style.width = "0%";
+      line.style.height = "100%";
+
+      line.style.background =
+        "rgba(255,255,255,0.90)";
+
+      line.style.borderRadius =
+        "999px";
+
+      line.style.transition =
+        "width 1.5s cubic-bezier(.2,.8,.2,1)";
+
+
+      // 組裝
+      logoBox.appendChild(logo);
+
+      lineBox.appendChild(line);
+
+      content.appendChild(logoBox);
+      content.appendChild(welcome);
+      content.appendChild(title);
+      content.appendChild(subtitle);
+      content.appendChild(lineBox);
+
+      overlay.appendChild(glow);
+      overlay.appendChild(content);
+
+      animationRoot.appendChild(overlay);
+
+
+      // 開始淡入
+      requestAnimationFrame(() => {
+
+        overlay.style.opacity = "1";
+
+        setTimeout(() => {
+
+          glow.style.opacity = "1";
+
+          glow.style.transform =
+            "scale(1)";
+
+          content.style.opacity = "1";
+
+          content.style.transform =
+            "translateY(0) scale(1)";
+
+        }, 120);
+
+
+        setTimeout(() => {
+
+          line.style.width = "100%";
+
+        }, 500);
+
+      });
+
+
+      // 開始離場
+      setTimeout(() => {
+
+        content.style.opacity = "0";
+
+        content.style.transform =
+          "translateY(-12px) scale(1.03)";
+
+        glow.style.opacity = "0";
+
+        glow.style.transform =
+          "scale(1.3)";
+
+      }, 2000);
+
+
+      // Overlay 淡出
+      setTimeout(() => {
+
+        overlay.style.opacity = "0";
+
+      }, 2250);
+
+
+      // 移除動畫
+      setTimeout(() => {
+
+        animationRoot.innerHTML = "";
+
+        resolve();
+
+      }, 2750);
+
+    });
+
+  }
+
+
+  // =========================================
+  // 隱藏所有內容頁
+  // =========================================
 
   function hideAllContentPages() {
 
@@ -209,32 +441,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * Sidebar Active
-   * =========================================
-   */
+  // =========================================
+  // 清除 Sidebar Active
+  // =========================================
 
   function clearSidebarActive() {
 
-    sidebarItems.forEach(
-      (item) => {
+    sidebarItems.forEach((item) => {
 
-        item.classList.remove(
-          "active"
-        );
+      item.classList.remove("active");
 
-      }
-    );
+    });
 
   }
 
 
-  /*
-   * =========================================
-   * 顯示首頁
-   * =========================================
-   */
+  // =========================================
+  // 首頁
+  // =========================================
 
   function showDashboard() {
 
@@ -246,17 +470,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     clearSidebarActive();
 
-    const dashboardButton =
+    const button =
       document.querySelector(
         '.sidebar-item[data-page="dashboard"]'
       );
 
-    if (dashboardButton) {
-
-      dashboardButton.classList.add(
-        "active"
-      );
-
+    if (button) {
+      button.classList.add("active");
     }
 
     if (pageTitle) {
@@ -273,15 +493,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 顯示教室
-   * =========================================
-   */
+  // =========================================
+  // 教室
+  // =========================================
 
-  function showClassroom(
-    classroomNumber
-  ) {
+  function showClassroom(number) {
 
     hideAllContentPages();
 
@@ -292,21 +508,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (classroomTitle) {
 
       classroomTitle.textContent =
-        `教室 ${classroomNumber}`;
+        `教室 ${number}`;
 
     }
 
     if (pageTitle) {
 
       pageTitle.textContent =
-        `教室 ${classroomNumber} 課表`;
+        `教室 ${number} 課表`;
 
     }
 
     if (pageDescription) {
 
       pageDescription.textContent =
-        `管理教室 ${classroomNumber} 的課程時間`;
+        `管理教室 ${number} 的課程時間`;
 
     }
 
@@ -315,11 +531,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 顯示格位狀態
-   * =========================================
-   */
+  // =========================================
+  // 格位狀態
+  // =========================================
 
   function showSlotStatus() {
 
@@ -337,11 +551,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     if (button) {
-
-      button.classList.add(
-        "active"
-      );
-
+      button.classList.add("active");
     }
 
     if (pageTitle) {
@@ -361,11 +571,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 顯示系統終端機
-   * =========================================
-   */
+  // =========================================
+  // 系統終端機
+  // =========================================
 
   function showTerminal() {
 
@@ -383,11 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     if (button) {
-
-      button.classList.add(
-        "active"
-      );
-
+      button.classList.add("active");
     }
 
     if (pageTitle) {
@@ -407,57 +611,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * Sidebar Navigation
-   * =========================================
-   */
+  // =========================================
+  // Sidebar 頁面切換
+  // =========================================
 
-  sidebarItems.forEach(
-    (item) => {
+  sidebarItems.forEach((item) => {
 
-      item.addEventListener(
-        "click",
-        () => {
+    item.addEventListener(
+      "click",
+      () => {
 
-          const page =
-            item.dataset.page;
+        const page =
+          item.dataset.page;
 
-          if (page === "dashboard") {
-
-            showDashboard();
-
-          }
-
-          if (page === "slot-status") {
-
-            showSlotStatus();
-
-          }
-
-          if (page === "terminal") {
-
-            showTerminal();
-
-          }
-
+        if (page === "dashboard") {
+          showDashboard();
         }
-      );
 
-    }
-  );
+        if (page === "slot-status") {
+          showSlotStatus();
+        }
+
+        if (page === "terminal") {
+          showTerminal();
+        }
+
+      }
+    );
+
+  });
 
 
-  /*
-   * =========================================
-   * 課表展開
-   * =========================================
-   */
+  // =========================================
+  // 課表展開
+  // =========================================
 
-  if (
-    scheduleToggle &&
-    classroomMenu
-  ) {
+  if (scheduleToggle && classroomMenu) {
 
     scheduleToggle.addEventListener(
       "click",
@@ -481,38 +670,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 教室按鈕
-   * =========================================
-   */
+  // =========================================
+  // 教室選擇
+  // =========================================
 
-  classroomItems.forEach(
-    (item) => {
+  classroomItems.forEach((item) => {
 
-      item.addEventListener(
-        "click",
-        () => {
+    item.addEventListener(
+      "click",
+      () => {
 
-          const classroomNumber =
-            item.dataset.classroom;
+        showClassroom(
+          item.dataset.classroom
+        );
 
-          showClassroom(
-            classroomNumber
-          );
+      }
+    );
 
-        }
-      );
-
-    }
-  );
+  });
 
 
-  /*
-   * =========================================
-   * 更新裝置 UI
-   * =========================================
-   */
+  // =========================================
+  // 更新裝置顯示
+  // =========================================
 
   function updateDeviceStatus(
     element,
@@ -551,11 +731,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 取得裝置狀態
-   * =========================================
-   */
+  // =========================================
+  // 取得 Device Status
+  // =========================================
 
   async function fetchDeviceStatus() {
 
@@ -580,24 +758,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const data =
         await response.json();
 
-      if (
-        !data.success ||
-        !data.devices
-      ) {
+      if (!data.success || !data.devices) {
 
         throw new Error(
-          "裝置資料格式錯誤"
+          "裝置狀態資料格式錯誤"
         );
 
       }
 
 
-      /*
-       * ESP Robot
-       */
-
       const espRobot =
         data.devices["esp-robot"];
+
+      const lvglTerminal =
+        data.devices["lvgl-terminal"];
+
 
       const espOnline =
         Boolean(
@@ -605,26 +780,12 @@ document.addEventListener("DOMContentLoaded", () => {
           espRobot.online
         );
 
-
-      /*
-       * LVGL Terminal
-       */
-
-      const lvglTerminal =
-        data.devices[
-          "lvgl-terminal"
-        ];
-
       const lvglOnline =
         Boolean(
           lvglTerminal &&
           lvglTerminal.online
         );
 
-
-      /*
-       * 更新畫面
-       */
 
       updateDeviceStatus(
         espRobotStatus,
@@ -637,10 +798,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
 
-      /*
-       * 計算連線數量
-       */
-
       let connected = 0;
 
       if (espOnline) {
@@ -651,6 +808,7 @@ document.addEventListener("DOMContentLoaded", () => {
         connected++;
       }
 
+
       if (connectedDeviceCount) {
 
         connectedDeviceCount.textContent =
@@ -659,17 +817,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
 
-      /*
-       * 系統連線狀態
-       */
-
-      if (
-        connectionText &&
-        connectionDot
-      ) {
+      // Render / API 正常
+      if (connectionText) {
 
         connectionText.textContent =
           "系統正常";
+
+      }
+
+      if (connectionDot) {
 
         connectionDot.classList.add(
           "online"
@@ -678,56 +834,32 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
 
-      /*
-       * ESP Robot 狀態變化 Log
-       */
-
+      // ESP Robot 狀態變化
       if (
         previousEspRobotOnline !== null &&
-        previousEspRobotOnline !==
-          espOnline
+        previousEspRobotOnline !== espOnline
       ) {
 
-        if (espOnline) {
-
-          addSystemLog(
-            "ESP Robot 已連線"
-          );
-
-        } else {
-
-          addSystemLog(
-            "ESP Robot 已離線"
-          );
-
-        }
+        addSystemLog(
+          espOnline
+            ? "ESP Robot 已連線"
+            : "ESP Robot 已離線"
+        );
 
       }
 
 
-      /*
-       * LVGL 狀態變化 Log
-       */
-
+      // LVGL Terminal 狀態變化
       if (
         previousLvglTerminalOnline !== null &&
-        previousLvglTerminalOnline !==
-          lvglOnline
+        previousLvglTerminalOnline !== lvglOnline
       ) {
 
-        if (lvglOnline) {
-
-          addSystemLog(
-            "LVGL Terminal 已連線"
-          );
-
-        } else {
-
-          addSystemLog(
-            "LVGL Terminal 已離線"
-          );
-
-        }
+        addSystemLog(
+          lvglOnline
+            ? "LVGL Terminal 已連線"
+            : "LVGL Terminal 已離線"
+        );
 
       }
 
@@ -765,11 +897,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 開始裝置監測
-   * =========================================
-   */
+  // =========================================
+  // 每 5 秒監測一次
+  // =========================================
 
   function startDevicePolling() {
 
@@ -789,11 +919,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 登入
-   * =========================================
-   */
+  // =========================================
+  // 登入
+  // =========================================
 
   if (loginForm) {
 
@@ -802,6 +930,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async (event) => {
 
         event.preventDefault();
+
 
         const account =
           accountInput
@@ -813,10 +942,12 @@ document.addEventListener("DOMContentLoaded", () => {
             ? passwordInput.value
             : "";
 
+
         const submitButton =
           loginForm.querySelector(
             'button[type="submit"]'
           );
+
 
         if (submitButton) {
 
@@ -827,11 +958,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
         if (loginMessage) {
 
           loginMessage.textContent = "";
 
         }
+
 
         try {
 
@@ -853,8 +986,10 @@ document.addEventListener("DOMContentLoaded", () => {
               }
             );
 
+
           const data =
             await response.json();
+
 
           if (!response.ok) {
 
@@ -866,10 +1001,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
 
-          /*
-           * 登入成功
-           */
-
+          // 登入成功
           if (loginMessage) {
 
             loginMessage.textContent =
@@ -878,34 +1010,34 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
 
-          /*
-           * 顯示主系統
-           */
-
-          setTimeout(
-            () => {
-
-              if (loginPage) {
-
-                loginPage.hidden =
-                  true;
-
-              }
-
-              if (homePage) {
-
-                homePage.hidden =
-                  false;
-
-              }
-
-              showDashboard();
-
-              startDevicePolling();
-
-            },
-            500
+          // 稍微停一下讓使用者看到登入成功
+          await new Promise(
+            (resolve) =>
+              setTimeout(resolve, 350)
           );
+
+
+          // 播放歡迎動畫
+          await playWelcomeAnimation();
+
+
+          // 切換頁面
+          if (loginPage) {
+            loginPage.hidden = true;
+          }
+
+          if (homePage) {
+            homePage.hidden = false;
+          }
+
+
+          // 顯示首頁
+          showDashboard();
+
+
+          // 開始監測裝置
+          startDevicePolling();
+
 
         } catch (error) {
 
@@ -920,8 +1052,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (submitButton) {
 
-            submitButton.disabled =
-              false;
+            submitButton.disabled = false;
 
             submitButton.textContent =
               "登入系統";
@@ -936,11 +1067,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /*
-   * =========================================
-   * 登出
-   * =========================================
-   */
+  // =========================================
+  // 登出
+  // =========================================
 
   if (logoutButton) {
 
@@ -949,29 +1078,19 @@ document.addEventListener("DOMContentLoaded", () => {
       () => {
 
         if (homePage) {
-
-          homePage.hidden =
-            true;
-
+          homePage.hidden = true;
         }
 
         if (loginPage) {
-
-          loginPage.hidden =
-            false;
-
+          loginPage.hidden = false;
         }
 
         if (passwordInput) {
-
           passwordInput.value = "";
-
         }
 
         if (loginMessage) {
-
           loginMessage.textContent = "";
-
         }
 
       }
