@@ -18,6 +18,71 @@ function getDatabaseApiUrl() {
 
 /*
  * =========================================
+ * Apps Script Request
+ * =========================================
+ */
+
+async function appsScriptRequest(
+  url,
+  options = {}
+) {
+
+  const response =
+    await fetch(
+      url,
+      {
+        ...options,
+        redirect: "follow"
+      }
+    );
+
+
+  const text =
+    await response.text();
+
+
+  /*
+   * HTTP 錯誤
+   */
+
+  if (!response.ok) {
+
+    throw new Error(
+      `Apps Script HTTP ${response.status}: ${text.slice(0, 300)}`
+    );
+
+  }
+
+
+  /*
+   * 嘗試解析 JSON
+   */
+
+  try {
+
+    return JSON.parse(
+      text
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Apps Script returned non-JSON:",
+      text.slice(0, 500)
+    );
+
+
+    throw new Error(
+      "Apps Script returned non-JSON response"
+    );
+
+  }
+
+}
+
+
+/*
+ * =========================================
  * GET /api/database/health
  * =========================================
  */
@@ -42,28 +107,10 @@ router.get("/health", async (req, res) => {
     }
 
 
-    const response =
-      await fetch(
+    const data =
+      await appsScriptRequest(
         databaseApiUrl
       );
-
-
-    if (!response.ok) {
-
-      return res.status(502).json({
-        success: false,
-        status: "error",
-        message:
-          "Google Apps Script request failed",
-        http_status:
-          response.status
-      });
-
-    }
-
-
-    const data =
-      await response.json();
 
 
     return res.json({
@@ -139,28 +186,10 @@ router.get("/users", async (req, res) => {
     );
 
 
-    const response =
-      await fetch(
+    const data =
+      await appsScriptRequest(
         url.toString()
       );
-
-
-    if (!response.ok) {
-
-      return res.status(502).json({
-        success: false,
-        status: "error",
-        message:
-          "Google Apps Script request failed",
-        http_status:
-          response.status
-      });
-
-    }
-
-
-    const data =
-      await response.json();
 
 
     return res.json({
@@ -250,18 +279,18 @@ router.post("/users", async (req, res) => {
 
 
     /*
-     * 傳送給 Apps Script
+     * Apps Script POST
      */
 
-    const response =
-      await fetch(
+    const data =
+      await appsScriptRequest(
         databaseApiUrl,
         {
           method: "POST",
 
           headers: {
             "Content-Type":
-              "application/json"
+              "text/plain;charset=utf-8"
           },
 
           body:
@@ -276,26 +305,8 @@ router.post("/users", async (req, res) => {
       );
 
 
-    if (!response.ok) {
-
-      return res.status(502).json({
-        success: false,
-        status: "error",
-        message:
-          "Google Apps Script request failed",
-        http_status:
-          response.status
-      });
-
-    }
-
-
-    const data =
-      await response.json();
-
-
     /*
-     * Apps Script 驗證失敗
+     * Apps Script 拒絕
      */
 
     if (
@@ -304,6 +315,7 @@ router.post("/users", async (req, res) => {
 
       return res.status(400).json({
         success: false,
+
         status:
           data.status || "error",
 
@@ -319,7 +331,7 @@ router.post("/users", async (req, res) => {
 
 
     /*
-     * 成功
+     * 建立成功
      */
 
     return res.status(201).json({
