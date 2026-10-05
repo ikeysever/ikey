@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>iKey 智慧鑰匙管理系統</title>
-
   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
-  <!-- 登入頁 -->
+  <!-- =========================
+       登入頁
+       ========================= -->
   <main id="loginPage" class="page">
 
     <section class="login-box">
@@ -32,6 +32,7 @@
 
         <div class="form-group">
           <label for="account">帳號</label>
+
           <input
             id="account"
             name="account"
@@ -43,6 +44,7 @@
 
         <div class="form-group">
           <label for="password">密碼</label>
+
           <input
             id="password"
             name="password"
@@ -65,60 +67,485 @@
   </main>
 
 
-  <!-- 首頁 -->
+  <!-- =========================
+       系統首頁
+       ========================= -->
   <main id="homePage" class="page" hidden>
 
-    <header class="home-header">
+    <div class="app-layout">
 
-      <div class="home-brand">
-        <img
-          src="./assets/ikey-logo.png"
-          alt="iKey"
-          class="logo-small"
+      <!-- =====================
+           左側側欄
+           ===================== -->
+      <aside class="sidebar">
+
+        <!-- Logo -->
+        <div class="sidebar-brand">
+
+          <img
+            src="./assets/ikey-logo.png"
+            alt="iKey"
+            class="sidebar-logo"
+          >
+
+          <div class="sidebar-brand-text">
+            <strong>iKey</strong>
+            <span>智慧鑰匙管理系統</span>
+          </div>
+
+        </div>
+
+
+        <!-- 側欄選單 -->
+        <nav class="sidebar-nav">
+
+          <!-- 首頁 -->
+          <button
+            class="sidebar-item active"
+            type="button"
+            data-page="dashboard"
+          >
+            <span class="sidebar-icon">⌂</span>
+            <span>首頁</span>
+          </button>
+
+
+          <!-- 課表 -->
+          <div class="sidebar-group">
+
+            <button
+              id="scheduleToggle"
+              class="sidebar-item sidebar-item-expandable"
+              type="button"
+            >
+              <span class="sidebar-icon">▦</span>
+              <span>課表</span>
+              <span
+                id="scheduleArrow"
+                class="sidebar-arrow"
+              >
+                ▶
+              </span>
+            </button>
+
+
+            <!-- 教室列表 -->
+            <div
+              id="classroomMenu"
+              class="classroom-menu"
+              hidden
+            >
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="1"
+              >
+                教室 1
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="2"
+              >
+                教室 2
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="3"
+              >
+                教室 3
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="4"
+              >
+                教室 4
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="5"
+              >
+                教室 5
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="6"
+              >
+                教室 6
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="7"
+              >
+                教室 7
+              </button>
+
+              <button
+                class="classroom-item"
+                type="button"
+                data-classroom="8"
+              >
+                教室 8
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <!-- 格位目前狀態 -->
+          <button
+            class="sidebar-item"
+            type="button"
+            data-page="slot-status"
+          >
+            <span class="sidebar-icon">▣</span>
+            <span>格位目前狀態</span>
+          </button>
+
+
+          <!-- 系統終端機 -->
+          <button
+            class="sidebar-item"
+            type="button"
+            data-page="terminal"
+          >
+            <span class="sidebar-icon">›_</span>
+            <span>系統終端機</span>
+          </button>
+
+        </nav>
+
+
+        <!-- 側欄底部 -->
+        <div class="sidebar-footer">
+
+          <button
+            id="logoutButton"
+            class="logout-button"
+            type="button"
+          >
+            登出
+          </button>
+
+        </div>
+
+      </aside>
+
+
+      <!-- =====================
+           右側主要內容
+           ===================== -->
+      <section class="main-area">
+
+        <!-- 頂部標題 -->
+        <header class="main-header">
+
+          <div>
+            <h1 id="pageTitle">
+              首頁
+            </h1>
+
+            <p id="pageDescription">
+              iKey 智慧鑰匙管理系統
+            </p>
+          </div>
+
+          <div class="connection-status">
+
+            <span
+              class="connection-dot"
+              id="connectionDot"
+            ></span>
+
+            <span id="connectionText">
+              系統正常
+            </span>
+
+          </div>
+
+        </header>
+
+
+        <!-- =================
+             首頁內容
+             ================= -->
+        <section
+          id="dashboardPage"
+          class="content-page"
         >
 
-        <span>iKey 智慧鑰匙管理系統</span>
-      </div>
-
-      <button id="logoutButton" type="button">
-        登出
-      </button>
-
-    </header>
+          <div class="dashboard-grid">
 
 
-    <section class="home-content">
+            <!-- ESP Robot 連線監測 -->
+            <article class="dashboard-panel">
 
-      <h1>首頁</h1>
+              <div class="panel-header">
 
-      <p>歡迎使用 iKey 智慧鑰匙管理系統</p>
+                <div>
+                  <h2>ESP Robot 連線監測</h2>
+
+                  <p>
+                    即時監測 ESP Robot 連線狀態
+                  </p>
+                </div>
+
+                <span class="status-badge online">
+                  ONLINE
+                </span>
+
+              </div>
+
+              <div class="robot-status-list">
+
+                <div class="robot-status-item">
+
+                  <span>ESP Robot 01</span>
+
+                  <span class="robot-online">
+                    ● 已連線
+                  </span>
+
+                </div>
+
+                <div class="robot-status-item">
+
+                  <span>ESP Robot 02</span>
+
+                  <span class="robot-offline">
+                    ● 尚未連線
+                  </span>
+
+                </div>
+
+              </div>
+
+            </article>
 
 
-      <div class="dashboard">
+            <!-- 系統日誌 -->
+            <article class="dashboard-panel">
 
-        <div class="dashboard-card">
-          <h2>智慧鑰匙</h2>
-          <p>管理智慧鑰匙</p>
-        </div>
+              <div class="panel-header">
 
-        <div class="dashboard-card">
-          <h2>冷氣卡</h2>
-          <p>管理冷氣卡</p>
-        </div>
+                <div>
+                  <h2>系統日誌</h2>
 
-        <div class="dashboard-card">
-          <h2>課表管理</h2>
-          <p>管理課表</p>
-        </div>
+                  <p>
+                    系統與 ESP Robot 即時活動
+                  </p>
+                </div>
 
-      </div>
+              </div>
 
-    </section>
+              <div
+                id="systemLog"
+                class="system-log"
+              >
+
+                <div class="log-line">
+                  <span>[SYSTEM]</span>
+                  iKey 系統已啟動
+                </div>
+
+                <div class="log-line">
+                  <span>[ESP]</span>
+                  等待 ESP Robot 連線
+                </div>
+
+                <div class="log-line">
+                  <span>[SYSTEM]</span>
+                  系統目前正常運作
+                </div>
+
+              </div>
+
+            </article>
+
+
+            <!-- 系統摘要 -->
+            <article class="dashboard-panel dashboard-panel-wide">
+
+              <div class="panel-header">
+
+                <div>
+                  <h2>系統狀態</h2>
+
+                  <p>
+                    iKey 目前系統資訊
+                  </p>
+                </div>
+
+              </div>
+
+              <div class="system-summary">
+
+                <div class="summary-item">
+                  <span>ESP Robot</span>
+                  <strong>1 / 2</strong>
+                </div>
+
+                <div class="summary-item">
+                  <span>使用中格位</span>
+                  <strong>0</strong>
+                </div>
+
+                <div class="summary-item">
+                  <span>今日課表</span>
+                  <strong>0</strong>
+                </div>
+
+                <div class="summary-item">
+                  <span>系統狀態</span>
+                  <strong class="summary-online">
+                    正常
+                  </strong>
+                </div>
+
+              </div>
+
+            </article>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================
+             課表 / 教室
+             ================= -->
+        <section
+          id="classroomPage"
+          class="content-page"
+          hidden
+        >
+
+          <div class="empty-panel">
+
+            <div class="empty-icon">
+              ▦
+            </div>
+
+            <h2 id="classroomTitle">
+              教室 1
+            </h2>
+
+            <p>
+              課表功能即將建立
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================
+             格位目前狀態
+             ================= -->
+        <section
+          id="slotStatusPage"
+          class="content-page"
+          hidden
+        >
+
+          <div class="empty-panel">
+
+            <div class="empty-icon">
+              ▣
+            </div>
+
+            <h2>
+              格位目前狀態
+            </h2>
+
+            <p>
+              此處將顯示目前每個格位由誰借用。
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================
+             系統終端機
+             ================= -->
+        <section
+          id="terminalPage"
+          class="content-page"
+          hidden
+        >
+
+          <div class="terminal-panel">
+
+            <div class="terminal-header">
+
+              <div class="terminal-title">
+                <span class="terminal-dot"></span>
+                系統終端機
+              </div>
+
+              <span class="terminal-status">
+                SYSTEM
+              </span>
+
+            </div>
+
+
+            <div
+              id="terminalOutput"
+              class="terminal-output"
+            >
+
+              <div>
+                iKey System Terminal
+              </div>
+
+              <div>
+                --------------------------------
+              </div>
+
+              <div>
+                系統初始化完成
+              </div>
+
+              <div>
+                等待系統指令與事件...
+              </div>
+
+              <div class="terminal-cursor">
+                &gt; _
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </section>
+
+    </div>
 
   </main>
 
 
-  <!-- 動畫容器 -->
+  <!-- =========================
+       動畫系統
+       ========================= -->
   <div id="animationRoot"></div>
 
 
