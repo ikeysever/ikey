@@ -1,0 +1,265 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family:
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    Arial,
+    sans-serif;
+}
+
+body {
+  background: #0b1220;
+  color: #ffffff;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* =========================
+   共用頁面
+========================= */
+
+.page {
+  min-height: 100vh;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+
+/* =========================
+   登入頁
+========================= */
+
+#loginPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-box {
+  width: min(420px, 100%);
+  padding: 40px;
+  border-radius: 20px;
+  background: #111b2e;
+  border: 1px solid #263550;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.logo-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+}
+
+.login-box h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+}
+
+.login-box > p {
+  margin: 10px 0 30px;
+  text-align: center;
+  color: #9ca9bd;
+}
+
+
+/* =========================
+   表單
+========================= */
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #34445f;
+  border-radius: 10px;
+  outline: none;
+  background: #0b1220;
+  color: #ffffff;
+}
+
+.form-group input:focus {
+  border-color: #6ea8fe;
+}
+
+#loginForm button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 13px;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+#loginForm button:hover {
+  background: #1d4ed8;
+}
+
+#loginForm button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+#loginMessage {
+  min-height: 24px;
+  margin: 14px 0 0;
+  text-align: center;
+  color: #ff6b6b;
+}
+
+
+/* =========================
+   首頁
+========================= */
+
+#homePage {
+  background: #0b1220;
+}
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid #263550;
+  background: #111b2e;
+}
+
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+}
+
+.logo-small {
+  width: 52px;
+  height: auto;
+  object-fit: contain;
+}
+
+#logoutButton {
+  padding: 9px 16px;
+  border: 1px solid #34445f;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+}
+
+#logoutButton:hover {
+  background: #1a2740;
+}
+
+.home-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 50px 28px;
+}
+
+.home-content h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+}
+
+.home-content > p {
+  margin: 0 0 35px;
+  color: #9ca9bd;
+}
+
+
+/* =========================
+   首頁功能卡片
+========================= */
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.dashboard-card {
+  padding: 28px;
+  border: 1px solid #263550;
+  border-radius: 16px;
+  background: #111b2e;
+}
+
+.dashboard-card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.dashboard-card p {
+  margin: 0;
+  color: #9ca9bd;
+}
+
+
+/* =========================
+   動畫容器
+========================= */
+
+#animationRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+
+/* =========================
+   RWD
+========================= */
+
+@media (max-width: 700px) {
+
+  .login-box {
+    padding: 28px 22px;
+  }
+
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .home-header {
+    padding: 16px;
+  }
+
+  .home-content {
+    padding: 35px 18px;
+  }
+
+}

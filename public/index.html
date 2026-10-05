@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>iKey 智慧鑰匙管理系統</title>
+
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+
+  <!-- 登入頁 -->
+  <main id="loginPage" class="page">
+
+    <section class="login-box">
+
+      <div class="logo-area">
+        <img
+          src="./assets/ikey-logo.png"
+          alt="iKey"
+          class="logo"
+        >
+      </div>
+
+      <h1>iKey 智慧鑰匙管理系統</h1>
+
+      <p>智慧校園管理系統</p>
+
+      <form id="loginForm">
+
+        <div class="form-group">
+          <label for="account">帳號</label>
+          <input
+            id="account"
+            name="account"
+            type="text"
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">密碼</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button type="submit">
+          登入系統
+        </button>
+
+        <p id="loginMessage"></p>
+
+      </form>
+
+    </section>
+
+  </main>
+
+
+  <!-- 首頁 -->
+  <main id="homePage" class="page" hidden>
+
+    <header class="home-header">
+
+      <div class="home-brand">
+        <img
+          src="./assets/ikey-logo.png"
+          alt="iKey"
+          class="logo-small"
+        >
+
+        <span>iKey 智慧鑰匙管理系統</span>
+      </div>
+
+      <button id="logoutButton" type="button">
+        登出
+      </button>
+
+    </header>
+
+
+    <section class="home-content">
+
+      <h1>首頁</h1>
+
+      <p>歡迎使用 iKey 智慧鑰匙管理系統</p>
+
+
+      <div class="dashboard">
+
+        <div class="dashboard-card">
+          <h2>智慧鑰匙</h2>
+          <p>管理智慧鑰匙</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h2>冷氣卡</h2>
+          <p>管理冷氣卡</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h2>課表管理</h2>
+          <p>管理課表</p>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- 動畫容器 -->
+  <div id="animationRoot"></div>
+
+
+  <script src="./animation.js"></script>
+
+</body>
+</html>
