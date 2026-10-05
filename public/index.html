@@ -3,35 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>iKey 智慧鑰匙管理系統</title>
-  <link rel="stylesheet" href="./style.css">
+
+  <link
+    rel="stylesheet"
+    href="./style.css"
+  >
 </head>
 
 <body>
 
-  <!-- =========================
+  <!-- ========================================
        登入頁
-       ========================= -->
-  <main id="loginPage" class="page">
+       ======================================== -->
+
+  <main
+    id="loginPage"
+    class="page"
+  >
 
     <section class="login-box">
 
       <div class="logo-area">
+
         <img
           src="./assets/ikey-logo.png"
           alt="iKey"
           class="logo"
         >
+
       </div>
 
-      <h1>iKey 智慧鑰匙管理系統</h1>
+      <h1>
+        iKey 智慧鑰匙管理系統
+      </h1>
 
-      <p>智慧校園管理系統</p>
+      <p>
+        智慧校園管理系統
+      </p>
+
 
       <form id="loginForm">
 
         <div class="form-group">
-          <label for="account">帳號</label>
+
+          <label for="account">
+            帳號
+          </label>
 
           <input
             id="account"
@@ -40,10 +59,15 @@
             autocomplete="username"
             required
           >
+
         </div>
 
+
         <div class="form-group">
-          <label for="password">密碼</label>
+
+          <label for="password">
+            密碼
+          </label>
 
           <input
             id="password"
@@ -52,7 +76,9 @@
             autocomplete="current-password"
             required
           >
+
         </div>
+
 
         <button type="submit">
           登入系統
@@ -67,19 +93,28 @@
   </main>
 
 
-  <!-- =========================
-       系統首頁
-       ========================= -->
-  <main id="homePage" class="page" hidden>
+  <!-- ========================================
+       iKey 主系統
+       ======================================== -->
+
+  <main
+    id="homePage"
+    class="page"
+    hidden
+  >
 
     <div class="app-layout">
 
-      <!-- =====================
-           左側側欄
-           ===================== -->
+
+      <!-- ====================================
+           左側 Sidebar
+           ==================================== -->
+
       <aside class="sidebar">
 
+
         <!-- Logo -->
+
         <div class="sidebar-brand">
 
           <img
@@ -89,28 +124,50 @@
           >
 
           <div class="sidebar-brand-text">
-            <strong>iKey</strong>
-            <span>智慧鑰匙管理系統</span>
+
+            <strong>
+              iKey
+            </strong>
+
+            <span>
+              智慧鑰匙管理系統
+            </span>
+
           </div>
 
         </div>
 
 
-        <!-- 側欄選單 -->
+        <!-- ==================================
+             側欄選單
+             ================================== -->
+
         <nav class="sidebar-nav">
 
+
           <!-- 首頁 -->
+
           <button
             class="sidebar-item active"
             type="button"
             data-page="dashboard"
           >
-            <span class="sidebar-icon">⌂</span>
-            <span>首頁</span>
+
+            <span class="sidebar-icon">
+              ⌂
+            </span>
+
+            <span>
+              首頁
+            </span>
+
           </button>
 
 
-          <!-- 課表 -->
+          <!-- ==================================
+               課表
+               ================================== -->
+
           <div class="sidebar-group">
 
             <button
@@ -118,18 +175,27 @@
               class="sidebar-item sidebar-item-expandable"
               type="button"
             >
-              <span class="sidebar-icon">▦</span>
-              <span>課表</span>
+
+              <span class="sidebar-icon">
+                ▦
+              </span>
+
+              <span>
+                課表
+              </span>
+
               <span
                 id="scheduleArrow"
                 class="sidebar-arrow"
               >
                 ▶
               </span>
+
             </button>
 
 
-            <!-- 教室列表 -->
+            <!-- 教室 1～8 -->
+
             <div
               id="classroomMenu"
               class="classroom-menu"
@@ -205,31 +271,54 @@
           </div>
 
 
-          <!-- 格位目前狀態 -->
+          <!-- ==================================
+               格位目前狀態
+               ================================== -->
+
           <button
             class="sidebar-item"
             type="button"
             data-page="slot-status"
           >
-            <span class="sidebar-icon">▣</span>
-            <span>格位目前狀態</span>
+
+            <span class="sidebar-icon">
+              ▣
+            </span>
+
+            <span>
+              格位目前狀態
+            </span>
+
           </button>
 
 
-          <!-- 系統終端機 -->
+          <!-- ==================================
+               系統終端機
+               ================================== -->
+
           <button
             class="sidebar-item"
             type="button"
             data-page="terminal"
           >
-            <span class="sidebar-icon">›_</span>
-            <span>系統終端機</span>
+
+            <span class="sidebar-icon">
+              ›_
+            </span>
+
+            <span>
+              系統終端機
+            </span>
+
           </button>
 
         </nav>
 
 
-        <!-- 側欄底部 -->
+        <!-- ==================================
+             側欄底部
+             ================================== -->
+
         <div class="sidebar-footer">
 
           <button
@@ -245,15 +334,21 @@
       </aside>
 
 
-      <!-- =====================
-           右側主要內容
-           ===================== -->
+      <!-- ====================================
+           右側主要區域
+           ==================================== -->
+
       <section class="main-area">
 
-        <!-- 頂部標題 -->
+
+        <!-- ==================================
+             Header
+             ================================== -->
+
         <header class="main-header">
 
           <div>
+
             <h1 id="pageTitle">
               首頁
             </h1>
@@ -261,7 +356,9 @@
             <p id="pageDescription">
               iKey 智慧鑰匙管理系統
             </p>
+
           </div>
+
 
           <div class="connection-status">
 
@@ -279,9 +376,10 @@
         </header>
 
 
-        <!-- =================
-             首頁內容
-             ================= -->
+        <!-- ==================================
+             首頁 Dashboard
+             ================================== -->
+
         <section
           id="dashboardPage"
           class="content-page"
@@ -290,42 +388,70 @@
           <div class="dashboard-grid">
 
 
-            <!-- ESP Robot 連線監測 -->
+            <!-- ================================
+                 裝置連線監測
+                 ================================ -->
+
             <article class="dashboard-panel">
 
               <div class="panel-header">
 
                 <div>
-                  <h2>ESP Robot 連線監測</h2>
+
+                  <h2>
+                    裝置連線監測
+                  </h2>
 
                   <p>
-                    即時監測 ESP Robot 連線狀態
+                    即時監測 iKey 實體裝置連線狀態
                   </p>
+
                 </div>
 
-                <span class="status-badge online">
-                  ONLINE
+
+                <span
+                  id="deviceStatusBadge"
+                  class="status-badge online"
+                >
+                  MONITOR
                 </span>
 
               </div>
 
+
               <div class="robot-status-list">
+
+
+                <!-- ESP Robot -->
 
                 <div class="robot-status-item">
 
-                  <span>ESP Robot 01</span>
+                  <span>
+                    ESP Robot
+                  </span>
 
-                  <span class="robot-online">
-                    ● 已連線
+                  <span
+                    id="espRobotStatus"
+                    class="robot-offline"
+                  >
+                    ● 尚未連線
                   </span>
 
                 </div>
 
+
+                <!-- LVGL Terminal -->
+
                 <div class="robot-status-item">
 
-                  <span>ESP Robot 02</span>
+                  <span>
+                    LVGL Terminal
+                  </span>
 
-                  <span class="robot-offline">
+                  <span
+                    id="lvglTerminalStatus"
+                    class="robot-offline"
+                  >
                     ● 尚未連線
                   </span>
 
@@ -336,20 +462,28 @@
             </article>
 
 
-            <!-- 系統日誌 -->
+            <!-- ================================
+                 系統日誌
+                 ================================ -->
+
             <article class="dashboard-panel">
 
               <div class="panel-header">
 
                 <div>
-                  <h2>系統日誌</h2>
+
+                  <h2>
+                    系統日誌
+                  </h2>
 
                   <p>
-                    系統與 ESP Robot 即時活動
+                    系統與裝置即時活動
                   </p>
+
                 </div>
 
               </div>
+
 
               <div
                 id="systemLog"
@@ -357,18 +491,46 @@
               >
 
                 <div class="log-line">
-                  <span>[SYSTEM]</span>
+
+                  <span>
+                    [SYSTEM]
+                  </span>
+
                   iKey 系統已啟動
+
                 </div>
 
+
                 <div class="log-line">
-                  <span>[ESP]</span>
+
+                  <span>
+                    [DEVICE]
+                  </span>
+
                   等待 ESP Robot 連線
+
                 </div>
 
+
                 <div class="log-line">
-                  <span>[SYSTEM]</span>
+
+                  <span>
+                    [DEVICE]
+                  </span>
+
+                  等待 LVGL Terminal 連線
+
+                </div>
+
+
+                <div class="log-line">
+
+                  <span>
+                    [SYSTEM]
+                  </span>
+
                   系統目前正常運作
+
                 </div>
 
               </div>
@@ -376,43 +538,99 @@
             </article>
 
 
-            <!-- 系統摘要 -->
-            <article class="dashboard-panel dashboard-panel-wide">
+            <!-- ================================
+                 系統摘要
+                 ================================ -->
+
+            <article
+              class="dashboard-panel dashboard-panel-wide"
+            >
 
               <div class="panel-header">
 
                 <div>
-                  <h2>系統狀態</h2>
+
+                  <h2>
+                    系統狀態
+                  </h2>
 
                   <p>
                     iKey 目前系統資訊
                   </p>
+
                 </div>
 
               </div>
 
+
               <div class="system-summary">
 
-                <div class="summary-item">
-                  <span>ESP Robot</span>
-                  <strong>1 / 2</strong>
-                </div>
+
+                <!-- 連線裝置 -->
 
                 <div class="summary-item">
-                  <span>使用中格位</span>
-                  <strong>0</strong>
+
+                  <span>
+                    連線裝置
+                  </span>
+
+                  <strong
+                    id="connectedDeviceCount"
+                  >
+                    0 / 2
+                  </strong>
+
                 </div>
 
-                <div class="summary-item">
-                  <span>今日課表</span>
-                  <strong>0</strong>
-                </div>
+
+                <!-- 使用中格位 -->
 
                 <div class="summary-item">
-                  <span>系統狀態</span>
-                  <strong class="summary-online">
+
+                  <span>
+                    使用中格位
+                  </span>
+
+                  <strong
+                    id="activeSlotCount"
+                  >
+                    0
+                  </strong>
+
+                </div>
+
+
+                <!-- 今日課表 -->
+
+                <div class="summary-item">
+
+                  <span>
+                    今日課表
+                  </span>
+
+                  <strong
+                    id="todayScheduleCount"
+                  >
+                    0
+                  </strong>
+
+                </div>
+
+
+                <!-- 系統狀態 -->
+
+                <div class="summary-item">
+
+                  <span>
+                    系統狀態
+                  </span>
+
+                  <strong
+                    class="summary-online"
+                  >
                     正常
                   </strong>
+
                 </div>
 
               </div>
@@ -424,9 +642,10 @@
         </section>
 
 
-        <!-- =================
-             課表 / 教室
-             ================= -->
+        <!-- ==================================
+             教室課表頁
+             ================================== -->
+
         <section
           id="classroomPage"
           class="content-page"
@@ -452,9 +671,10 @@
         </section>
 
 
-        <!-- =================
+        <!-- ==================================
              格位目前狀態
-             ================= -->
+             ================================== -->
+
         <section
           id="slotStatusPage"
           class="content-page"
@@ -480,9 +700,10 @@
         </section>
 
 
-        <!-- =================
+        <!-- ==================================
              系統終端機
-             ================= -->
+             ================================== -->
+
         <section
           id="terminalPage"
           class="content-page"
@@ -491,11 +712,19 @@
 
           <div class="terminal-panel">
 
+
+            <!-- Terminal Header -->
+
             <div class="terminal-header">
 
               <div class="terminal-title">
-                <span class="terminal-dot"></span>
+
+                <span
+                  class="terminal-dot"
+                ></span>
+
                 系統終端機
+
               </div>
 
               <span class="terminal-status">
@@ -504,6 +733,8 @@
 
             </div>
 
+
+            <!-- Terminal Output -->
 
             <div
               id="terminalOutput"
@@ -520,6 +751,14 @@
 
               <div>
                 系統初始化完成
+              </div>
+
+              <div>
+                ESP Robot：等待連線
+              </div>
+
+              <div>
+                LVGL Terminal：等待連線
               </div>
 
               <div>
@@ -543,11 +782,16 @@
   </main>
 
 
-  <!-- =========================
-       動畫系統
-       ========================= -->
+  <!-- ========================================
+       iKey 動畫系統
+       ======================================== -->
+
   <div id="animationRoot"></div>
 
+
+  <!-- ========================================
+       JavaScript
+       ======================================== -->
 
   <script src="./animation.js"></script>
 
