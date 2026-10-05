@@ -1,236 +1,6 @@
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  font-family:
-    "Microsoft JhengHei",
-    "Noto Sans TC",
-    Arial,
-    sans-serif;
-}
-
-body {
-  background: #0b1220;
-  color: #ffffff;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-/* =========================
-   共用頁面
-========================= */
-
-.page {
-  min-height: 100vh;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-
-/* =========================
-   登入頁
-========================= */
-
-#loginPage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.login-box {
-  width: min(420px, 100%);
-  padding: 40px;
-  border-radius: 20px;
-  background: #111b2e;
-  border: 1px solid #263550;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-}
-
-.logo-area {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-}
-
-.logo {
-  width: 120px;
-  height: auto;
-  object-fit: contain;
-}
-
-.login-box h1 {
-  margin: 0;
-  text-align: center;
-  font-size: 24px;
-}
-
-.login-box > p {
-  margin: 10px 0 30px;
-  text-align: center;
-  color: #9ca9bd;
-}
-
-
-/* =========================
-   表單
-========================= */
-
-.form-group {
-  margin-bottom: 18px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 15px;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 13px 14px;
-  border: 1px solid #34445f;
-  border-radius: 10px;
-  outline: none;
-  background: #0b1220;
-  color: #ffffff;
-}
-
-.form-group input:focus {
-  border-color: #6ea8fe;
-}
-
-#loginForm button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 13px;
-  border: 0;
-  border-radius: 10px;
-  background: #2563eb;
-  color: #ffffff;
-  font-weight: 700;
-}
-
-#loginForm button:hover {
-  background: #1d4ed8;
-}
-
-#loginForm button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-#loginMessage {
-  min-height: 24px;
-  margin: 14px 0 0;
-  text-align: center;
-  color: #ff6b6b;
-}
-
-
-/* =========================
-   首頁
-========================= */
-
-#homePage {
-  background: #0b1220;
-}
-
-.home-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 28px;
-  border-bottom: 1px solid #263550;
-  background: #111b2e;
-}
-
-.home-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 700;
-}
-
-.logo-small {
-  width: 52px;
-  height: auto;
-  object-fit: contain;
-}
-
-#logoutButton {
-  padding: 9px 16px;
-  border: 1px solid #34445f;
-  border-radius: 8px;
-  background: transparent;
-  color: #ffffff;
-}
-
-#logoutButton:hover {
-  background: #1a2740;
-}
-
-.home-content {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 50px 28px;
-}
-
-.home-content h1 {
-  margin: 0 0 10px;
-  font-size: 32px;
-}
-
-.home-content > p {
-  margin: 0 0 35px;
-  color: #9ca9bd;
-}
-
-
-/* =========================
-   首頁功能卡片
-========================= */
-
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.dashboard-card {
-  padding: 28px;
-  border: 1px solid #263550;
-  border-radius: 16px;
-  background: #111b2e;
-}
-
-.dashboard-card h2 {
-  margin: 0 0 10px;
-  font-size: 20px;
-}
-
-.dashboard-card p {
-  margin: 0;
-  color: #9ca9bd;
-}
-
-
-/* =========================
-   動畫容器
-========================= */
+/* ==================================================
+   iKey Gamma Animation
+   ================================================== */
 
 #animationRoot {
   position: fixed;
@@ -239,27 +9,161 @@ button {
   pointer-events: none;
 }
 
+.ikey-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 20;
+  max-width: min(90vw, 420px);
+  padding: 13px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: var(--text, #f8fafc);
+  background: rgba(15, 26, 44, 0.94);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+  pointer-events: auto;
+}
 
-/* =========================
-   RWD
-========================= */
+.ikey-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
 
-@media (max-width: 700px) {
+.ikey-toast-success {
+  border-color: rgba(125, 226, 177, 0.48);
+}
 
-  .login-box {
-    padding: 28px 22px;
+.ikey-toast-error {
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 13, 24, 0.96);
+  pointer-events: auto;
+}
+
+.welcome-content {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+/* Gamma Logo 動畫 */
+.welcome-brand {
+  opacity: 0;
+  transform: translateY(12px) scale(0.94);
+}
+
+/* 修正 PNG 原尺寸過大的問題 */
+.welcome-brand .brand-logo {
+  display: block;
+  width: min(260px, 70vw);
+  height: auto;
+  max-height: 180px;
+  object-fit: contain;
+}
+
+.welcome-title {
+  margin: 0;
+  color: var(--text, #f8fafc);
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight: 520;
+  letter-spacing: -0.03em;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.welcome-line {
+  width: 0;
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #63d8e8,
+      transparent
+    );
+}
+
+.welcome-overlay.is-running .welcome-brand {
+  animation:
+    brandIn
+    520ms
+    cubic-bezier(.2, .8, .2, 1)
+    forwards;
+}
+
+.welcome-overlay.is-running .welcome-line {
+  animation:
+    lineIn
+    400ms
+    380ms
+    ease-out
+    forwards;
+}
+
+.welcome-overlay.is-running .welcome-title {
+  animation:
+    titleIn
+    420ms
+    520ms
+    cubic-bezier(.2, .8, .2, 1)
+    forwards;
+}
+
+.welcome-overlay.is-leaving {
+  animation:
+    overlayOut
+    360ms
+    ease
+    forwards;
+}
+
+@keyframes brandIn {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes lineIn {
+  to {
+    width: min(180px, 44vw);
+  }
+}
+
+@keyframes titleIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlayOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-brand,
+  .welcome-title {
+    opacity: 1;
+    transform: none;
   }
 
-  .dashboard {
-    grid-template-columns: 1fr;
+  .welcome-line {
+    width: min(180px, 44vw);
   }
-
-  .home-header {
-    padding: 16px;
-  }
-
-  .home-content {
-    padding: 35px 18px;
-  }
-
 }
