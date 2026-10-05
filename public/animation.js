@@ -1,32 +1,28 @@
-(function (window, document) {
-  "use strict";
+document.addEventListener("DOMContentLoaded", () => {
 
   /*
-   * ============================================
-   * iKey Animation + Navigation System
-   * ============================================
-   */
-
-  const DEFAULT_DURATION = 1500;
-  const LOGO_SRC = "./assets/ikey-logo.png";
-
-  const root =
-    document.getElementById("animationRoot");
-
-  /*
-   * ============================================
-   * 登入 / 首頁
-   * ============================================
+   * =========================================
+   * Login
+   * =========================================
    */
 
   const loginPage =
     document.getElementById("loginPage");
 
-  const homePage =
-    document.getElementById("homePage");
+  const appPage =
+    document.getElementById("appPage");
 
   const loginForm =
     document.getElementById("loginForm");
+
+  const accountInput =
+    document.getElementById("account");
+
+  const passwordInput =
+    document.getElementById("password");
+
+  const loginButton =
+    document.getElementById("loginButton");
 
   const loginMessage =
     document.getElementById("loginMessage");
@@ -36,9 +32,19 @@
 
 
   /*
-   * ============================================
-   * 首頁內容
-   * ============================================
+   * =========================================
+   * Welcome Animation
+   * =========================================
+   */
+
+  const welcomeOverlay =
+    document.getElementById("welcomeOverlay");
+
+
+  /*
+   * =========================================
+   * Pages
+   * =========================================
    */
 
   const dashboardPage =
@@ -54,568 +60,489 @@
     document.getElementById("terminalPage");
 
 
-  const pageTitle =
-    document.getElementById("pageTitle");
+  /*
+   * =========================================
+   * Sidebar
+   * =========================================
+   */
 
-  const pageDescription =
-    document.getElementById("pageDescription");
+  const homeButton =
+    document.getElementById("homeButton");
+
+  const scheduleToggle =
+    document.getElementById("scheduleToggle");
+
+  const classroomMenu =
+    document.getElementById("classroomMenu");
+
+  const scheduleArrow =
+    document.getElementById("scheduleArrow");
+
+  const classroomButtons =
+    document.querySelectorAll(".classroom-button");
+
+  const slotStatusButton =
+    document.getElementById("slotStatusButton");
+
+  const terminalButton =
+    document.getElementById("terminalButton");
+
+
+  /*
+   * =========================================
+   * Classroom
+   * =========================================
+   */
 
   const classroomTitle =
     document.getElementById("classroomTitle");
 
 
   /*
-   * ============================================
-   * 側欄
-   * ============================================
+   * =========================================
+   * Device Status
+   * =========================================
    */
 
-  const sidebarItems =
-    document.querySelectorAll(
-      ".sidebar-item[data-page]"
-    );
+  const espRobotStatus =
+    document.getElementById("espRobotStatus");
 
-  const classroomItems =
-    document.querySelectorAll(
-      ".classroom-item"
-    );
+  const lvglTerminalStatus =
+    document.getElementById("lvglTerminalStatus");
 
-  const scheduleToggle =
-    document.getElementById(
-      "scheduleToggle"
-    );
-
-  const classroomMenu =
-    document.getElementById(
-      "classroomMenu"
-    );
-
-  const scheduleArrow =
-    document.getElementById(
-      "scheduleArrow"
-    );
+  const connectedDeviceCount =
+    document.getElementById("connectedDeviceCount");
 
 
   /*
-   * ============================================
-   * 工具
-   * ============================================
+   * =========================================
+   * Device State
+   * =========================================
    */
 
-  function wait(milliseconds) {
-    return new Promise(
-      (resolve) => {
-        window.setTimeout(
-          resolve,
-          milliseconds
-        );
-      }
-    );
-  }
+  let previousEspRobotOnline = null;
+  let previousLvglTerminalOnline = null;
+
+  let devicePollingStarted = false;
 
 
-  function removeAfter(
-    element,
-    milliseconds
-  ) {
-    return wait(milliseconds)
-      .then(() => {
+  /*
+   * =========================================
+   * System Log
+   * =========================================
+   */
 
-        if (
-          element &&
-          element.parentNode
-        ) {
-          element.parentNode.removeChild(
-            element
-          );
+  const systemLog =
+    document.getElementById("systemLog");
+
+
+  function addSystemLog(message) {
+
+    if (!systemLog) {
+      return;
+    }
+
+    const time =
+      new Date().toLocaleTimeString(
+        "zh-TW",
+        {
+          hour12: false
         }
+      );
 
-      });
-  }
-
-
-  /*
-   * ============================================
-   * Welcome Animation
-   * ============================================
-   */
-
-  function createWelcomeOverlay(
-    logoSrc = LOGO_SRC
-  ) {
-
-    const overlay =
+    const line =
       document.createElement("div");
 
-    overlay.className =
-      "welcome-overlay";
+    line.textContent =
+      `[${time}] ${message}`;
 
-    overlay.setAttribute(
-      "role",
-      "dialog"
-    );
+    systemLog.prepend(line);
 
-    overlay.setAttribute(
-      "aria-modal",
-      "true"
-    );
-
-    overlay.setAttribute(
-      "aria-label",
-      "登入成功"
-    );
-
-    overlay.innerHTML = `
-      <div class="welcome-content">
-
-        <div
-          class="brand-lockup welcome-brand"
-          aria-label="iKey"
-        >
-
-          <img
-            class="brand-logo"
-            src="${logoSrc}"
-            alt="iKey"
-          >
-
-        </div>
-
-        <div
-          class="welcome-line"
-          aria-hidden="true"
-        ></div>
-
-        <p class="welcome-title">
-          歡迎使用 iKey
-        </p>
-
-      </div>
-    `;
-
-    return overlay;
-  }
-
-
-  function showWelcomeAnimation(
-    options = {}
-  ) {
-
-    const duration =
-      Math.max(
-        0,
-        Number(
-          options.duration ??
-          DEFAULT_DURATION
-        )
-      );
-
-    const logoSrc =
-      options.logoSrc ||
-      LOGO_SRC;
-
-    const overlay =
-      createWelcomeOverlay(
-        logoSrc
-      );
-
-    root.replaceChildren(
-      overlay
-    );
-
-    window.requestAnimationFrame(
-      () => {
-        overlay.classList.add(
-          "is-running"
-        );
-      }
-    );
-
-    return wait(duration)
-      .then(() => {
-
-        overlay.classList.remove(
-          "is-running"
-        );
-
-        overlay.classList.add(
-          "is-leaving"
-        );
-
-        return removeAfter(
-          overlay,
-          380
-        );
-
-      });
   }
 
 
   /*
-   * ============================================
-   * Toast
-   * ============================================
+   * =========================================
+   * Page Control
+   * =========================================
    */
 
-  function showToast(
-    message,
-    type = "success",
-    duration = 1800
-  ) {
+  function hideAllPages() {
 
-    const toast =
-      document.createElement(
-        "div"
-      );
+    if (dashboardPage) {
+      dashboardPage.hidden = true;
+    }
 
-    toast.className =
-      `ikey-toast ikey-toast-${type}`;
+    if (classroomPage) {
+      classroomPage.hidden = true;
+    }
 
-    toast.setAttribute(
-      "role",
-      "status"
-    );
+    if (slotStatusPage) {
+      slotStatusPage.hidden = true;
+    }
 
-    toast.textContent =
-      message;
+    if (terminalPage) {
+      terminalPage.hidden = true;
+    }
 
-    root.appendChild(
-      toast
-    );
-
-    window.requestAnimationFrame(
-      () => {
-        toast.classList.add(
-          "is-visible"
-        );
-      }
-    );
-
-    return wait(duration)
-      .then(() => {
-
-        toast.classList.remove(
-          "is-visible"
-        );
-
-        return removeAfter(
-          toast,
-          220
-        );
-
-      });
   }
 
-
-  function showSuccessAnimation(
-    message = "操作成功"
-  ) {
-
-    return showToast(
-      message,
-      "success"
-    );
-  }
-
-
-  function showErrorAnimation(
-    message =
-      "操作失敗，請稍後再試"
-  ) {
-
-    return showToast(
-      message,
-      "error"
-    );
-  }
-
-
-  /*
-   * ============================================
-   * 顯示指定頁面
-   * ============================================
-   */
-
-  function hideAllContentPages() {
-
-    dashboardPage.hidden = true;
-
-    classroomPage.hidden = true;
-
-    slotStatusPage.hidden = true;
-
-    terminalPage.hidden = true;
-  }
-
-
-  function clearSidebarActive() {
-
-    sidebarItems.forEach(
-      (item) => {
-
-        item.classList.remove(
-          "active"
-        );
-
-      }
-    );
-
-    classroomItems.forEach(
-      (item) => {
-
-        item.classList.remove(
-          "active"
-        );
-
-      }
-    );
-  }
-
-
-  /*
-   * ============================================
-   * 顯示首頁
-   * ============================================
-   */
 
   function showDashboard() {
 
-    hideAllContentPages();
+    hideAllPages();
 
-    clearSidebarActive();
-
-    dashboardPage.hidden = false;
-
-    pageTitle.textContent =
-      "首頁";
-
-    pageDescription.textContent =
-      "iKey 智慧鑰匙管理系統";
-
-    const dashboardButton =
-      document.querySelector(
-        '.sidebar-item[data-page="dashboard"]'
-      );
-
-    if (dashboardButton) {
-      dashboardButton.classList.add(
-        "active"
-      );
+    if (dashboardPage) {
+      dashboardPage.hidden = false;
     }
+
   }
 
-
-  /*
-   * ============================================
-   * 顯示教室
-   * ============================================
-   */
 
   function showClassroom(
     classroomNumber
   ) {
 
-    hideAllContentPages();
+    hideAllPages();
 
-    clearSidebarActive();
+    if (classroomPage) {
 
-    classroomPage.hidden = false;
+      classroomPage.hidden = false;
 
-    classroomTitle.textContent =
-      `教室 ${classroomNumber}`;
+    }
 
-    pageTitle.textContent =
-      `教室 ${classroomNumber}`;
+    if (classroomTitle) {
 
-    pageDescription.textContent =
-      "課表管理";
+      classroomTitle.textContent =
+        `教室 ${classroomNumber}`;
 
-    classroomItems.forEach(
-      (item) => {
+    }
 
-        if (
-          item.dataset.classroom ===
-          String(classroomNumber)
-        ) {
+  }
 
-          item.classList.add(
-            "active"
+
+  function showSlotStatus() {
+
+    hideAllPages();
+
+    if (slotStatusPage) {
+      slotStatusPage.hidden = false;
+    }
+
+  }
+
+
+  function showTerminal() {
+
+    hideAllPages();
+
+    if (terminalPage) {
+      terminalPage.hidden = false;
+    }
+
+  }
+
+
+  /*
+   * =========================================
+   * Device UI
+   * =========================================
+   */
+
+  function updateDeviceElement(
+    element,
+    online
+  ) {
+
+    if (!element) {
+      return;
+    }
+
+    element.classList.remove(
+      "robot-online",
+      "robot-offline"
+    );
+
+    if (online) {
+
+      element.textContent =
+        "● 已連線";
+
+      element.classList.add(
+        "robot-online"
+      );
+
+    } else {
+
+      element.textContent =
+        "● 尚未連線";
+
+      element.classList.add(
+        "robot-offline"
+      );
+
+    }
+
+  }
+
+
+  /*
+   * =========================================
+   * Fetch Device Status
+   * =========================================
+   */
+
+  async function fetchDeviceStatus() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/device/status",
+          {
+            cache: "no-store"
+          }
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+
+      }
+
+      const data =
+        await response.json();
+
+      if (
+        !data.success ||
+        !data.devices
+      ) {
+
+        throw new Error(
+          "Invalid device status response"
+        );
+
+      }
+
+
+      /*
+       * ESP Robot
+       */
+
+      const espRobot =
+        data.devices["esp-robot"];
+
+      const espRobotOnline =
+        Boolean(
+          espRobot &&
+          espRobot.online
+        );
+
+      updateDeviceElement(
+        espRobotStatus,
+        espRobotOnline
+      );
+
+
+      /*
+       * LVGL Terminal
+       */
+
+      const lvglTerminal =
+        data.devices["lvgl-terminal"];
+
+      const lvglTerminalOnline =
+        Boolean(
+          lvglTerminal &&
+          lvglTerminal.online
+        );
+
+      updateDeviceElement(
+        lvglTerminalStatus,
+        lvglTerminalOnline
+      );
+
+
+      /*
+       * Connected Count
+       */
+
+      let connectedCount = 0;
+
+      if (espRobotOnline) {
+        connectedCount++;
+      }
+
+      if (lvglTerminalOnline) {
+        connectedCount++;
+      }
+
+      if (connectedDeviceCount) {
+
+        connectedDeviceCount.textContent =
+          `${connectedCount} / 2`;
+
+      }
+
+
+      /*
+       * ESP Robot Log
+       */
+
+      if (
+        previousEspRobotOnline !== null &&
+        previousEspRobotOnline !==
+          espRobotOnline
+      ) {
+
+        if (espRobotOnline) {
+
+          addSystemLog(
+            "ESP Robot 已連線"
+          );
+
+        } else {
+
+          addSystemLog(
+            "ESP Robot 已離線"
+          );
+
+        }
+
+      }
+
+
+      /*
+       * LVGL Terminal Log
+       */
+
+      if (
+        previousLvglTerminalOnline !== null &&
+        previousLvglTerminalOnline !==
+          lvglTerminalOnline
+      ) {
+
+        if (lvglTerminalOnline) {
+
+          addSystemLog(
+            "LVGL Terminal 已連線"
+          );
+
+        } else {
+
+          addSystemLog(
+            "LVGL Terminal 已離線"
+          );
+
+        }
+
+      }
+
+
+      /*
+       * Save Previous State
+       */
+
+      previousEspRobotOnline =
+        espRobotOnline;
+
+      previousLvglTerminalOnline =
+        lvglTerminalOnline;
+
+    } catch (error) {
+
+      console.error(
+        "Device status error:",
+        error
+      );
+
+    }
+
+  }
+
+
+  /*
+   * =========================================
+   * Start Device Polling
+   * =========================================
+   */
+
+  function startDevicePolling() {
+
+    if (devicePollingStarted) {
+      return;
+    }
+
+    devicePollingStarted = true;
+
+    fetchDeviceStatus();
+
+    setInterval(
+      fetchDeviceStatus,
+      5000
+    );
+
+  }
+
+
+  /*
+   * =========================================
+   * Sidebar Events
+   * =========================================
+   */
+
+  if (homeButton) {
+
+    homeButton.addEventListener(
+      "click",
+      () => {
+
+        showDashboard();
+
+      }
+    );
+
+  }
+
+
+  if (
+    scheduleToggle &&
+    classroomMenu
+  ) {
+
+    scheduleToggle.addEventListener(
+      "click",
+      () => {
+
+        classroomMenu.hidden =
+          !classroomMenu.hidden;
+
+        if (scheduleArrow) {
+
+          scheduleArrow.classList.toggle(
+            "open",
+            !classroomMenu.hidden
           );
 
         }
 
       }
     );
-  }
-
-
-  /*
-   * ============================================
-   * 格位目前狀態
-   * ============================================
-   */
-
-  function showSlotStatus() {
-
-    hideAllContentPages();
-
-    clearSidebarActive();
-
-    slotStatusPage.hidden = false;
-
-    pageTitle.textContent =
-      "格位目前狀態";
-
-    pageDescription.textContent =
-      "目前每個格位的借用狀態";
-
-    const button =
-      document.querySelector(
-        '.sidebar-item[data-page="slot-status"]'
-      );
-
-    if (button) {
-
-      button.classList.add(
-        "active"
-      );
-
-    }
-  }
-
-
-  /*
-   * ============================================
-   * 系統終端機
-   * ============================================
-   */
-
-  function showTerminal() {
-
-    hideAllContentPages();
-
-    clearSidebarActive();
-
-    terminalPage.hidden = false;
-
-    pageTitle.textContent =
-      "系統終端機";
-
-    pageDescription.textContent =
-      "iKey 系統即時終端機";
-
-    const button =
-      document.querySelector(
-        '.sidebar-item[data-page="terminal"]'
-      );
-
-    if (button) {
-
-      button.classList.add(
-        "active"
-      );
-
-    }
-  }
-
-
-  /*
-   * ============================================
-   * 側欄：一般選單
-   * ============================================
-   */
-
-  sidebarItems.forEach(
-    (item) => {
-
-      item.addEventListener(
-        "click",
-        () => {
-
-          const page =
-            item.dataset.page;
-
-          if (
-            page ===
-            "dashboard"
-          ) {
-
-            showDashboard();
-
-            return;
-          }
-
-          if (
-            page ===
-            "slot-status"
-          ) {
-
-            showSlotStatus();
-
-            return;
-          }
-
-          if (
-            page ===
-            "terminal"
-          ) {
-
-            showTerminal();
-
-            return;
-          }
-
-        }
-      );
-
-    }
-  );
-
-
-  /*
-   * ============================================
-   * 側欄：課表展開 / 收合
-   * ============================================
-   */
-
-  if (scheduleToggle) {
-
-    scheduleToggle.addEventListener(
-      "click",
-      () => {
-
-        const isHidden =
-          classroomMenu.hidden;
-
-        classroomMenu.hidden =
-          !isHidden;
-
-        scheduleArrow.classList.toggle(
-          "open",
-          isHidden
-        );
-
-      }
-    );
 
   }
 
 
-  /*
-   * ============================================
-   * 側欄：教室
-   * ============================================
-   */
+  classroomButtons.forEach(
+    (button) => {
 
-  classroomItems.forEach(
-    (item) => {
-
-      item.addEventListener(
+      button.addEventListener(
         "click",
         () => {
 
           const classroomNumber =
-            item.dataset.classroom;
+            button.dataset.classroom;
 
           showClassroom(
             classroomNumber
@@ -628,213 +555,235 @@
   );
 
 
+  if (slotStatusButton) {
+
+    slotStatusButton.addEventListener(
+      "click",
+      () => {
+
+        showSlotStatus();
+
+      }
+    );
+
+  }
+
+
+  if (terminalButton) {
+
+    terminalButton.addEventListener(
+      "click",
+      () => {
+
+        showTerminal();
+
+      }
+    );
+
+  }
+
+
   /*
-   * ============================================
-   * 登入
-   * ============================================
+   * =========================================
+   * Login
+   * =========================================
    */
 
-  loginForm.addEventListener(
-    "submit",
-    async function (event) {
+  if (loginForm) {
 
-      event.preventDefault();
+    loginForm.addEventListener(
+      "submit",
+      async (event) => {
 
-      const submitButton =
-        loginForm.querySelector(
-          'button[type="submit"]'
-        );
+        event.preventDefault();
 
-      const account =
-        document
-          .getElementById(
-            "account"
-          )
-          .value
-          .trim();
+        const account =
+          accountInput
+            ? accountInput.value.trim()
+            : "";
 
-      const password =
-        document
-          .getElementById(
-            "password"
-          )
-          .value;
+        const password =
+          passwordInput
+            ? passwordInput.value
+            : "";
 
-      loginMessage.textContent =
-        "";
+        if (loginButton) {
 
-      submitButton.disabled =
-        true;
+          loginButton.disabled = true;
+          loginButton.textContent =
+            "登入中...";
 
-      try {
+        }
 
-        const response =
-          await fetch(
-            "/api/login",
-            {
-              method: "POST",
+        if (loginMessage) {
 
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
+          loginMessage.textContent = "";
 
-              body:
-                JSON.stringify({
+        }
+
+        try {
+
+          const response =
+            await fetch(
+              "/api/login",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+
+                body: JSON.stringify({
                   account,
                   password
                 })
-            }
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.message ||
+              "登入失敗"
+            );
+
+          }
+
+
+          /*
+           * Login Success
+           */
+
+          if (loginMessage) {
+
+            loginMessage.textContent =
+              "登入成功";
+
+          }
+
+
+          if (welcomeOverlay) {
+
+            welcomeOverlay.hidden =
+              false;
+
+          }
+
+
+          setTimeout(
+            () => {
+
+              if (loginPage) {
+
+                loginPage.hidden =
+                  true;
+
+              }
+
+              if (appPage) {
+
+                appPage.hidden =
+                  false;
+
+              }
+
+              showDashboard();
+
+              startDevicePolling();
+
+            },
+            1200
           );
 
-        const result =
-          await response.json();
 
+          setTimeout(
+            () => {
 
-        /*
-         * 登入失敗
-         */
+              if (welcomeOverlay) {
 
-        if (
-          !response.ok ||
-          !result.success
-        ) {
+                welcomeOverlay.hidden =
+                  true;
 
-          loginMessage.textContent =
-            result.message ||
-            "帳號或密碼錯誤";
+              }
 
-          await showErrorAnimation(
-            "帳號或密碼錯誤"
+            },
+            2200
           );
 
-          submitButton.disabled =
-            false;
+        } catch (error) {
 
-          return;
+          if (loginMessage) {
+
+            loginMessage.textContent =
+              error.message;
+
+          }
+
+        } finally {
+
+          if (loginButton) {
+
+            loginButton.disabled =
+              false;
+
+            loginButton.textContent =
+              "登入";
+
+          }
+
         }
 
+      }
+    );
 
-        /*
-         * 登入成功
-         */
-
-        await showSuccessAnimation(
-          "登入成功"
-        );
+  }
 
 
-        await showWelcomeAnimation(
-          {
-            duration: 1500,
-            logoSrc: LOGO_SRC
-          }
-        );
+  /*
+   * =========================================
+   * Logout
+   * =========================================
+   */
 
+  if (logoutButton) {
 
-        /*
-         * 顯示首頁
-         */
+    logoutButton.addEventListener(
+      "click",
+      () => {
 
-        loginPage.hidden =
-          true;
+        if (appPage) {
 
-        homePage.hidden =
-          false;
+          appPage.hidden =
+            true;
 
-        loginForm.reset();
+        }
 
-        loginMessage.textContent =
-          "";
+        if (loginPage) {
 
-        showDashboard();
+          loginPage.hidden =
+            false;
 
-      } catch (error) {
+        }
 
-        console.error(
-          "Login error:",
-          error
-        );
+        if (passwordInput) {
 
-        loginMessage.textContent =
-          "系統連線失敗，請稍後再試";
+          passwordInput.value = "";
 
-        await showErrorAnimation(
-          "系統連線失敗"
-        );
+        }
 
-      } finally {
+        if (loginMessage) {
 
-        submitButton.disabled =
-          false;
+          loginMessage.textContent = "";
+
+        }
 
       }
+    );
 
-    }
-  );
+  }
 
-
-  /*
-   * ============================================
-   * 登出
-   * ============================================
-   */
-
-  logoutButton.addEventListener(
-    "click",
-    function () {
-
-      homePage.hidden =
-        true;
-
-      loginPage.hidden =
-        false;
-
-      loginForm.reset();
-
-      loginMessage.textContent =
-        "";
-
-      showDashboard();
-
-    }
-  );
-
-
-  /*
-   * ============================================
-   * 初始狀態
-   * ============================================
-   */
-
-  showDashboard();
-
-
-  /*
-   * ============================================
-   * 對外公開 API
-   * ============================================
-   */
-
-  window.iKeyAnimations = {
-
-    showWelcomeAnimation,
-
-    showSuccessAnimation,
-
-    showErrorAnimation
-
-  };
-
-
-  window.showWelcomeAnimation =
-    showWelcomeAnimation;
-
-  window.showSuccessAnimation =
-    showSuccessAnimation;
-
-  window.showErrorAnimation =
-    showErrorAnimation;
-
-
-})(window, document);
+});
