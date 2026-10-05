@@ -1,5 +1,266 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0b1220;
+  --panel: rgba(20, 31, 52, 0.78);
+  --panel-border: rgba(148, 163, 184, 0.18);
+  --text: #f8fafc;
+  --muted: #a6b2c5;
+  --accent: #63d8e8;
+  --accent-strong: #2eb8d0;
+  --success: #7de2b1;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  margin: 0;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(
+      circle at 20% 0%,
+      #1b3150 0,
+      var(--bg) 42%,
+      #070c16 100%
+    );
+  font-family:
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.page {
+  min-height: 100vh;
+}
+
+[hidden] {
+  display: none !important;
+}
+
 /* ==================================================
-   iKey Gamma Animation
+   登入頁
+   ================================================== */
+
+#loginPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-box {
+  width: min(420px, 100%);
+  padding: 40px;
+  border-radius: 20px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.logo-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+}
+
+.login-box h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.login-box > p {
+  margin: 10px 0 30px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(8, 14, 27, 0.48);
+  color: var(--text);
+}
+
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 216, 232, 0.14);
+}
+
+#loginForm button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 12px;
+  color: #061119;
+  background:
+    linear-gradient(
+      135deg,
+      #96f0ed,
+      var(--accent-strong)
+    );
+  font-weight: 750;
+  transition:
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+#loginForm button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+#loginForm button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+#loginMessage {
+  min-height: 24px;
+  margin: 14px 0 0;
+  text-align: center;
+  color: #ff6b6b;
+}
+
+/* ==================================================
+   首頁
+   ================================================== */
+
+#homePage {
+  background:
+    radial-gradient(
+      circle at 20% 0%,
+      #1b3150 0,
+      var(--bg) 42%,
+      #070c16 100%
+    );
+}
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--panel-border);
+  background: rgba(20, 31, 52, 0.78);
+  backdrop-filter: blur(18px);
+}
+
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+}
+
+.logo-small {
+  width: 52px;
+  height: auto;
+  object-fit: contain;
+}
+
+#logoutButton {
+  padding: 9px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+}
+
+#logoutButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.home-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 50px 28px;
+}
+
+.home-content h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  letter-spacing: -0.04em;
+}
+
+.home-content > p {
+  margin: 0 0 35px;
+  color: var(--muted);
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.dashboard-card {
+  padding: 28px;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.dashboard-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ==================================================
+   iKey Animation System
    ================================================== */
 
 #animationRoot {
@@ -9,23 +270,33 @@
   pointer-events: none;
 }
 
+/* ---------- Toast ---------- */
+
 .ikey-toast {
   position: fixed;
   left: 50%;
   bottom: 28px;
   z-index: 20;
+
   max-width: min(90vw, 420px);
+
   padding: 13px 18px;
+
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
-  color: var(--text, #f8fafc);
+
+  color: var(--text);
   background: rgba(15, 26, 44, 0.94);
+
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+
   opacity: 0;
   transform: translate(-50%, 12px);
+
   transition:
     opacity 220ms ease,
     transform 220ms ease;
+
   pointer-events: auto;
 }
 
@@ -42,13 +313,19 @@
   border-color: rgba(248, 113, 113, 0.55);
 }
 
+/* ---------- Welcome Overlay ---------- */
+
 .welcome-overlay {
   position: fixed;
   inset: 0;
+
   display: grid;
   place-items: center;
+
   padding: 24px;
+
   background: rgba(7, 13, 24, 0.96);
+
   pointer-events: auto;
 }
 
@@ -56,45 +333,72 @@
   display: grid;
   justify-items: center;
   gap: 18px;
+
   text-align: center;
 }
 
-/* Gamma Logo 動畫 */
+/*
+ * Gamma 原始設計：
+ * Logo / Brand 初始為透明並稍微縮小，
+ * 登入成功後再淡入、放大到正常尺寸。
+ */
 .welcome-brand {
   opacity: 0;
   transform: translateY(12px) scale(0.94);
 }
 
-/* 修正 PNG 原尺寸過大的問題 */
+/*
+ * 目前 iKey 使用 PNG Logo。
+ *
+ * 原本異常的原因：
+ * PNG 沒有尺寸限制，所以瀏覽器使用原始圖片尺寸。
+ *
+ * 這裡只控制動畫中的 Logo 尺寸，
+ * 不修改原始 PNG。
+ */
 .welcome-brand .brand-logo {
   display: block;
+
   width: min(260px, 70vw);
   height: auto;
+
   max-height: 180px;
+
   object-fit: contain;
 }
 
-.welcome-title {
-  margin: 0;
-  color: var(--text, #f8fafc);
-  font-size: clamp(1.3rem, 4vw, 2rem);
-  font-weight: 520;
-  letter-spacing: -0.03em;
-  opacity: 0;
-  transform: translateY(10px);
-}
+/* ---------- Welcome Line ---------- */
 
 .welcome-line {
   width: 0;
   height: 1px;
+
   background:
     linear-gradient(
       90deg,
       transparent,
-      #63d8e8,
+      var(--accent),
       transparent
     );
 }
+
+/* ---------- Welcome Title ---------- */
+
+.welcome-title {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight: 520;
+
+  letter-spacing: -0.03em;
+
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* ---------- Running Animation ---------- */
 
 .welcome-overlay.is-running .welcome-brand {
   animation:
@@ -122,6 +426,8 @@
     forwards;
 }
 
+/* ---------- Leaving Animation ---------- */
+
 .welcome-overlay.is-leaving {
   animation:
     overlayOut
@@ -129,6 +435,8 @@
     ease
     forwards;
 }
+
+/* ---------- Keyframes ---------- */
 
 @keyframes brandIn {
   to {
@@ -156,7 +464,42 @@
   }
 }
 
+/* ==================================================
+   RWD
+   ================================================== */
+
+@media (max-width: 700px) {
+  .login-box {
+    padding: 28px 22px;
+  }
+
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .home-header {
+    padding: 16px;
+  }
+
+  .home-content {
+    padding: 35px 18px;
+  }
+}
+
+/* ==================================================
+   Reduced Motion
+   ================================================== */
+
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
   .welcome-brand,
   .welcome-title {
     opacity: 1;
