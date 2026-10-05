@@ -67,27 +67,44 @@ async function appsScriptRequest(
   } catch (error) {
 
     const titleMatch =
-  text.match(/<title[^>]*>(.*?)<\/title>/i);
+      text.match(
+        /<title[^>]*>(.*?)<\/title>/i
+      );
 
-const bodyText =
-  text
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 
-console.error(
-  "Apps Script non-JSON TITLE:",
-  titleMatch
-    ? titleMatch[1]
-    : "NO TITLE"
-);
+    const bodyText =
+      text
+        .replace(
+          /<script[\s\S]*?<\/script>/gi,
+          " "
+        )
+        .replace(
+          /<style[\s\S]*?<\/style>/gi,
+          " "
+        )
+        .replace(
+          /<[^>]+>/g,
+          " "
+        )
+        .replace(
+          /\s+/g,
+          " "
+        )
+        .trim();
 
-console.error(
-  "Apps Script non-JSON TEXT:",
-  bodyText.slice(0, 1000)
-);
+
+    console.error(
+      "Apps Script non-JSON TITLE:",
+      titleMatch
+        ? titleMatch[1]
+        : "NO TITLE"
+    );
+
+
+    console.error(
+      "Apps Script non-JSON TEXT:",
+      bodyText.slice(0, 1000)
+    );
 
 
     throw new Error(
@@ -275,10 +292,6 @@ router.post("/users", async (req, res) => {
       req.body;
 
 
-    /*
-     * 基本驗證
-     */
-
     if (
       !user ||
       !user.user_id ||
@@ -295,10 +308,6 @@ router.post("/users", async (req, res) => {
 
     }
 
-
-    /*
-     * Apps Script POST
-     */
 
     const data =
       await appsScriptRequest(
@@ -323,10 +332,6 @@ router.post("/users", async (req, res) => {
       );
 
 
-    /*
-     * Apps Script 拒絕
-     */
-
     if (
       data.success !== true
     ) {
@@ -347,10 +352,6 @@ router.post("/users", async (req, res) => {
 
     }
 
-
-    /*
-     * 建立成功
-     */
 
     return res.status(201).json({
       success: true,
@@ -376,6 +377,222 @@ router.post("/users", async (req, res) => {
       status: "error",
       message:
         "Failed to create user"
+    });
+
+  }
+
+});
+
+
+/*
+ * =========================================
+ * GET /api/database/classes
+ * =========================================
+ */
+
+router.get("/classes", async (req, res) => {
+
+  try {
+
+    const databaseApiUrl =
+      getDatabaseApiUrl();
+
+
+    if (!databaseApiUrl) {
+
+      return res.status(500).json({
+        success: false,
+        status: "error",
+        message:
+          "IKEY_DATABASE_API_URL is not configured"
+      });
+
+    }
+
+
+    const url =
+      new URL(
+        databaseApiUrl
+      );
+
+
+    url.searchParams.set(
+      "action",
+      "classes"
+    );
+
+
+    const data =
+      await appsScriptRequest(
+        url.toString()
+      );
+
+
+    return res.json({
+      success:
+        data.success === true,
+
+      status:
+        data.status || "unknown",
+
+      message:
+        "Classes data received",
+
+      database:
+        data
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "Database Classes Error:",
+      error
+    );
+
+
+    return res.status(500).json({
+      success: false,
+      status: "error",
+      message:
+        "Failed to read Classes data"
+    });
+
+  }
+
+});
+
+
+/*
+ * =========================================
+ * POST /api/database/classes
+ * =========================================
+ */
+
+router.post("/classes", async (req, res) => {
+
+  try {
+
+    const databaseApiUrl =
+      getDatabaseApiUrl();
+
+
+    if (!databaseApiUrl) {
+
+      return res.status(500).json({
+        success: false,
+        status: "error",
+        message:
+          "IKEY_DATABASE_API_URL is not configured"
+      });
+
+    }
+
+
+    const classData =
+      req.body;
+
+
+    /*
+     * 基本驗證
+     */
+
+    if (
+      !classData ||
+      !classData.class_id ||
+      !classData.class_name
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        status: "error",
+        message:
+          "class_id and class_name are required"
+      });
+
+    }
+
+
+    /*
+     * 傳送到 Apps Script
+     */
+
+    const data =
+      await appsScriptRequest(
+        databaseApiUrl,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "text/plain;charset=utf-8"
+          },
+
+          body:
+            JSON.stringify({
+              action:
+                "create_class",
+
+              class:
+                classData
+            })
+        }
+      );
+
+
+    /*
+     * Apps Script 拒絕
+     */
+
+    if (
+      data.success !== true
+    ) {
+
+      return res.status(400).json({
+        success: false,
+
+        status:
+          data.status || "error",
+
+        message:
+          data.message ||
+          "Failed to create class",
+
+        database:
+          data
+      });
+
+    }
+
+
+    /*
+     * 建立成功
+     */
+
+    return res.status(201).json({
+      success: true,
+      status: "ok",
+      message:
+        "Class created successfully",
+
+      database:
+        data
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "Create Class Error:",
+      error
+    );
+
+
+    return res.status(500).json({
+      success: false,
+      status: "error",
+      message:
+        "Failed to create class"
     });
 
   }
