@@ -4,6 +4,7 @@ const path = require("path");
 const loginRoutes = require("./routes/login");
 const healthRoutes = require("./routes/health");
 const deviceRoutes = require("./routes/device");
+const databaseRoutes = require("./routes/database");
 
 const app = express();
 
@@ -39,6 +40,11 @@ app.use(
 app.use(
   "/api/device",
   deviceRoutes
+);
+
+app.use(
+  "/api/database",
+  databaseRoutes
 );
 
 
