@@ -66,10 +66,28 @@ async function appsScriptRequest(
 
   } catch (error) {
 
-    console.error(
-      "Apps Script returned non-JSON:",
-      text.slice(0, 500)
-    );
+    const titleMatch =
+  text.match(/<title[^>]*>(.*?)<\/title>/i);
+
+const bodyText =
+  text
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+console.error(
+  "Apps Script non-JSON TITLE:",
+  titleMatch
+    ? titleMatch[1]
+    : "NO TITLE"
+);
+
+console.error(
+  "Apps Script non-JSON TEXT:",
+  bodyText.slice(0, 1000)
+);
 
 
     throw new Error(
