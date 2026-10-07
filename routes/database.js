@@ -27,7 +27,7 @@ async function appsScriptRequest(
   options = {}
 ) {
 
-  const response =
+  let response =
     await fetch(
       url,
       {
@@ -35,6 +35,79 @@ async function appsScriptRequest(
         redirect: "follow"
       }
     );
+
+
+  /*
+   * Google Apps Script ContentService redirects responses to a
+   * temporary googleusercontent.com URL. That temporary URL can
+   * occasionally return 404 immediately after it is created.
+   *
+   * Important:
+   * Retry only the final response URL with GET. Never repeat the
+   * original Apps Script request, because it may be a POST that
+   * already changed database state.
+   */
+  if (
+    response.status === 404 &&
+    response.url &&
+    response.url !== url
+  ) {
+
+    let isGoogleContentUrl =
+      false;
+
+
+    try {
+
+      const hostname =
+        new URL(
+          response.url
+        ).hostname;
+
+
+      isGoogleContentUrl =
+        hostname ===
+          "script.googleusercontent.com" ||
+        hostname.endsWith(
+          ".googleusercontent.com"
+        );
+
+    } catch (error) {
+
+      isGoogleContentUrl =
+        false;
+
+    }
+
+
+    if (isGoogleContentUrl) {
+
+      console.warn(
+        "Apps Script ContentService returned 404; retrying the same response URL after 3 seconds"
+      );
+
+
+      await new Promise(
+        (resolve) =>
+          setTimeout(
+            resolve,
+            3000
+          )
+      );
+
+
+      response =
+        await fetch(
+          response.url,
+          {
+            method: "GET",
+            redirect: "follow"
+          }
+        );
+
+    }
+
+  }
 
 
   const text =
