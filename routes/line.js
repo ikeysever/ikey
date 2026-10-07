@@ -509,28 +509,52 @@ async function appsScriptRequest(
 
     if (isGoogleContentUrl) {
 
-      console.warn(
-        "[LINE] Apps Script ContentService returned 404; retrying final response URL after 3 seconds"
-      );
+      const originalMethod =
+        String(
+          options.method ||
+          "GET"
+        ).toUpperCase();
 
 
-      await new Promise(
-        (resolve) =>
-          setTimeout(
-            resolve,
-            3000
-          )
-      );
+      if (
+        originalMethod ===
+        "GET"
+      ) {
+
+        const retryDelayMs =
+          200;
 
 
-      response =
-        await fetch(
-          response.url,
-          {
-            method: "GET",
-            redirect: "follow"
-          }
+        console.warn(
+          `[LINE PERF] Apps Script ContentService returned 404; retrying final response URL after ${retryDelayMs}ms`
         );
+
+
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              retryDelayMs
+            )
+        );
+
+
+        response =
+          await fetch(
+            response.url,
+            {
+              method: "GET",
+              redirect: "follow"
+            }
+          );
+
+      } else {
+
+        console.warn(
+          `[LINE PERF] Apps Script ContentService returned 404 after ${originalMethod}; write request will not be replayed as GET`
+        );
+
+      }
 
     }
 

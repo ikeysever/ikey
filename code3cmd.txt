@@ -574,3 +574,35 @@ E. LINE Apps Script 404 固定 3 秒 retry 尚未修改；上一刀已加入 PER
 - code1cmd.txt（只追加 TalkBack 跨工作線資料／交易點確認請求）
 
 靜態：routes/line.js syntax PASS。
+
+
+========================================
+【2026-10-07｜LINE 效能優化第 2 刀＋通知規格更正】
+狀態：程式完成／靜態語法 PASS，待 Render 實測。
+
+效能：
+- appsScriptRequest() 原本遇到 Google ContentService 特定 redirect 404 時固定等待 3000ms。
+- GET 讀取 fallback 改為 200ms 後快速重試 final response URL。
+- 理論上單次命中此 fallback 可直接少等待約 2.8 秒。
+- 保留 retry，不是直接刪除 Google ContentService 容錯。
+- 非 GET（例如 update_user POST）若遇到相同情況，不再把原寫入請求錯誤地改成 GET 重送；避免寫入語意錯亂或不安全重播。
+- 上一刀 Users/Classes 30 秒 cache、in-flight join、Users write invalidation、[LINE PERF] 全部保留。
+
+通知最新規格：
+- 正常借出：不通知。
+- 正常歸還：不通知。
+- 只有 ESP32 明確要求時才通知 LINE。
+- 已確認情境：有人要借鑰匙，但上一位借用者尚未歸還 → ESP32 判斷並要求 Render 通知上一位借用者。
+- 先前 code1cmd 中「正常學生借還通知老師＋全班／老師借還通知本人」作廢。
+- 本刀不自行新增 ESP32 通知 API/payload；先由工作線 1 回覆現有真實入口，避免自行決定重大 API 規格。
+
+修改：
+- routes/line.js
+- code1cmd.txt
+- code3cmd.txt
+
+未修改：
+- Borrow/Return 成功行為。
+- ESP32 protocol。
+- Google Sheet schema。
+- Apps Script。
