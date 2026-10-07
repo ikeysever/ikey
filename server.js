@@ -5,6 +5,7 @@ const loginRoutes = require("./routes/login");
 const healthRoutes = require("./routes/health");
 const deviceRoutes = require("./routes/device");
 const databaseRoutes = require("./routes/database");
+const lineRoutes = require("./routes/line");
 
 const app = express();
 
@@ -17,6 +18,12 @@ const PORT =
  * Middleware
  * =========================================
  */
+
+// LINE webhook needs the exact raw request body for x-line-signature verification.
+app.use(
+  "/api/line/webhook",
+  express.raw({ type: "application/json" })
+);
 
 app.use(express.json());
 
@@ -45,6 +52,11 @@ app.use(
 app.use(
   "/api/database",
   databaseRoutes
+);
+
+app.use(
+  "/api/line",
+  lineRoutes
 );
 
 
