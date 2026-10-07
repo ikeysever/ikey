@@ -161,3 +161,27 @@ PR #2 的通知／品牌資源已在 main，但尚未接入真實事件；它與
 - 真實桌面／手機畫面、聲音、實際音量、慢速載入、失敗重試與登入後首頁仍需使用者在正式瀏覽器實測。
 - 若 Render 已設定 main 自動部署，待部署完成後即可由使用者進站驗收。
 - 本次沒有把尚未執行的瀏覽器 QA 記為 PASS。
+
+==================================================
+【2026-10-07｜工作線 1：網站品牌圖片同步更換】
+==================================================
+使用者要求：「網站圖片也一併更換」。
+
+修改前已重新讀取最新 main 與 code1cmd / code2cmd / code3cmd，並依工作線 2 品牌資源交接確認定稿素材：
+- public/assets/brand/ikey-approved.png
+- public/assets/brand/favicon.png
+
+本次只修改網站品牌圖片引用，不啟用通知事件、不修改課表、不修改 Welcome 動畫邏輯：
+- 登入頁 Logo：./assets/ikey-logo.png → ./assets/brand/ikey-approved.png
+- Sidebar Logo：./assets/ikey-logo.png → ./assets/brand/ikey-approved.png
+- 新增 favicon：./assets/brand/favicon.png
+
+網站修改 commit：0e37bddd871222c20f6f8dd61b55393404c9cd0c
+
+修改後重新讀取 main 驗證：
+- 舊 ikey-logo.png 引用：0
+- 定稿 ikey-approved.png 引用：2
+- favicon.png 引用：1
+- welcome.js 仍在 animation.js 前載入：PASS
+
+實際瀏覽器中的 Logo 比例、清晰度與 favicon 顯示仍待使用者在 Render 部署後目視驗收。
