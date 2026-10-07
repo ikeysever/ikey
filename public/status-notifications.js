@@ -187,12 +187,6 @@
   }
 
   function applyApprovedBrand() {
-    document
-      .querySelectorAll('img[src$="ikey-logo.png"]')
-      .forEach((img) => {
-        img.src = "./assets/brand/ikey-approved.png";
-      });
-
     let favicon = document.querySelector('link[rel="icon"]');
 
     if (!favicon) {
