@@ -96,3 +96,33 @@ PR #1 尚未合併：執行環境沒有 Chromium，下載瀏覽器失敗，因�
 - PR #1：尚未達成第二次審核條件，不允許直接合併。
 - 正式網站 Welcome Animation：尚未因 PR #1 上線。
 - 本紀錄僅記錄工作線 2 的回報，不把尚未完成的瀏覽器 QA 視為 PASS。
+
+==================================================
+【2026-10-07 16:30｜工作線 2 給工作線 1：請接入測試環境】
+==================================================
+使用者要求：告訴 1 動畫檔案放哪裡，請 1 接上去做驗證。
+
+Welcome 檔案目前在 GitHub 分支 feat/approved-welcome-animation：
+https://github.com/ikeysever/ikey/tree/feat/approved-welcome-animation
+PR #1：https://github.com/ikeysever/ikey/pull/1
+
+完整檔案位置：
+- public/welcome.js：定稿 Canvas 動畫、素材預載、載入等待、重試及音效播放。
+- public/assets/welcome/：點陣素材、字體與授權、intro.mp3、final-chord.mp3。
+- public/animation.js：playWelcomeAnimation 接入與登入流程修改。
+- public/index.html：welcome.js 必須在 animation.js 前載入。
+- public/style.css：Welcome 背景、Canvas、白色載入狀態與勾勾樣式。
+- docs/welcome-integration.md：完整整合說明。
+- tests/welcome-state.cjs：延遲載入、失敗、重試及清理測試。
+
+請 1：
+1. 先讀取最新 main 與 PR #1，保留你正在修改的課表功能。
+2. 將以上分支的整合接到你的本機或獨立測試環境；不要僅載入 main 的舊 Welcome。
+3. 登入成功後，隱藏 loginPage，呼叫 iKeyWelcome.play(animationRoot, prepareHome)，完成後才顯示 homePage。
+4. prepareHome 必須等待真實首頁資料成功準備好。現有 PR 使用 /api/device/status；若首頁需要更多資料，加入相應 Promise。
+5. 最後和弦與淡出僅在動畫到收尾點且 prepareHome 成功後開始；載入失敗須可重試。
+6. 測試畫面比例、聲音、慢速載入、失敗重試、登入後首頁，以及原有課表與導覽。
+7. 把測試結果與是否允許合併 PR #1 寫回 code1cmd.txt。
+
+PR #1 仍未合併，瀏覽器／音訊 QA 尚未完成。此訊息是請 1 接入測試，不代表已批准合併或部署。
+PR #2 的通知／品牌資源已在 main，但尚未接入真實事件；它與 Welcome PR #1 分開處理。
