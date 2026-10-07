@@ -504,3 +504,43 @@ LINE 預計顯示：
 
 狀態原則：
 程式接入完成＋靜態 PASS ≠ Render 實機整合 PASS；待使用者之後集中驗收。
+
+==================================================
+【2026-10-07｜工作線 1 完成：教室 1～8 共用真實課表】
+==================================================
+在使用者允許工作線 1 繼續實作、暫緩人工驗收的前提下，將原本僅 R01 可用的課表引擎泛化到既有 R01～R08；未新增資料表／欄位，未修改 LINE／ESP32 規格。
+
+完成：
+- 教室 1～8 側欄按鈕全部開啟同一個真實課表面板，不再讓教室 2～8停在 placeholder。
+- loadClassroomOneSchedule 改為共用 loadClassroomSchedule(classroomNumber)。
+- 依目前教室動態組合 classroom_id：1→R01、2→R02 ... 8→R08。
+- Classrooms 名稱、Schedules 篩選、空課表 fallback 全部依目前 classroom_id。
+- 快速切換教室保留 race guard：API 回來時若 activeClassroomNumber 已變更，不覆蓋目前畫面。
+- 新增課程 POST 不再硬寫 R01，改送目前教室 classroomId。
+- 成功／失敗 Terminal 紀錄同步使用正確 R01～R08。
+- 新增成功後只重新讀取當下建立課程的教室。
+- 新增課程 modal 左上教室標示同步目前教室。
+- 僅接受教室 1～8 作為新增課程目標，避免未知 classroom_id。
+- 修改教室名稱仍維持 disabled，本刀不跨到下一功能。
+
+修改檔案：
+- public/animation.js
+- public/index.html（只修正已過時的「唯讀」tooltip）
+
+commit：
+- 2ab18fd8160ce3cb1fae38e9827002dccdacfa88
+
+靜態驗證：
+- animation.js syntax：PASS
+- 原 R01 hardcode：已自課表 JS 清除
+- Schedule POST：保留且改為動態 classroomId
+- 真實通知：保留
+- 班級新增／刪除：保留
+- 老師搜尋：保留
+- 同步 spinner：保留
+
+待實機驗收：
+- R01～R08 各自讀取正確課表
+- 不同教室新增課程寫入正確 classroom_id
+- 快速切換教室 race guard
+- 各教室成功／失敗通知與 Terminal 詳細紀錄
