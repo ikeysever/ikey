@@ -857,7 +857,7 @@
 
 
   <!-- ========================================
-       新增課程視窗（第三階段：介面確認）
+       新增課程視窗（真正寫入課表）
        ======================================== -->
 
   <div
@@ -905,6 +905,28 @@
 
 
       <div class="schedule-modal-body">
+
+        <label class="schedule-field">
+
+          <span>
+            課程名稱
+          </span>
+
+          <input
+            id="addCourseName"
+            class="schedule-text-input"
+            type="text"
+            placeholder="例如：電機實習"
+            autocomplete="off"
+            maxlength="80"
+          >
+
+          <small>
+            必填；會顯示在課表課程卡片上
+          </small>
+
+        </label>
+
 
         <label class="schedule-field">
 
@@ -988,23 +1010,119 @@
         </label>
 
 
+        <div
+          id="addCourseClassCreatePanel"
+          class="schedule-class-create-panel"
+          hidden
+        >
+
+          <strong>
+            新增班級
+          </strong>
+
+          <label class="schedule-field">
+            <span>班級名稱</span>
+            <input
+              id="addCourseNewClassName"
+              class="schedule-text-input"
+              type="text"
+              placeholder="例如：電機二甲"
+              maxlength="40"
+            >
+          </label>
+
+          <div class="schedule-class-create-grid">
+
+            <label class="schedule-field">
+              <span>科別</span>
+              <input
+                id="addCourseNewClassDepartment"
+                class="schedule-text-input"
+                type="text"
+                placeholder="例如：電機科"
+                maxlength="40"
+              >
+            </label>
+
+            <label class="schedule-field">
+              <span>年級</span>
+              <input
+                id="addCourseNewClassGrade"
+                class="schedule-text-input"
+                type="number"
+                min="1"
+                max="3"
+                step="1"
+                placeholder="1"
+              >
+            </label>
+
+          </div>
+
+          <div class="schedule-class-create-actions">
+            <button
+              id="addCourseCancelClassButton"
+              class="schedule-inline-button secondary"
+              type="button"
+            >
+              取消
+            </button>
+
+            <button
+              id="addCourseSaveClassButton"
+              class="schedule-inline-button primary"
+              type="button"
+            >
+              儲存班級
+            </button>
+          </div>
+
+        </div>
+
+
         <div class="schedule-field">
 
           <span>
             時間
           </span>
 
-          <div class="schedule-selected-time">
+          <div class="schedule-time-editor">
 
             <strong id="addCourseDay">
               星期一
             </strong>
 
-            <span id="addCourseTime">
-              08:00 ～ 09:00
-            </span>
+            <label>
+              <span>開始</span>
+              <input
+                id="addCourseStartTime"
+                type="time"
+                min="06:00"
+                max="22:00"
+                step="60"
+                value="08:00"
+              >
+            </label>
+
+            <span aria-hidden="true">～</span>
+
+            <label>
+              <span>結束</span>
+              <input
+                id="addCourseEndTime"
+                type="time"
+                min="06:00"
+                max="22:00"
+                step="60"
+                value="09:00"
+              >
+            </label>
 
           </div>
+
+          <small>
+            可自行修改分鐘；有效範圍 06:00～22:00
+          </small>
 
         </div>
 
@@ -1037,7 +1155,7 @@
         class="schedule-modal-notice"
         hidden
       >
-        第三階段只確認介面，尚未寫入資料庫。
+        請填寫課程資料後新增。
       </p>
 
     </section>

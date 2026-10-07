@@ -72,6 +72,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const addCourseNotice =
     document.getElementById("addCourseNotice");
 
+  const addCourseName =
+    document.getElementById("addCourseName");
+
+  const addCourseStartTime =
+    document.getElementById("addCourseStartTime");
+
+  const addCourseEndTime =
+    document.getElementById("addCourseEndTime");
+
+  const addCourseClassCreatePanel =
+    document.getElementById("addCourseClassCreatePanel");
+
+  const addCourseNewClassName =
+    document.getElementById("addCourseNewClassName");
+
+  const addCourseNewClassDepartment =
+    document.getElementById("addCourseNewClassDepartment");
+
+  const addCourseNewClassGrade =
+    document.getElementById("addCourseNewClassGrade");
+
+  const addCourseSaveClassButton =
+    document.getElementById("addCourseSaveClassButton");
+
+  const addCourseCancelClassButton =
+    document.getElementById("addCourseCancelClassButton");
+
   const addCourseTeacher =
     document.getElementById("addCourseTeacher");
 
@@ -91,6 +118,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedScheduleTeacherId = "";
   let selectedScheduleClassId = "";
+
+  let activeScheduleDayIndex = null;
+  let allScheduleRecords = [];
+  let scheduleWriteInProgress = false;
 
 
   // =========================================
@@ -593,18 +624,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (filtered.length === 0) {
 
-      const empty =
-        document.createElement("div");
-
-      empty.className =
-        "schedule-search-empty";
-
-      empty.textContent =
+      if (
+        !isTeacher &&
         keyword
-          ? "找不到符合的資料"
-          : "目前沒有可選資料";
+      ) {
 
-      container.appendChild(empty);
+        const addButton =
+          document.createElement("button");
+
+        addButton.type = "button";
+        addButton.className =
+          "schedule-search-add";
+
+        addButton.textContent =
+          `＋ 新增班級「${query.trim()}」`;
+
+        addButton.addEventListener(
+          "click",
+          () => {
+
+            openScheduleClassCreatePanel(
+              query.trim()
+            );
+
+          }
+        );
+
+        container.appendChild(
+          addButton
+        );
+
+      } else {
+
+        const empty =
+          document.createElement("div");
+
+        empty.className =
+          "schedule-search-empty";
+
+        empty.textContent =
+          keyword
+            ? "找不到符合的資料"
+            : "目前沒有可選資料";
+
+        container.appendChild(empty);
+
+      }
+
+
       container.hidden = false;
 
       return;
@@ -720,7 +787,53 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        container.appendChild(option);
+        if (isTeacher) {
+
+          container.appendChild(option);
+
+        } else {
+
+          const row =
+            document.createElement("div");
+
+          row.className =
+            "schedule-search-option-row";
+
+
+          const removeButton =
+            document.createElement("button");
+
+          removeButton.type = "button";
+          removeButton.className =
+            "schedule-class-delete";
+          removeButton.textContent = "×";
+          removeButton.title =
+            "刪除這個班級";
+          removeButton.setAttribute(
+            "aria-label",
+            `刪除班級 ${item.class_name || item.class_id || ""}`
+          );
+
+          removeButton.addEventListener(
+            "click",
+            async (event) => {
+
+              event.preventDefault();
+              event.stopPropagation();
+
+              await removeScheduleClass(
+                item
+              );
+
+            }
+          );
+
+
+          row.appendChild(option);
+          row.appendChild(removeButton);
+          container.appendChild(row);
+
+        }
 
       }
     );
@@ -739,6 +852,450 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (addCourseClassOptions) {
       addCourseClassOptions.hidden = true;
+    }
+
+  }
+
+
+  function setAddCourseNotice(
+    message
+  ) {
+
+    if (!addCourseNotice) {
+      return;
+    }
+
+    addCourseNotice.hidden = false;
+    addCourseNotice.textContent =
+      message;
+
+  }
+
+
+  function openScheduleClassCreatePanel(
+    className = ""
+  ) {
+
+    closeScheduleSearchOptions();
+
+    if (!addCourseClassCreatePanel) {
+      return;
+    }
+
+    addCourseClassCreatePanel.hidden =
+      false;
+
+    if (addCourseNewClassName) {
+      addCourseNewClassName.value =
+        className;
+      addCourseNewClassName.focus();
+    }
+
+    if (addCourseNewClassDepartment) {
+      addCourseNewClassDepartment.value =
+        "";
+    }
+
+    if (addCourseNewClassGrade) {
+      addCourseNewClassGrade.value =
+        "";
+    }
+
+  }
+
+
+  function closeScheduleClassCreatePanel() {
+
+    if (addCourseClassCreatePanel) {
+      addCourseClassCreatePanel.hidden =
+        true;
+    }
+
+  }
+
+
+  function sortScheduleClasses(
+    classes
+  ) {
+
+    return classes
+      .filter(
+        (item) =>
+          isRecordEnabled(
+            item.enabled
+          )
+      )
+      .sort(
+        (a, b) =>
+          String(
+            a.class_name ||
+            a.class_id ||
+            ""
+          ).localeCompare(
+            String(
+              b.class_name ||
+              b.class_id ||
+              ""
+            ),
+            "zh-Hant"
+          )
+      );
+
+  }
+
+
+  async function refreshScheduleClasses() {
+
+    const classes =
+      await fetchDatabaseCollection(
+        "classes",
+        "classes"
+      );
+
+    scheduleClassOptions =
+      sortScheduleClasses(
+        classes
+      );
+
+    return scheduleClassOptions;
+
+  }
+
+
+  async function createScheduleClass() {
+
+    if (scheduleWriteInProgress) {
+      return;
+    }
+
+
+    const className =
+      String(
+        addCourseNewClassName &&
+        addCourseNewClassName.value ||
+        ""
+      ).trim();
+
+    const department =
+      String(
+        addCourseNewClassDepartment &&
+        addCourseNewClassDepartment.value ||
+        ""
+      ).trim();
+
+    const grade =
+      Number(
+        addCourseNewClassGrade &&
+        addCourseNewClassGrade.value
+      );
+
+
+    if (
+      !className ||
+      !department ||
+      !Number.isInteger(grade) ||
+      grade < 1 ||
+      grade > 3
+    ) {
+
+      setAddCourseNotice(
+        "新增班級需要班級名稱、科別與 1～3 年級。"
+      );
+
+      return;
+
+    }
+
+
+    const duplicate =
+      scheduleClassOptions.find(
+        (item) =>
+          String(
+            item.class_name || ""
+          ).trim().toLowerCase() ===
+          className.toLowerCase()
+      );
+
+
+    if (duplicate) {
+
+      selectedScheduleClassId =
+        String(
+          duplicate.class_id || ""
+        );
+
+      if (addCourseClass) {
+        addCourseClass.value =
+          duplicate.class_name ||
+          duplicate.class_id ||
+          "";
+      }
+
+      closeScheduleClassCreatePanel();
+      setAddCourseNotice(
+        "這個班級已存在，已直接選取。"
+      );
+
+      return;
+
+    }
+
+
+    scheduleWriteInProgress = true;
+
+    if (addCourseSaveClassButton) {
+      addCourseSaveClassButton.disabled =
+        true;
+    }
+
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/database/classes",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              class_name:
+                className,
+              department:
+                department,
+              grade:
+                grade,
+              enabled:
+                true
+            })
+          }
+        );
+
+      const data =
+        await response.json()
+          .catch(
+            () => null
+          );
+
+
+      if (
+        !response.ok ||
+        !data ||
+        data.success !== true
+      ) {
+
+        throw new Error(
+          data &&
+          data.message ||
+          "班級新增失敗"
+        );
+
+      }
+
+
+      const classes =
+        await refreshScheduleClasses();
+
+      const created =
+        classes.find(
+          (item) =>
+            String(
+              item.class_name || ""
+            ).trim().toLowerCase() ===
+            className.toLowerCase()
+        );
+
+
+      if (!created) {
+
+        throw new Error(
+          "班級已寫入，但重新讀取後找不到該班級"
+        );
+
+      }
+
+
+      selectedScheduleClassId =
+        String(
+          created.class_id || ""
+        );
+
+      if (addCourseClass) {
+        addCourseClass.value =
+          created.class_name ||
+          created.class_id ||
+          "";
+      }
+
+      closeScheduleClassCreatePanel();
+
+      setAddCourseNotice(
+        `班級「${created.class_name || className}」已建立並選取。`
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Create Class Error:",
+        error
+      );
+
+      setAddCourseNotice(
+        `新增班級失敗：${error.message}`
+      );
+
+    } finally {
+
+      scheduleWriteInProgress = false;
+
+      if (addCourseSaveClassButton) {
+        addCourseSaveClassButton.disabled =
+          false;
+      }
+
+    }
+
+  }
+
+
+  async function removeScheduleClass(
+    classData
+  ) {
+
+    const classId =
+      String(
+        classData.class_id || ""
+      );
+
+    const className =
+      classData.class_name ||
+      classId ||
+      "這個班級";
+
+
+    if (!classId) {
+      return;
+    }
+
+
+    const isUsed =
+      allScheduleRecords.some(
+        (schedule) =>
+          isRecordEnabled(
+            schedule.enabled
+          ) &&
+          String(
+            schedule.class_id || ""
+          ) === classId
+      );
+
+
+    if (isUsed) {
+
+      setAddCourseNotice(
+        `「${className}」已有課表使用，不能刪除。`
+      );
+
+      closeScheduleSearchOptions();
+      return;
+
+    }
+
+
+    if (
+      !window.confirm(
+        `確定刪除班級「${className}」嗎？`
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    try {
+
+      const response =
+        await fetch(
+          `/api/database/classes/${encodeURIComponent(classId)}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              ...classData,
+              enabled:
+                false
+            })
+          }
+        );
+
+      const data =
+        await response.json()
+          .catch(
+            () => null
+          );
+
+
+      if (
+        !response.ok ||
+        !data ||
+        data.success !== true
+      ) {
+
+        throw new Error(
+          data &&
+          data.message ||
+          "班級刪除失敗"
+        );
+
+      }
+
+
+      scheduleClassOptions =
+        scheduleClassOptions.filter(
+          (item) =>
+            String(
+              item.class_id || ""
+            ) !== classId
+        );
+
+
+      if (
+        selectedScheduleClassId ===
+        classId
+      ) {
+
+        selectedScheduleClassId = "";
+
+        if (addCourseClass) {
+          addCourseClass.value = "";
+        }
+
+      }
+
+
+      closeScheduleSearchOptions();
+
+      setAddCourseNotice(
+        `已刪除班級「${className}」。`
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Delete Class Error:",
+        error
+      );
+
+      setAddCourseNotice(
+        `刪除班級失敗：${error.message}`
+      );
+
     }
 
   }
@@ -767,23 +1324,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    if (addCourseTime) {
+    activeScheduleDayIndex =
+      dayIndex;
 
-      const start =
-        `${String(hour).padStart(2, "0")}:00`;
+    const start =
+      `${String(hour).padStart(2, "0")}:00`;
 
-      const end =
-        `${String(hour + 1).padStart(2, "0")}:00`;
+    const end =
+      `${String(hour + 1).padStart(2, "0")}:00`;
 
-      addCourseTime.textContent =
-        `${start} ～ ${end}`;
 
+    if (addCourseStartTime) {
+      addCourseStartTime.value =
+        start;
+    }
+
+    if (addCourseEndTime) {
+      addCourseEndTime.value =
+        end;
     }
 
 
     selectedScheduleTeacherId = "";
     selectedScheduleClassId = "";
 
+
+    if (addCourseName) {
+      addCourseName.value = "";
+    }
 
     if (addCourseTeacher) {
       addCourseTeacher.value = "";
@@ -795,6 +1363,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     closeScheduleSearchOptions();
+    closeScheduleClassCreatePanel();
 
 
     if (addCourseNotice) {
@@ -1346,28 +1915,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       scheduleClassOptions =
-        classes
-          .filter(
-            (item) =>
-              isRecordEnabled(
-                item.enabled
-              )
-          )
-          .sort(
-            (a, b) =>
-              String(
-                a.class_name ||
-                a.class_id ||
-                ""
-              ).localeCompare(
-                String(
-                  b.class_name ||
-                  b.class_id ||
-                  ""
-                ),
-                "zh-Hant"
-              )
-          );
+        sortScheduleClasses(
+          classes
+        );
+
+      allScheduleRecords =
+        schedules;
 
 
       const timings = [
@@ -1814,7 +2367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // =========================================
-  // 新增課程視窗（第三階段：只確認介面）
+  // 新增課程視窗（真正寫入課表）
   // =========================================
 
   if (addCourseCloseButton) {
@@ -1920,6 +2473,26 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
 
+  if (addCourseSaveClassButton) {
+
+    addCourseSaveClassButton.addEventListener(
+      "click",
+      createScheduleClass
+    );
+
+  }
+
+
+  if (addCourseCancelClassButton) {
+
+    addCourseCancelClassButton.addEventListener(
+      "click",
+      closeScheduleClassCreatePanel
+    );
+
+  }
+
+
   document.addEventListener(
     "click",
     (event) => {
@@ -1947,15 +2520,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
     addCourseConfirmButton.addEventListener(
       "click",
-      () => {
+      async () => {
 
-        // 這一刀仍然故意不呼叫 POST /api/database/schedules。
-        if (!addCourseNotice) {
+        if (scheduleWriteInProgress) {
           return;
         }
 
 
-        addCourseNotice.hidden = false;
+        const courseName =
+          String(
+            addCourseName &&
+            addCourseName.value ||
+            ""
+          ).trim();
+
+        const startTime =
+          String(
+            addCourseStartTime &&
+            addCourseStartTime.value ||
+            ""
+          );
+
+        const endTime =
+          String(
+            addCourseEndTime &&
+            addCourseEndTime.value ||
+            ""
+          );
+
+        const startMinutes =
+          parseScheduleTime(
+            startTime
+          );
+
+        const endMinutes =
+          parseScheduleTime(
+            endTime
+          );
+
+
+        if (!courseName) {
+
+          setAddCourseNotice(
+            "請輸入課程名稱。"
+          );
+
+          return;
+
+        }
 
 
         if (
@@ -1963,16 +2575,139 @@ document.addEventListener("DOMContentLoaded", () => {
           !selectedScheduleClassId
         ) {
 
-          addCourseNotice.textContent =
-            "請先從下拉選單選擇老師與班級。";
+          setAddCourseNotice(
+            "請先從下拉選單選擇老師與班級。"
+          );
 
           return;
 
         }
 
 
-        addCourseNotice.textContent =
-          `已選擇老師 ${selectedScheduleTeacherId}、班級 ${selectedScheduleClassId}；目前尚未寫入資料庫。`;
+        if (
+          activeScheduleDayIndex === null ||
+          !scheduleDays[
+            activeScheduleDayIndex
+          ]
+        ) {
+
+          setAddCourseNotice(
+            "找不到要新增的星期，請重新開啟視窗。"
+          );
+
+          return;
+
+        }
+
+
+        if (
+          startMinutes === null ||
+          endMinutes === null ||
+          startMinutes < 360 ||
+          endMinutes > 1320 ||
+          endMinutes <= startMinutes
+        ) {
+
+          setAddCourseNotice(
+            "時間需介於 06:00～22:00，且結束時間必須晚於開始時間。"
+          );
+
+          return;
+
+        }
+
+
+        scheduleWriteInProgress = true;
+        addCourseConfirmButton.disabled =
+          true;
+
+        setAddCourseNotice(
+          "正在新增課程..."
+        );
+
+
+        try {
+
+          const response =
+            await fetch(
+              "/api/database/schedules",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+                body: JSON.stringify({
+                  classroom_id:
+                    "R01",
+                  weekday:
+                    scheduleDays[
+                      activeScheduleDayIndex
+                    ].value,
+                  start_time:
+                    startTime,
+                  end_time:
+                    endTime,
+                  teacher_id:
+                    selectedScheduleTeacherId,
+                  class_id:
+                    selectedScheduleClassId,
+                  course_name:
+                    courseName,
+                  enabled:
+                    true
+                })
+              }
+            );
+
+          const data =
+            await response.json()
+              .catch(
+                () => null
+              );
+
+
+          if (
+            !response.ok ||
+            !data ||
+            data.success !== true
+          ) {
+
+            throw new Error(
+              data &&
+              data.message ||
+              "課程新增失敗"
+            );
+
+          }
+
+
+          closeAddCourseModal();
+
+          await loadClassroomOneSchedule();
+
+          addSystemLog(
+            `課表新增成功：${courseName} ${startTime}～${endTime}`
+          );
+
+        } catch (error) {
+
+          console.error(
+            "Create Schedule Error:",
+            error
+          );
+
+          setAddCourseNotice(
+            `新增課程失敗：${error.message}`
+          );
+
+        } finally {
+
+          scheduleWriteInProgress = false;
+          addCourseConfirmButton.disabled =
+            false;
+
+        }
 
       }
     );

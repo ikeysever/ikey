@@ -181,6 +181,121 @@ async function appsScriptRequest(
 
 /*
  * ============================================================
+ * Sequential ID Helper
+ * ============================================================
+ */
+
+async function getNextDatabaseId(
+  action,
+  collectionKey,
+  idKey,
+  prefix,
+  width
+) {
+
+  const databaseApiUrl =
+    getDatabaseApiUrl();
+
+
+  if (!databaseApiUrl) {
+
+    throw new Error(
+      "IKEY_DATABASE_API_URL is not configured"
+    );
+
+  }
+
+
+  const url =
+    new URL(
+      databaseApiUrl
+    );
+
+  url.searchParams.set(
+    "action",
+    action
+  );
+
+
+  const data =
+    await appsScriptRequest(
+      url.toString()
+    );
+
+
+  if (data.success !== true) {
+
+    throw new Error(
+      data.message ||
+      `Failed to read ${action}`
+    );
+
+  }
+
+
+  const collection =
+    data[collectionKey] ||
+    (
+      data.data &&
+      data.data[collectionKey]
+    );
+
+
+  if (!Array.isArray(collection)) {
+
+    throw new Error(
+      `${action} data format is invalid`
+    );
+
+  }
+
+
+  let maximum = 0;
+
+  const pattern =
+    new RegExp(
+      `^${prefix}(\\d+)$`,
+      "i"
+    );
+
+
+  collection.forEach(
+    (item) => {
+
+      const match =
+        String(
+          item &&
+          item[idKey] ||
+          ""
+        ).match(pattern);
+
+
+      if (!match) {
+        return;
+      }
+
+
+      maximum =
+        Math.max(
+          maximum,
+          Number(match[1]) || 0
+        );
+
+    }
+  );
+
+
+  return (
+    prefix +
+    String(maximum + 1)
+      .padStart(width, "0")
+  );
+
+}
+
+
+/*
+ * ============================================================
  * GET Helper
  * ============================================================
  */
@@ -534,15 +649,55 @@ router.get(
 
 router.post(
   "/classes",
-  (req, res) =>
-    databasePost(
-      req,
-      res,
-      "create_class",
-      "class",
-      req.body,
-      "Class created successfully"
-    )
+  async (req, res) => {
+
+    try {
+
+      const classData = {
+        ...req.body
+      };
+
+
+      if (!classData.class_id) {
+
+        classData.class_id =
+          await getNextDatabaseId(
+            "classes",
+            "classes",
+            "class_id",
+            "C",
+            3
+          );
+
+      }
+
+
+      return databasePost(
+        req,
+        res,
+        "create_class",
+        "class",
+        classData,
+        "Class created successfully"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Class ID Generation Error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        status: "error",
+        message:
+          "Failed to prepare class ID"
+      });
+
+    }
+
+  }
 );
 
 
@@ -646,15 +801,55 @@ router.get(
 
 router.post(
   "/schedules",
-  (req, res) =>
-    databasePost(
-      req,
-      res,
-      "create_schedule",
-      "schedule",
-      req.body,
-      "Schedule created successfully"
-    )
+  async (req, res) => {
+
+    try {
+
+      const schedule = {
+        ...req.body
+      };
+
+
+      if (!schedule.schedule_id) {
+
+        schedule.schedule_id =
+          await getNextDatabaseId(
+            "schedules",
+            "schedules",
+            "schedule_id",
+            "SCH",
+            6
+          );
+
+      }
+
+
+      return databasePost(
+        req,
+        res,
+        "create_schedule",
+        "schedule",
+        schedule,
+        "Schedule created successfully"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Schedule ID Generation Error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        status: "error",
+        message:
+          "Failed to prepare schedule ID"
+      });
+
+    }
+
+  }
 );
 
 
