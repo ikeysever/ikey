@@ -104,7 +104,10 @@ typeLine('歡迎使用iKey',278,6.8);typeLine('智慧鑰匙管理系統',323,7.2
     function sound(buffer) {
       if (!buffer || audioContext?.state !== 'running') return;
       const node = audioContext.createBufferSource();
-      node.buffer = buffer; node.connect(audioContext.destination);
+      const gain = audioContext.createGain();
+      gain.gain.value = 0.65;
+      node.buffer = buffer;
+      node.connect(gain).connect(audioContext.destination);
       node.start(); nodes.push(node);
     }
     try {
