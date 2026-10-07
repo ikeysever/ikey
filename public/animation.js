@@ -72,7 +72,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const addCourseNotice =
     document.getElementById("addCourseNotice");
 
+  const addCourseTeacher =
+    document.getElementById("addCourseTeacher");
+
+  const addCourseTeacherOptions =
+    document.getElementById("addCourseTeacherOptions");
+
+  const addCourseClass =
+    document.getElementById("addCourseClass");
+
+  const addCourseClassOptions =
+    document.getElementById("addCourseClassOptions");
+
   let activeClassroomNumber = null;
+
+  let scheduleTeacherOptions = [];
+  let scheduleClassOptions = [];
+
+  let selectedScheduleTeacherId = "";
+  let selectedScheduleClassId = "";
 
 
   // =========================================
@@ -801,6 +819,224 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  function renderScheduleSearchOptions(
+    type,
+    query = ""
+  ) {
+
+    const isTeacher =
+      type === "teacher";
+
+    const container =
+      isTeacher
+        ? addCourseTeacherOptions
+        : addCourseClassOptions;
+
+    const source =
+      isTeacher
+        ? scheduleTeacherOptions
+        : scheduleClassOptions;
+
+
+    if (!container) {
+      return;
+    }
+
+
+    const keyword =
+      String(query)
+        .trim()
+        .toLowerCase();
+
+
+    const filtered =
+      source.filter(
+        (item) => {
+
+          const searchText =
+            isTeacher
+              ? [
+                  item.name,
+                  item.user_id,
+                  item.department
+                ]
+              : [
+                  item.class_name,
+                  item.class_id,
+                  item.department,
+                  item.grade
+                ];
+
+
+          return (
+            keyword === "" ||
+            searchText
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase()
+              .includes(keyword)
+          );
+
+        }
+      );
+
+
+    container.innerHTML = "";
+
+
+    if (filtered.length === 0) {
+
+      const empty =
+        document.createElement("div");
+
+      empty.className =
+        "schedule-search-empty";
+
+      empty.textContent =
+        keyword
+          ? "找不到符合的資料"
+          : "目前沒有可選資料";
+
+      container.appendChild(empty);
+      container.hidden = false;
+
+      return;
+
+    }
+
+
+    filtered.forEach(
+      (item) => {
+
+        const option =
+          document.createElement("button");
+
+        option.type = "button";
+        option.className =
+          "schedule-search-option";
+
+        option.setAttribute(
+          "role",
+          "option"
+        );
+
+
+        const main =
+          document.createElement("span");
+
+        main.className =
+          "schedule-search-option-main";
+
+        main.textContent =
+          isTeacher
+            ? (
+                item.name ||
+                item.user_id ||
+                "未命名老師"
+              )
+            : (
+                item.class_name ||
+                item.class_id ||
+                "未命名班級"
+              );
+
+
+        const meta =
+          document.createElement("span");
+
+        meta.className =
+          "schedule-search-option-meta";
+
+        meta.textContent =
+          isTeacher
+            ? String(
+                item.user_id || ""
+              )
+            : String(
+                item.class_id || ""
+              );
+
+
+        option.appendChild(main);
+        option.appendChild(meta);
+
+
+        option.addEventListener(
+          "click",
+          () => {
+
+            if (isTeacher) {
+
+              selectedScheduleTeacherId =
+                String(
+                  item.user_id || ""
+                );
+
+              if (addCourseTeacher) {
+
+                addCourseTeacher.value =
+                  item.name ||
+                  item.user_id ||
+                  "";
+
+              }
+
+            } else {
+
+              selectedScheduleClassId =
+                String(
+                  item.class_id || ""
+                );
+
+              if (addCourseClass) {
+
+                addCourseClass.value =
+                  item.class_name ||
+                  item.class_id ||
+                  "";
+
+              }
+
+            }
+
+
+            container.hidden = true;
+
+
+            if (addCourseNotice) {
+
+              addCourseNotice.hidden = true;
+
+            }
+
+          }
+        );
+
+
+        container.appendChild(option);
+
+      }
+    );
+
+
+    container.hidden = false;
+
+  }
+
+
+  function closeScheduleSearchOptions() {
+
+    if (addCourseTeacherOptions) {
+      addCourseTeacherOptions.hidden = true;
+    }
+
+    if (addCourseClassOptions) {
+      addCourseClassOptions.hidden = true;
+    }
+
+  }
+
+
   function openAddCourseModal(
     dayIndex,
     hour
@@ -838,6 +1074,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    selectedScheduleTeacherId = "";
+    selectedScheduleClassId = "";
+
+
+    if (addCourseTeacher) {
+      addCourseTeacher.value = "";
+    }
+
+    if (addCourseClass) {
+      addCourseClass.value = "";
+    }
+
+
+    closeScheduleSearchOptions();
+
+
     if (addCourseNotice) {
 
       addCourseNotice.hidden = true;
@@ -858,6 +1110,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     addCourseModal.hidden = true;
+
+    closeScheduleSearchOptions();
 
   }
 
@@ -1349,6 +1603,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const users =
         usersResult.collection;
+
+
+      scheduleTeacherOptions =
+        users
+          .filter(
+            (item) =>
+              String(
+                item.identity || ""
+              ).toLowerCase() ===
+                "teacher" &&
+              isRecordEnabled(
+                item.enabled
+              )
+          )
+          .sort(
+            (a, b) =>
+              String(
+                a.name ||
+                a.user_id ||
+                ""
+              ).localeCompare(
+                String(
+                  b.name ||
+                  b.user_id ||
+                  ""
+                ),
+                "zh-Hant"
+              )
+          );
+
+
+      scheduleClassOptions =
+        classes
+          .filter(
+            (item) =>
+              isRecordEnabled(
+                item.enabled
+              )
+          )
+          .sort(
+            (a, b) =>
+              String(
+                a.class_name ||
+                a.class_id ||
+                ""
+              ).localeCompare(
+                String(
+                  b.class_name ||
+                  b.class_id ||
+                  ""
+                ),
+                "zh-Hant"
+              )
+          );
 
 
       const timings = [
@@ -1849,18 +2157,126 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
+  function bindScheduleSearchInput(
+    input,
+    type
+  ) {
+
+    if (!input) {
+      return;
+    }
+
+
+    input.addEventListener(
+      "focus",
+      () => {
+
+        renderScheduleSearchOptions(
+          type,
+          input.value
+        );
+
+      }
+    );
+
+
+    input.addEventListener(
+      "input",
+      () => {
+
+        if (type === "teacher") {
+
+          selectedScheduleTeacherId = "";
+
+        } else {
+
+          selectedScheduleClassId = "";
+
+        }
+
+
+        if (addCourseNotice) {
+
+          addCourseNotice.hidden = true;
+
+        }
+
+
+        renderScheduleSearchOptions(
+          type,
+          input.value
+        );
+
+      }
+    );
+
+  }
+
+
+  bindScheduleSearchInput(
+    addCourseTeacher,
+    "teacher"
+  );
+
+  bindScheduleSearchInput(
+    addCourseClass,
+    "class"
+  );
+
+
+  document.addEventListener(
+    "click",
+    (event) => {
+
+      const target =
+        event.target;
+
+
+      if (
+        target instanceof Element &&
+        !target.closest(
+          ".schedule-search-wrapper"
+        )
+      ) {
+
+        closeScheduleSearchOptions();
+
+      }
+
+    }
+  );
+
+
   if (addCourseConfirmButton) {
 
     addCourseConfirmButton.addEventListener(
       "click",
       () => {
 
-        // 第三階段故意不呼叫 POST /api/database/schedules。
-        if (addCourseNotice) {
+        // 這一刀仍然故意不呼叫 POST /api/database/schedules。
+        if (!addCourseNotice) {
+          return;
+        }
 
-          addCourseNotice.hidden = false;
+
+        addCourseNotice.hidden = false;
+
+
+        if (
+          !selectedScheduleTeacherId ||
+          !selectedScheduleClassId
+        ) {
+
+          addCourseNotice.textContent =
+            "請先從下拉選單選擇老師與班級。";
+
+          return;
 
         }
+
+
+        addCourseNotice.textContent =
+          `已選擇老師 ${selectedScheduleTeacherId}、班級 ${selectedScheduleClassId}；目前尚未寫入資料庫。`;
 
       }
     );
