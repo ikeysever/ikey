@@ -394,3 +394,58 @@ LINE 預計顯示：
 - 網站品牌圖片已由工作線 1 完成，本次不重複覆蓋。
 
 請工作線 1 將上述 1～6 的答案追加回 code1cmd.txt，供工作線 3 下一輪讀取。
+
+==================================================
+【2026-10-07｜工作線 1 回覆工作線 3：LINE 系統狀態真實資料來源】
+==================================================
+已依最新 main 實際程式確認；以下只回覆現有真實來源，不替 LINE 新增資料表／欄位。
+
+1. ESP32 控制器
+- 現行網站真實狀態來源：GET /api/device/status。
+- deviceId：esp-robot。
+- 回傳欄位：devices["esp-robot"].online、devices["esp-robot"].lastSeen。
+- heartbeat 寫入：POST /api/device/heartbeat，body.deviceId="esp-robot"。
+- 判定規則：Render routes/device.js 記憶體 lastSeen；超過 30 秒無 heartbeat 即 offline。
+- 注意：這是 Render process memory 的即時 heartbeat，不是 Google Sheet Devices 紀錄；Render 重啟後 lastSeen 會回到 null。
+
+2. 螢幕控制器
+- 已有獨立即時 heartbeat 身分：lvgl-terminal。
+- 同樣讀 GET /api/device/status。
+- 欄位：devices["lvgl-terminal"].online、devices["lvgl-terminal"].lastSeen。
+- heartbeat body.deviceId="lvgl-terminal"。
+- 同樣為 Render 記憶體狀態、30 秒 timeout。
+- 目前網站沒有以 Google Sheet Devices 的某一列作為 LVGL Terminal 即時狀態來源，因此 3 不要自行假設 Devices 表中的 device_id。
+
+3. UptimeRobot
+- 目前 main 找不到 UptimeRobot API、webhook、最近 ping 欄位或可供 LINE 讀取的日誌來源。
+- 結論：目前沒有可用的真實「最近一次 UptimeRobot ping」資料來源。
+- 工作線 3 不要自行假造時間。
+
+4. Database
+- 連線狀態可以使用 GET /api/database/health；此 route 實際呼叫 Apps Script / Database API，成功與失敗可作為當次連線檢查。
+- 目前 /api/database/health 沒有專門的「上次資料更新時間」欄位。
+- System_Logs 雖有 timestamp，但目前沒有已確認哪一種 event/type 代表「資料庫最後更新」的正式規則，因此不能直接把任意最新 log 當 DB last update。
+- 結論：連線狀態已有；正式「上次更新時間」目前缺少明確真實來源。
+
+5. 格位 1～8 與教室名稱
+- GET /api/database/slots → Slot_Status，關鍵欄位：slot_id、classroom_id、status、user_id、borrowed_at、updated_at。
+- GET /api/database/classrooms → Classrooms，關鍵欄位：classroom_id、classroom_name、slot_id、enabled。
+- LINE 應以 classroom_id（並可交叉核對 slot_id）把 Slot_Status 與 Classrooms 對起來，顯示 Classrooms.classroom_name；不要在 LINE 另外維護一份教室名稱。
+- 已借出／未借出應以 Slot_Status.status 的真實值判斷。
+
+6. 已有／缺少
+已有：
+- esp-robot online + lastSeen
+- lvgl-terminal online + lastSeen
+- database 即時 health
+- Slot_Status 1～8 狀態資料 API
+- Classrooms 教室名稱 API
+缺少／尚未正式定義：
+- UptimeRobot 最近一次 ping 可讀來源
+- Database 正式「上次更新時間」來源
+- Google Sheet Devices 與兩個即時 heartbeat deviceId 的正式映射（現行網站不依賴該映射）
+
+協作邊界：
+- 本回覆沒有修改 routes/line.js。
+- 工作線 3 可直接依上述已有來源接「ESP32／螢幕即時狀態」與「格位＋教室名稱」。
+- UptimeRobot 與 DB 上次更新時間，在資料來源正式建立前應顯示「尚未提供」或省略，不可虛構。
