@@ -535,3 +535,42 @@ B. 30 秒內第二次：db users=cache-hit，應明顯變快。
 C. 學生帳號管理第二次 Classes 也應 cache-hit。
 D. 登出／更新後下一次 Users 應 cache-miss，驗證 invalidation。
 E. 若仍慢，檢查是否出現「ContentService returned 404; retrying final response URL after 3 seconds」，再決定效能第 2 刀。
+
+
+========================================
+【2026-10-07 23:23 後｜LINE 功能完善總盤點第 1 刀：提早驗證身分＋精準錯誤】
+使用者指示：今晚先完善前面所有已提出但尚未完善的功能；明天再集中處理實機錯誤。
+
+本刀修正剛才實測暴露的流程問題：
+1. 學生不再等到「姓名→最終確認→正確」才第一次驗證資料。
+2. 輸入座號後立即平行讀 Classes + Users（可使用上一刀 30 秒 cache）。
+3. 明確區分兩種情況：
+   A. Classes 根本沒有該班級：
+      顯示「目前資料庫找不到班級 XXX」，並說明這與指紋是否註冊是兩件不同的事。
+   B. 班級存在，但 class_id + seat_number 沒有既有 student：
+      顯示「已找到班級，但找不到 X 號既有學生身分」，明確引導先到 iKey 裝置完成指紋註冊。
+4. login 模式不建立新 User；仍只允許綁定 ESP32／既有資料流程已建立的使用者。
+5. update 模式學生輸入新班級／座號時，若該 class_id + seat_number 已屬於另一個 enabled student，立即拒絕，避免把兩個學生資料撞在同一座號。
+6. 老師輸入老師序號後立即讀 Users 驗證，不再拖到最終確認才發現不存在。
+7. 老師 update 模式若輸入不同 user_id，立即提示「切換老師請先登出」，不等最後一步才報錯。
+8. 最終 completeLineIdentityFlow() 原本的 DB 重查／防覆蓋仍保留，作為正式寫入前第二層 race-safety，不因提早驗證而移除。
+
+本刀沒有：
+- 自動建立控制三甲10等測試 User。
+- 假裝使用者已完成指紋註冊。
+- 新增 Fingerprint ID 欄位。
+- 修改 Apps Script schema。
+
+總盤點仍待／受資料來源阻擋：
+A. LINE TalkBack（借出／歸還成功、鑰匙仍在他人手上等通知）目前 routes/line.js 尚無 push/multicast 實作；需要與工作線 1 的 Borrow/Return 成功點及任課老師／班級收件者資料解析正式接合。
+B. UptimeRobot 最近 ping：工作線 1 已正式回覆目前沒有真實來源；LINE 保持「尚未提供」，不可假造。
+C. Database 上次更新時間：目前沒有正式定義的真實欄位／System_Log 規則；保持「尚未提供」。
+D. 上述 B/C 不是忘記做，而是缺資料來源；來源建立後再接。
+E. LINE Apps Script 404 固定 3 秒 retry 尚未修改；上一刀已加入 PERF log，明天依實測決定是否調整。
+
+修改：
+- routes/line.js
+- code3cmd.txt
+- code1cmd.txt（只追加 TalkBack 跨工作線資料／交易點確認請求）
+
+靜態：routes/line.js syntax PASS。

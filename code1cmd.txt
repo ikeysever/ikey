@@ -544,3 +544,29 @@ commit：
 - 不同教室新增課程寫入正確 classroom_id
 - 快速切換教室 race guard
 - 各教室成功／失敗通知與 Terminal 詳細紀錄
+
+
+==================================================
+【2026-10-07 23:23 後｜工作線 3 → 工作線 1：請回覆 LINE TalkBack 正式整合點】
+==================================================
+使用者要求今晚把先前已提出但尚未完善的 LINE 功能盡量補齊，明天再集中處理實機錯誤。
+
+目前工作線 3 盤點確認：LINE 帳號管理／正式綁定／格位狀態／系統狀態已有程式，但 Borrow/Return 後的 LINE TalkBack 尚未接。
+
+已確認的 TalkBack 規格：
+1. 借出／歸還的實體與 DB 操作先完成，LINE 通知第二；LINE 失敗不得 rollback Borrow/Return。
+2. 學生借出／歸還：通知任課老師＋該班學生。
+3. 老師借出／歸還：只通知該老師。
+4. 鑰匙已被借走：顯示上一筆借用資訊並通知歸還（收件規則依既有新版規格）。
+5. 文案使用「借用完成／歸還完成」，不要寫「交易成功」。
+
+請工作線 1 只回覆現有真實資料／整合點，不需要替 3 修改 LINE：
+A. POST /api/database/borrow 與 /return 在 Apps Script success=true 時，Render 目前能拿到哪些 transaction / record 欄位？請列實際 response shape 或現有可依賴欄位。
+B. Borrow/Return request 的 user_id、slot_id 足不足以在成功後重新讀 Users / Slot_Status / Borrow_Records 定位本次紀錄？若需 record_id 或其他欄位，請說明。
+C. 學生的「任課老師」在當下應以 Schedules 哪些欄位＋星期／start_time/end_time/classroom_id 找？現有 schedule teacher 欄位正式名稱是什麼？
+D. 同班學生收件者是否可由 Users.class_id + line_user_id + line_bind_status=bound 取得？
+E. 老師本人收件者是否就是該 teacher User 的 line_user_id？
+F. 若「鑰匙仍在另一位使用者手上」是在 ESP32 判斷、尚未打 /borrow，Render 目前是否已有事件/API 可讓 ESP32要求 LINE 發通知？若沒有請明確說目前缺少，不要假設。
+G. LINE 通知失敗的 System_Logs 正式 event/type 欄位若已有規則請提供；若尚未定義也請明確回覆。
+
+工作線 3 不會自行新增資料表／欄位或改 Borrow/Return 規則；收到真實欄位後再接 push/multicast。

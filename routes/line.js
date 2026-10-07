@@ -3158,30 +3158,181 @@ async function handleFlowTextInput(
     }
 
 
-    const nextSession =
-      updateLineFlowSession(
-        event,
-        {
-          seat:
-            String(
-              Number(
-                messageText
-              )
-            ),
-          stage:
-            "identity_confirm"
-        }
+    const seat =
+      String(
+        Number(
+          messageText
+        )
       );
 
 
-    await replyMessages(
-      event.replyToken,
-      [
-        createFlowDataConfirmationFlex(
-          nextSession
+    try {
+
+      const [
+        classes,
+        users
+      ] =
+        await Promise.all([
+          databaseReadCollection(
+            "classes",
+            "classes"
+          ),
+          databaseReadCollection(
+            "users",
+            "users"
+          )
+        ]);
+
+
+      const classData =
+        findStudentClassForSession(
+          classes,
+          session
+        );
+
+
+      if (
+        session.mode ===
+        "update"
+      ) {
+
+        const occupiedByAnotherUser =
+          users.find(
+            (user) =>
+              String(
+                user.identity ||
+                ""
+              ).toLowerCase() ===
+                "student" &&
+              String(
+                user.class_id ||
+                ""
+              ) ===
+                String(
+                  classData.class_id ||
+                  ""
+                ) &&
+              String(
+                getStudentSeat(
+                  user
+                )
+              ) ===
+                seat &&
+              String(
+                user.user_id ||
+                ""
+              ) !==
+                String(
+                  session.targetUserId ||
+                  ""
+                ) &&
+              isRecordEnabled(
+                user.enabled
+              )
+          );
+
+
+        if (
+          occupiedByAnotherUser
+        ) {
+
+          await replyText(
+            event.replyToken,
+            `「${session.department}${getChineseGrade(session.grade)}${session.className} ${seat} 號」已對應到另一筆學生資料。\n請確認座號是否輸入正確。`
+          );
+
+          return true;
+
+        }
+
+      } else {
+
+        try {
+
+          findStudentUserForSession(
+            users,
+            classData,
+            {
+              ...session,
+              seat:
+                seat
+            }
+          );
+
+        } catch (error) {
+
+          const classLabel =
+            `${session.department}${getChineseGrade(session.grade)}${session.className}`;
+
+
+          await replyText(
+            event.replyToken,
+            `已找到班級「${classLabel}」，但找不到「${seat} 號」的既有學生身分。\n\n如果您還沒有在 iKey 裝置按壓並註冊過指紋，請先到 iKey 指紋辨識器完成註冊，再回到 LINE 點選「帳號管理」。`
+          );
+
+          return true;
+
+        }
+
+      }
+
+
+      const nextSession =
+        updateLineFlowSession(
+          event,
+          {
+            seat:
+              seat,
+            resolvedClassId:
+              String(
+                classData.class_id ||
+                ""
+              ),
+            stage:
+              "identity_confirm"
+          }
+        );
+
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createFlowDataConfirmationFlex(
+            nextSession
+          )
+        ]
+      );
+
+
+    } catch (error) {
+
+      const classLabel =
+        `${session.department}${getChineseGrade(session.grade)}${session.className}`;
+
+
+      if (
+        String(
+          error.message ||
+          ""
+        ).includes(
+          "找不到對應班級"
         )
-      ]
-    );
+      ) {
+
+        await replyText(
+          event.replyToken,
+          `目前資料庫找不到班級「${classLabel}」。\n這代表 Classes 尚未建立這個班級，與您的指紋是否已註冊是兩件不同的事。\n請先確認網站班級資料。`
+        );
+
+        return true;
+
+      }
+
+
+      throw error;
+
+    }
+
 
     return true;
 
@@ -3205,26 +3356,97 @@ async function handleFlowTextInput(
     }
 
 
-    const nextSession =
-      updateLineFlowSession(
-        event,
-        {
-          teacherSerial:
-            messageText,
-          stage:
-            "identity_confirm"
+    const teacherSerial =
+      String(
+        messageText
+      ).trim();
+
+
+    try {
+
+      const users =
+        await databaseReadCollection(
+          "users",
+          "users"
+        );
+
+
+      if (
+        session.mode ===
+        "update"
+      ) {
+
+        if (
+          String(
+            session.targetUserId ||
+            ""
+          )
+            .trim()
+            .toLowerCase() !==
+          teacherSerial
+            .toLowerCase()
+        ) {
+
+          await replyText(
+            event.replyToken,
+            "目前老師序號就是 iKey 老師身分的 user_id。\n若要切換成另一位老師，請先登出；更新資料不能直接覆蓋成另一個老師身分。"
+          );
+
+          return true;
+
         }
+
+      } else {
+
+        try {
+
+          findTeacherUserForSession(
+            users,
+            teacherSerial
+          );
+
+        } catch (error) {
+
+          await replyText(
+            event.replyToken,
+            `找不到老師序號「${teacherSerial}」的既有老師身分。\n如果忘記老師序號，請到 iKey 指紋辨識器重新辨識確認；若尚未註冊指紋，請先完成實體註冊。`
+          );
+
+          return true;
+
+        }
+
+      }
+
+
+      const nextSession =
+        updateLineFlowSession(
+          event,
+          {
+            teacherSerial:
+              teacherSerial,
+            stage:
+              "identity_confirm"
+          }
+        );
+
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createFlowDataConfirmationFlex(
+            nextSession
+          )
+        ]
       );
 
 
-    await replyMessages(
-      event.replyToken,
-      [
-        createFlowDataConfirmationFlex(
-          nextSession
-        )
-      ]
-    );
+    } catch (error) {
+
+      throw error;
+
+    }
+
 
     return true;
 
@@ -3278,7 +3500,6 @@ async function handleFlowTextInput(
   return false;
 
 }
-
 
 async function getLineProfile(
   lineUserId
