@@ -93,9 +93,9 @@ function verifyLineSignature(
  * ============================================================
  */
 
-async function replyText(
+async function replyMessages(
   replyToken,
-  text
+  messages
 ) {
 
   const channelAccessToken =
@@ -122,12 +122,7 @@ async function replyText(
         },
         body: JSON.stringify({
           replyToken: replyToken,
-          messages: [
-            {
-              type: "text",
-              text: text
-            }
-          ]
+          messages: messages
         })
       }
     );
@@ -147,11 +142,160 @@ async function replyText(
 }
 
 
+async function replyText(
+  replyToken,
+  text
+) {
+
+  return replyMessages(
+    replyToken,
+    [
+      {
+        type: "text",
+        text: text
+      }
+    ]
+  );
+
+}
+
+
+function createAccountManagementFlex() {
+
+  return {
+    type: "flex",
+    altText:
+      "iKey 帳號管理：請選擇登入或註冊",
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#0b1220",
+        paddingAll: "24px",
+        contents: [
+          {
+            type: "text",
+            text: "iKey",
+            size: "sm",
+            weight: "bold",
+            color: "#63d8e8"
+          },
+          {
+            type: "text",
+            text: "帳號管理",
+            size: "xl",
+            weight: "bold",
+            color: "#f8fafc",
+            margin: "md"
+          },
+          {
+            type: "text",
+            text: "您要登入或註冊？",
+            size: "md",
+            color: "#a6b2c5",
+            wrap: true,
+            margin: "sm"
+          }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "horizontal",
+        spacing: "md",
+        backgroundColor: "#0b1220",
+        paddingAll: "20px",
+        paddingTop: "0px",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#2eb8d0",
+            action: {
+              type: "message",
+              label: "登入",
+              text: "登入"
+            }
+          },
+          {
+            type: "button",
+            style: "secondary",
+            height: "sm",
+            color: "#1b3150",
+            action: {
+              type: "message",
+              label: "註冊",
+              text: "註冊"
+            }
+          }
+        ]
+      }
+    }
+  };
+
+}
+
+
 /*
  * ============================================================
  * Event Handler
  * ============================================================
  */
+
+async function handleTextMessage(
+  event,
+  messageText
+) {
+
+  if (!event.replyToken) {
+    return;
+  }
+
+
+  switch (messageText) {
+
+    case "測試":
+
+      await replyText(
+        event.replyToken,
+        "iKey LINE 系統連線正常"
+      );
+
+      console.log(
+        "[LINE] Step 1 test reply sent successfully"
+      );
+
+      return;
+
+
+    case "帳號管理":
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createAccountManagementFlex()
+        ]
+      );
+
+      console.log(
+        "[LINE] account management Flex Message sent successfully"
+      );
+
+      return;
+
+
+    default:
+
+      console.log(
+        `[LINE] no text route matched: ${messageText}`
+      );
+
+  }
+
+}
+
 
 async function handleLineEvent(
   event
@@ -175,22 +319,10 @@ async function handleLineEvent(
     );
 
 
-    if (
-      messageText === "測試" &&
-      event.replyToken
-    ) {
-
-      await replyText(
-        event.replyToken,
-        "iKey LINE 系統連線正常"
-      );
-
-
-      console.log(
-        "[LINE] Step 1 test reply sent successfully"
-      );
-
-    }
+    await handleTextMessage(
+      event,
+      messageText
+    );
 
   }
 
