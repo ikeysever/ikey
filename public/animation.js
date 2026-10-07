@@ -178,303 +178,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
 
   function playWelcomeAnimation() {
-
-    return new Promise((resolve) => {
-
-      if (!animationRoot) {
-        resolve();
-        return;
-      }
-
-      // 清除舊動畫
-      animationRoot.innerHTML = "";
-
-      // Overlay
-      const overlay =
-        document.createElement("div");
-
-      overlay.style.position = "fixed";
-      overlay.style.inset = "0";
-      overlay.style.zIndex = "99999";
-
-      overlay.style.display = "flex";
-      overlay.style.alignItems = "center";
-      overlay.style.justifyContent = "center";
-
-      overlay.style.background =
-        "radial-gradient(circle at center, #172033 0%, #0b1020 45%, #05070d 100%)";
-
-      overlay.style.opacity = "0";
-      overlay.style.transition =
-        "opacity 0.45s ease";
-
-      overlay.style.overflow = "hidden";
-
-
-      // 背景光暈
-      const glow =
-        document.createElement("div");
-
-      glow.style.position = "absolute";
-
-      glow.style.width = "420px";
-      glow.style.height = "420px";
-
-      glow.style.borderRadius = "50%";
-
-      glow.style.background =
-        "rgba(255,255,255,0.05)";
-
-      glow.style.filter = "blur(50px)";
-
-      glow.style.transform =
-        "scale(0.5)";
-
-      glow.style.opacity = "0";
-
-      glow.style.transition =
-        "all 1.4s cubic-bezier(.2,.8,.2,1)";
-
-
-      // 中央內容
-      const content =
-        document.createElement("div");
-
-      content.style.position = "relative";
-      content.style.zIndex = "2";
-
-      content.style.display = "flex";
-      content.style.flexDirection = "column";
-      content.style.alignItems = "center";
-
-      content.style.textAlign = "center";
-
-      content.style.transform =
-        "translateY(18px) scale(0.94)";
-
-      content.style.opacity = "0";
-
-      content.style.transition =
-        "all 0.9s cubic-bezier(.2,.8,.2,1)";
-
-
-      // Logo 外框
-      const logoBox =
-        document.createElement("div");
-
-      logoBox.style.width = "110px";
-      logoBox.style.height = "110px";
-
-      logoBox.style.display = "flex";
-      logoBox.style.alignItems = "center";
-      logoBox.style.justifyContent = "center";
-
-      logoBox.style.marginBottom = "26px";
-
-      logoBox.style.borderRadius = "28px";
-
-      logoBox.style.background =
-        "rgba(255,255,255,0.06)";
-
-      logoBox.style.border =
-        "1px solid rgba(255,255,255,0.10)";
-
-      logoBox.style.boxShadow =
-        "0 20px 60px rgba(0,0,0,0.30)";
-
-
-      // Logo
-      const logo =
-        document.createElement("img");
-
-      logo.src = "./assets/ikey-logo.png";
-      logo.alt = "iKey";
-
-      logo.style.width = "76px";
-      logo.style.height = "76px";
-
-      logo.style.objectFit = "contain";
-
-      logo.style.display = "block";
-
-
-      // Welcome
-      const welcome =
-        document.createElement("div");
-
-      welcome.textContent =
-        "WELCOME TO";
-
-      welcome.style.fontSize = "12px";
-      welcome.style.fontWeight = "700";
-      welcome.style.letterSpacing = "5px";
-
-      welcome.style.color =
-        "rgba(255,255,255,0.50)";
-
-      welcome.style.marginBottom =
-        "12px";
-
-
-      // iKey
-      const title =
-        document.createElement("div");
-
-      title.textContent = "iKey";
-
-      title.style.fontSize =
-        "clamp(48px, 8vw, 76px)";
-
-      title.style.fontWeight = "800";
-
-      title.style.letterSpacing =
-        "-3px";
-
-      title.style.lineHeight = "1";
-
-      title.style.color = "#ffffff";
-
-
-      // 中文名稱
-      const subtitle =
-        document.createElement("div");
-
-      subtitle.textContent =
-        "智慧鑰匙管理系統";
-
-      subtitle.style.marginTop =
-        "18px";
-
-      subtitle.style.fontSize =
-        "16px";
-
-      subtitle.style.fontWeight =
-        "500";
-
-      subtitle.style.letterSpacing =
-        "4px";
-
-      subtitle.style.color =
-        "rgba(255,255,255,0.72)";
-
-
-      // Loading line
-      const lineBox =
-        document.createElement("div");
-
-      lineBox.style.width = "180px";
-      lineBox.style.height = "2px";
-
-      lineBox.style.marginTop =
-        "34px";
-
-      lineBox.style.background =
-        "rgba(255,255,255,0.10)";
-
-      lineBox.style.borderRadius =
-        "999px";
-
-      lineBox.style.overflow =
-        "hidden";
-
-
-      const line =
-        document.createElement("div");
-
-      line.style.width = "0%";
-      line.style.height = "100%";
-
-      line.style.background =
-        "rgba(255,255,255,0.90)";
-
-      line.style.borderRadius =
-        "999px";
-
-      line.style.transition =
-        "width 1.5s cubic-bezier(.2,.8,.2,1)";
-
-
-      // 組裝
-      logoBox.appendChild(logo);
-
-      lineBox.appendChild(line);
-
-      content.appendChild(logoBox);
-      content.appendChild(welcome);
-      content.appendChild(title);
-      content.appendChild(subtitle);
-      content.appendChild(lineBox);
-
-      overlay.appendChild(glow);
-      overlay.appendChild(content);
-
-      animationRoot.appendChild(overlay);
-
-
-      // 開始淡入
-      requestAnimationFrame(() => {
-
-        overlay.style.opacity = "1";
-
-        setTimeout(() => {
-
-          glow.style.opacity = "1";
-
-          glow.style.transform =
-            "scale(1)";
-
-          content.style.opacity = "1";
-
-          content.style.transform =
-            "translateY(0) scale(1)";
-
-        }, 120);
-
-
-        setTimeout(() => {
-
-          line.style.width = "100%";
-
-        }, 500);
-
-      });
-
-
-      // 開始離場
-      setTimeout(() => {
-
-        content.style.opacity = "0";
-
-        content.style.transform =
-          "translateY(-12px) scale(1.03)";
-
-        glow.style.opacity = "0";
-
-        glow.style.transform =
-          "scale(1.3)";
-
-      }, 2000);
-
-
-      // Overlay 淡出
-      setTimeout(() => {
-
-        overlay.style.opacity = "0";
-
-      }, 2250);
-
-
-      // 移除動畫
-      setTimeout(() => {
-
-        animationRoot.innerHTML = "";
-
-        resolve();
-
-      }, 2750);
-
+    return window.iKeyWelcome.play(animationRoot, async () => {
+      showDashboard();
+      await fetchDeviceStatus(true);
     });
-
   }
 
 
@@ -2336,7 +2043,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 取得 Device Status
   // =========================================
 
-  async function fetchDeviceStatus() {
+  async function fetchDeviceStatus(required = false) {
 
     try {
 
@@ -2344,7 +2051,8 @@ document.addEventListener("DOMContentLoaded", () => {
         await fetch(
           "/api/device/status",
           {
-            cache: "no-store"
+            cache: "no-store",
+            signal: AbortSignal.timeout(15000)
           }
         );
 
@@ -2493,6 +2201,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       }
 
+      if (required) throw error;
     }
 
   }
@@ -2531,6 +2240,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async (event) => {
 
         event.preventDefault();
+        window.iKeyWelcome.unlockAudio();
 
 
         const account =
@@ -2618,7 +2328,8 @@ document.addEventListener("DOMContentLoaded", () => {
           );
 
 
-          // 播放歡迎動畫
+          // Hide login immediately after successful authentication.
+          if (loginPage) loginPage.hidden = true;
           await playWelcomeAnimation();
 
 
@@ -2641,7 +2352,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         } catch (error) {
-
+          if (loginPage) loginPage.hidden = false;
           if (loginMessage) {
 
             loginMessage.textContent =
