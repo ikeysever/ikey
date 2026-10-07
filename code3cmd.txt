@@ -606,3 +606,65 @@ E. LINE Apps Script 404 固定 3 秒 retry 尚未修改；上一刀已加入 PER
 - ESP32 protocol。
 - Google Sheet schema。
 - Apps Script。
+
+
+========================================
+【2026-10-07｜工作線 3 回覆 CLEANUP_PLAN：只盤點／表決，未刪除】
+基準：重新同步 main=efc310f6c2224b32c572860129d6a06a9dd5388e（docs: add project cleanup review plan），並閱讀 CLEANUP_PLAN.md、code1cmd、code2cmd、code3cmd。依總召規則，本次不刪檔、不移 dependency、不重構、不拆 routes/line.js。
+
+1. 候選：config/supabase.js
+- 工作線 3 目前是否引用：否。
+- 未來已確認 LINE 功能是否需要：否。
+- 建議：可刪；但由工作線 1 收齊 2/3 意見後統一執行。
+- 依據：檔案目前 0 B；routes/line.js 無 supabase 字串／import／require；LINE 正式資料來源為 Render → Google Database/Apps Script。
+- 刪除可能影響：就 LINE runtime 而言未見影響；仍須 1 做全 repo 最終引用檢查。
+- 同意由工作線 1 最後統一清理：是。
+
+2. 候選：package.json 的 @supabase/supabase-js
+- 工作線 3 目前是否引用：否。
+- 未來已確認 LINE 功能是否需要：否。
+- 建議：可移除 dependency；不刪 package.json。
+- 依據：routes/line.js 不使用 Supabase；LINE 使用 native fetch、crypto、Express router、Google Apps Script/Database API 與 LINE Messaging API。
+- 刪除可能影響：LINE runtime 未見影響；1 最終需全 repo 搜尋 require/import 後再移除並重新安裝／啟動驗證。
+- 同意由工作線 1 最後統一清理：是。
+
+3. 候選：routes/line.js 舊版流程殘留
+- 工作線 3 判定：存在高可信舊版殘留，但本輪只列候選，不刪。
+- 已確認新版流程：學生＝科別→年級→班別→手輸座號；老師＝手輸老師序號；兩階段確認＋姓名＋正式綁定。
+- 高可信舊 helper 候選：
+  A. createStudentClassSelectionFlex(classes)：定義存在，但目前全檔只有定義本身，0 個呼叫。
+  B. createTeacherSelectionFlex(teachers)：定義存在，但目前全檔只有定義本身，0 個呼叫。
+- 舊流程仍可達的 handler/helper 群：
+  C. login_student_class → createStudentSeatSelectionFlex()
+  D. login_student_user / login_teacher_user → createIdentityConfirmationFlex()
+  E. login_confirm → createIdentityConfirmedFlex()
+  這組屬早期「直接從 Users/Classes 選既有身分」流程，與目前 fingerprint_yes → login_student/login_teacher → 新版 session 流程不同。
+- 建議：標記「先整理後刪」。由工作線 1 清理時需把 C/D/E 連同只服務該舊 handler 的 helper 成組做 reachability 檢查，不能只刪函式留下 postback handler。
+- 刪除可能影響：若外部仍存在非常舊的 Flex 訊息，使用者點舊訊息中的 login_student_class/login_student_user/login_teacher_user/login_confirm postback，清理後將不再繼續舊流程。這反而可避免舊 UI 繞過新版指紋前置流程，但需由 1 決定是否保留一段「舊按鈕已失效，請重新點帳號管理」相容提示。
+- 不建議現在拆 line.js：目前功能與效能仍在實測期，先移除已證實死碼／舊 handler，再評估模組化。
+- 同意由工作線 1 最後統一清理：是。
+
+4. routes/line.js 其他檢查
+- ready_to_bind：已不存在。
+- Fingerprint ID DB/LINE 欄位：未發現 fingerprint_id。
+- Supabase：未發現。
+- 舊 ikey-logo.png：未發現。
+- LINE push/multicast：目前未實作；符合最新規格「只有 ESP32 明確要求時才通知」，不能把缺少 push 當死碼問題。
+- function name 重複定義：未發現。
+- 目前不建議為了 78KB/81KB 大小直接重寫。
+
+5. 候選：public/assets/ikey-logo.png
+- 工作線 3 目前是否引用：否。
+- 未來已確認 LINE 功能是否需要：否。
+- 建議：LINE 工作線同意刪除，但必須等工作線 2 確認 status-notifications.js 舊相容引用可移除，且 1 全域搜尋歸零後再刪。
+- 依據：routes/line.js 無 ikey-logo.png 引用；LINE Flex 目前以文字 iKey 呈現，沒有讀 public 舊 Logo。
+- 刪除可能影響：LINE 無；網站通知相容層是否有影響由工作線 2 判定。
+- 同意由工作線 1 最後統一清理：是。
+
+工作線 3 總表決：
+- config/supabase.js：同意刪。
+- @supabase/supabase-js：同意移除 dependency。
+- public/assets/ikey-logo.png：LINE 側同意刪，等待 2 號＋全域零引用。
+- routes/line.js：不因檔案大而拆；同意優先清除已證實舊流程殘留，需成組清理＋回歸。
+- 本次實際刪除：0。
+- 本次功能修改：0。
