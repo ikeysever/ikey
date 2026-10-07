@@ -1,0 +1,24 @@
+.ikey-notice-stack { position: fixed; right: 24px; bottom: 24px; width: min(360px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 10px; z-index: 10000; pointer-events: none; }
+.ikey-notice { position: relative; overflow: hidden; border: 1px solid rgba(148,163,184,.18); border-radius: 16px; background: rgba(20,31,52,.94); color: #f8fafc; box-shadow: 0 10px 30px rgba(0,0,0,.22); backdrop-filter: blur(16px); pointer-events: auto; animation: ikey-notice-enter .2s ease-out; }
+.ikey-notice-content { display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px 48px 18px 18px; border: 0; background: transparent; text-align: left; color: inherit; cursor: pointer; font: inherit; }
+.ikey-notice-content:disabled { opacity: 1; cursor: default; }
+.ikey-notice-icon { flex: 0 0 26px; color: #63d8e8; }
+.ikey-notice-icon svg { display: block; width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ikey-notice-text { min-width: 0; overflow-wrap: anywhere; }
+.ikey-notice-text strong { display: block; font-size: 14px; font-weight: 500; }
+.ikey-notice-text small { display: block; margin-top: 5px; font-size: 12px; color: #a6b2c5; }
+.ikey-notice-close { position: absolute; top: 6px; right: 6px; width: 36px; height: 36px; border: 0; background: transparent; color: #a6b2c5; font-size: 22px; cursor: pointer; }
+.ikey-notice[data-state="success"] .ikey-notice-icon { color: #7de2b1; }
+.ikey-notice[data-state="error"] .ikey-notice-icon { color: #ff6b6b; }
+.ikey-notice[data-state="warning"] .ikey-notice-icon { color: #f6b35b; }
+.ikey-notice-check { stroke-dasharray: 30; stroke-dashoffset: 30; animation: ikey-notice-draw .45s ease-out forwards; }
+.ikey-notice progress { display: block; width: calc(100% - 36px); height: 3px; margin: 0 18px 14px; border: 0; accent-color: #63d8e8; }
+.ikey-notice progress[hidden] { display: none; }
+.ikey-notice-leaving { animation: ikey-notice-exit .2s ease-in forwards; }
+.ikey-log-highlight { animation: ikey-notice-log .9s ease-out; }
+@keyframes ikey-notice-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ikey-notice-exit { to { opacity: 0; transform: translateY(12px); } }
+@keyframes ikey-notice-draw { to { stroke-dashoffset: 0; } }
+@keyframes ikey-notice-log { 0%,35% { background-color: rgba(166,178,197,.25); } 100% { background-color: transparent; } }
+@media (max-width: 480px) { .ikey-notice-stack { right: 16px; bottom: 16px; } .ikey-notice-close { width: 44px; height: 44px; top: 0; right: 0; } }
+@media (prefers-reduced-motion: reduce) { .ikey-notice, .ikey-notice-leaving, .ikey-log-highlight { animation-duration: .01s; } .ikey-notice-check { animation: none; stroke-dashoffset: 0; } }
