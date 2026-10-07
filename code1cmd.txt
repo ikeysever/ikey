@@ -449,3 +449,58 @@ LINE 預計顯示：
 - 本回覆沒有修改 routes/line.js。
 - 工作線 3 可直接依上述已有來源接「ESP32／螢幕即時狀態」與「格位＋教室名稱」。
 - UptimeRobot 與 DB 上次更新時間，在資料來源正式建立前應顯示「尚未提供」或省略，不可虛構。
+
+==================================================
+【2026-10-07｜工作線 1 完成：真實課表／ESP32 狀態通知接入】
+==================================================
+使用者表示目前沒有太多時間測試，允許工作線 1 繼續實作；因此本刀完成程式與靜態驗證，但所有瀏覽器／聲音／Render 實測仍保留「待驗收」，不冒充 PASS。
+
+依工作線 2 最新交接規格接入：
+1. public/index.html 正式載入 status-notifications.css / status-notifications.js；順序為 welcome.js → status-notifications.js → animation.js。
+2. 課表新增通過前端驗證、真正準備 POST 時才顯示 uploading「正在上傳課表…」。
+3. 只有 /api/database/schedules 回傳 HTTP 成功且 data.success===true 才更新同一通知為 success「課表更新完成」。
+4. 真實失敗才更新同一通知為 error「課表上傳失敗」，detail 使用實際 error.message，不虛構原因。
+5. 成功／失敗都先建立穩定 logId，寫入網站 Terminal DOM；通知文字點擊後 showTerminal()，再用 logId→DOM row Map 精準定位並 highlight 約 900ms。
+6. 成功 Terminal 紀錄包含：R01、星期、起訖時間、課程名稱、API message（實際有回傳才記）、實際前端量測耗時；不寫 token／憑證／老師或學生個資。
+7. 失敗 Terminal 紀錄包含：R01、課程名稱、起訖時間、實際 error.message、耗時。
+8. 工作線 2 最新規格取代舊「成功 2 秒自動消失」：成功通知也保留到使用者主動關閉，方便查看詳細資料。
+9. 關閉控制已移到左側狀態圖示本身；滑鼠 hover / keyboard focus 顯示「關閉」。通知文字區與關閉按鈕為兩個獨立 button。
+10. 上傳／成功／失敗／warning 保留原本不同低音量 Web Audio 提示音；實際音量仍待瀏覽器 QA。
+11. ESP32 warning 只在 previousEspRobotOnline 已知且 true→false 的真實狀態轉變觸發一次。
+12. 初次讀到 offline 不通知；持續 offline 不重複通知；/api/device/status API failure 只顯示伺服器連線異常，不推論 ESP32 offline。
+13. ESP32 斷線通知 detail / Terminal 紀錄使用 /api/device/status 真實 lastSeen；點擊同樣定位該 logId。
+14. LVGL Terminal 本刀仍維持原本狀態日誌，沒有擅自新增未確認的斷線通知規格。
+
+修改檔案：
+- public/index.html
+- public/animation.js
+- public/status-notifications.js
+- public/status-notifications.css
+
+功能 commit：
+- 61262f248edf47f8d6644c1af133e381b93a7a6f
+
+靜態回歸：
+- animation.js syntax：PASS
+- status-notifications.js syntax：PASS
+- welcome.js syntax：PASS
+- commit 僅修改上述 4 檔：PASS
+- Welcome 載入順序保留：PASS
+- 真實 Schedule POST：保留
+- 新增班級 POST／搜尋：保留
+- 老師搜尋：保留
+- 課表「同步資料中...」spinner：保留
+- stable logId → Terminal row → highlight：存在
+- ESP 初次 offline / API failure 不誤報：程式條件確認 PASS
+
+仍待使用者有時間後實機驗收：
+- 桌面／手機通知位置與尺寸
+- 四種提示音實際音量
+- 左側圖示 hover「關閉」視覺
+- 成功／失敗通知點擊 → Terminal 精準定位
+- 真實 Schedule POST → Google Sheet → 課表刷新
+- 真實 ESP online→offline warning
+- Welcome／課表／通知整體瀏覽器回歸
+
+狀態原則：
+程式接入完成＋靜態 PASS ≠ Render 實機整合 PASS；待使用者之後集中驗收。
