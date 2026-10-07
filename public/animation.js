@@ -51,6 +51,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const scheduleGrid =
     document.getElementById("scheduleGrid");
 
+  const addCourseModal =
+    document.getElementById("addCourseModal");
+
+  const addCourseCloseButton =
+    document.getElementById("addCourseCloseButton");
+
+  const addCourseCancelButton =
+    document.getElementById("addCourseCancelButton");
+
+  const addCourseConfirmButton =
+    document.getElementById("addCourseConfirmButton");
+
+  const addCourseDay =
+    document.getElementById("addCourseDay");
+
+  const addCourseTime =
+    document.getElementById("addCourseTime");
+
+  const addCourseNotice =
+    document.getElementById("addCourseNotice");
+
   let activeClassroomNumber = null;
 
 
@@ -727,6 +748,67 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  function openAddCourseModal(
+    dayIndex,
+    hour
+  ) {
+
+    if (
+      !addCourseModal ||
+      !scheduleDays[dayIndex]
+    ) {
+
+      return;
+
+    }
+
+
+    if (addCourseDay) {
+
+      addCourseDay.textContent =
+        scheduleDays[dayIndex].label;
+
+    }
+
+
+    if (addCourseTime) {
+
+      const start =
+        `${String(hour).padStart(2, "0")}:00`;
+
+      const end =
+        `${String(hour + 1).padStart(2, "0")}:00`;
+
+      addCourseTime.textContent =
+        `${start} ～ ${end}`;
+
+    }
+
+
+    if (addCourseNotice) {
+
+      addCourseNotice.hidden = true;
+
+    }
+
+
+    addCourseModal.hidden = false;
+
+  }
+
+
+  function closeAddCourseModal() {
+
+    if (!addCourseModal) {
+      return;
+    }
+
+
+    addCourseModal.hidden = true;
+
+  }
+
+
   function buildScheduleGrid(
     schedules,
     classes,
@@ -820,6 +902,95 @@ document.addEventListener("DOMContentLoaded", () => {
 
         hourCell.className =
           "schedule-hour-cell";
+
+
+        const day =
+          scheduleDays[dayIndex];
+
+        const cellStart =
+          hour * 60;
+
+        const cellEnd =
+          (hour + 1) * 60;
+
+
+        const isOccupied =
+          schedules.some(
+            (schedule) => {
+
+              if (
+                String(
+                  schedule.weekday || ""
+                ) !== day.value
+              ) {
+
+                return false;
+
+              }
+
+
+              const scheduleStart =
+                parseScheduleTime(
+                  schedule.start_time
+                );
+
+              const scheduleEnd =
+                parseScheduleTime(
+                  schedule.end_time
+                );
+
+
+              if (
+                scheduleStart === null ||
+                scheduleEnd === null
+              ) {
+
+                return false;
+
+              }
+
+
+              return (
+                scheduleStart < cellEnd &&
+                scheduleEnd > cellStart
+              );
+
+            }
+          );
+
+
+        if (isOccupied) {
+
+          hourCell.classList.add(
+            "is-occupied"
+          );
+
+          hourCell.title =
+            "此時段已有課程";
+
+        } else {
+
+          hourCell.classList.add(
+            "is-empty"
+          );
+
+          hourCell.title =
+            `新增 ${day.label} ${String(hour).padStart(2, "0")}:00 課程`;
+
+          hourCell.addEventListener(
+            "click",
+            () => {
+
+              openAddCourseModal(
+                dayIndex,
+                hour
+              );
+
+            }
+          );
+
+        }
+
 
         body.appendChild(hourCell);
 
@@ -1497,6 +1668,83 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
   });
+
+
+  // =========================================
+  // 新增課程視窗（第三階段：只確認介面）
+  // =========================================
+
+  if (addCourseCloseButton) {
+
+    addCourseCloseButton.addEventListener(
+      "click",
+      closeAddCourseModal
+    );
+
+  }
+
+
+  if (addCourseCancelButton) {
+
+    addCourseCancelButton.addEventListener(
+      "click",
+      closeAddCourseModal
+    );
+
+  }
+
+
+  document
+    .querySelectorAll(
+      "[data-close-add-course]"
+    )
+    .forEach(
+      (element) => {
+
+        element.addEventListener(
+          "click",
+          closeAddCourseModal
+        );
+
+      }
+    );
+
+
+  if (addCourseConfirmButton) {
+
+    addCourseConfirmButton.addEventListener(
+      "click",
+      () => {
+
+        // 第三階段故意不呼叫 POST /api/database/schedules。
+        if (addCourseNotice) {
+
+          addCourseNotice.hidden = false;
+
+        }
+
+      }
+    );
+
+  }
+
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+
+      if (
+        event.key === "Escape" &&
+        addCourseModal &&
+        !addCourseModal.hidden
+      ) {
+
+        closeAddCourseModal();
+
+      }
+
+    }
+  );
 
 
   // =========================================
