@@ -186,7 +186,7 @@ function createAccountManagementFlex(
 
   const detailText =
     !isLoggedIn
-      ? "請登入您的 iKey 帳號"
+      ? "請先確認是否已在 iKey 指紋辨識器完成註冊"
       : isStudent
         ? [
             `目前登入：${user.name || "未設定姓名"}`,
@@ -198,20 +198,54 @@ function createAccountManagementFlex(
           ].join("\n");
 
 
-  const action =
+  const buttons =
     isLoggedIn
-      ? createPostbackAction(
-          "登出",
+      ? [
           {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#2eb8d0",
             action:
-              "logout"
+              createPostbackAction(
+                "更新資料",
+                {
+                  action:
+                    "update_data"
+                }
+              )
+          },
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#1b3150",
+            action:
+              createPostbackAction(
+                "登出",
+                {
+                  action:
+                    "logout"
+                }
+              )
           }
-        )
-      : {
-          type: "message",
-          label: "登入",
-          text: "登入"
-        };
+        ]
+      : [
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#2eb8d0",
+            action:
+              createPostbackAction(
+                "開始",
+                {
+                  action:
+                    "fingerprint_check"
+                }
+              )
+          }
+        ];
 
 
   return {
@@ -219,7 +253,7 @@ function createAccountManagementFlex(
     altText:
       isLoggedIn
         ? "iKey 帳號管理：目前已登入"
-        : "iKey 帳號管理：請登入 iKey 帳號",
+        : "iKey 帳號管理",
     contents: {
       type: "bubble",
       size: "mega",
@@ -256,24 +290,13 @@ function createAccountManagementFlex(
       },
       footer: {
         type: "box",
-        layout: "horizontal",
-        spacing: "md",
+        layout: "vertical",
+        spacing: "sm",
         backgroundColor: "#0b1220",
         paddingAll: "20px",
         paddingTop: "0px",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            height: "sm",
-            color:
-              isLoggedIn
-                ? "#1b3150"
-                : "#2eb8d0",
-            action:
-              action
-          }
-        ]
+        contents:
+          buttons
       }
     }
   };
@@ -283,17 +306,43 @@ function createAccountManagementFlex(
 
 function createPostbackAction(
   label,
-  params
+  params,
+  options = {}
 ) {
 
-  return {
+  const action = {
     type: "postback",
     label: String(label).slice(0, 40),
     data:
       new URLSearchParams(
         params
-      ).toString()
+      ).toString(),
+    displayText:
+      String(
+        options.displayText ||
+        label
+      ).slice(0, 300)
   };
+
+
+  if (options.inputOption) {
+    action.inputOption =
+      options.inputOption;
+  }
+
+
+  if (
+    options.fillInText !==
+    undefined
+  ) {
+    action.fillInText =
+      String(
+        options.fillInText
+      ).slice(0, 300);
+  }
+
+
+  return action;
 
 }
 
@@ -707,7 +756,7 @@ async function createAccountManagementForEvent(
 
 
   if (!boundUser) {
-    return createAccountManagementFlex();
+    return createFingerprintQuestionFlex();
   }
 
 
@@ -1435,6 +1484,268 @@ function createWelcomeMessage() {
 }
 
 
+
+const STUDENT_DEPARTMENTS = [
+  "控制",
+  "綜高",
+  "電機",
+  "電子",
+  "冷凍",
+  "資訊",
+  "圖傳",
+  "製圖",
+  "建築"
+];
+
+
+function createFlowChoiceFlex(
+  title,
+  subtitle,
+  choices
+) {
+
+  return {
+    type: "flex",
+    altText:
+      `iKey：${title}`,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#0b1220",
+        paddingAll: "22px",
+        contents: [
+          {
+            type: "text",
+            text: "iKey",
+            size: "sm",
+            weight: "bold",
+            color: "#63d8e8"
+          },
+          {
+            type: "text",
+            text: title,
+            size: "xl",
+            weight: "bold",
+            color: "#f8fafc",
+            wrap: true,
+            margin: "md"
+          },
+          {
+            type: "text",
+            text: subtitle,
+            size: "sm",
+            color: "#a6b2c5",
+            wrap: true,
+            margin: "sm"
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            margin: "lg",
+            contents:
+              choices.map(
+                (choice) => ({
+                  type: "button",
+                  style: "primary",
+                  height: "sm",
+                  color:
+                    choice.color ||
+                    "#1b3150",
+                  adjustMode:
+                    "shrink-to-fit",
+                  action:
+                    createPostbackAction(
+                      choice.label,
+                      choice.params,
+                      {
+                        displayText:
+                          choice.displayText ||
+                          choice.label
+                      }
+                    )
+                })
+              )
+          }
+        ]
+      }
+    }
+  };
+
+}
+
+
+function createFingerprintQuestionFlex() {
+
+  return createFlowChoiceFlex(
+    "帳號管理",
+    "請問您是否已經按壓過指紋？",
+    [
+      {
+        label:
+          "已經按壓過指紋",
+        color:
+          "#2eb8d0",
+        params: {
+          action:
+            "fingerprint_yes"
+        }
+      },
+      {
+        label:
+          "還沒有",
+        params: {
+          action:
+            "fingerprint_no"
+        }
+      }
+    ]
+  );
+
+}
+
+
+function createStudentDepartmentFlex(
+  mode = "login"
+) {
+
+  return createFlowChoiceFlex(
+    "學生資料",
+    "請選擇科別",
+    STUDENT_DEPARTMENTS.map(
+      (department) => ({
+        label:
+          department,
+        params: {
+          action:
+            "student_department",
+          mode:
+            mode,
+          department:
+            department
+        }
+      })
+    )
+  );
+
+}
+
+
+function createStudentGradeFlex(
+  department,
+  mode = "login"
+) {
+
+  return createFlowChoiceFlex(
+    "學生資料",
+    `科別：${department}\n請選擇年級`,
+    [
+      ["一年級", "1"],
+      ["二年級", "2"],
+      ["三年級", "3"]
+    ].map(
+      ([label, grade]) => ({
+        label:
+          label,
+        params: {
+          action:
+            "student_grade",
+          mode:
+            mode,
+          department:
+            department,
+          grade:
+            grade
+        }
+      })
+    )
+  );
+
+}
+
+
+function createStudentClassFlex(
+  department,
+  grade,
+  mode = "login"
+) {
+
+  const classNames =
+    department ===
+      "綜高"
+      ? [
+          "忠",
+          "孝",
+          "仁",
+          "愛"
+        ]
+      : [
+          "甲",
+          "乙"
+        ];
+
+
+  return createFlowChoiceFlex(
+    "學生資料",
+    `科別：${department}\n年級：${grade} 年級\n請選擇班級`,
+    classNames.map(
+      (className) => ({
+        label:
+          className,
+        params: {
+          action:
+            "student_class",
+          mode:
+            mode,
+          department:
+            department,
+          grade:
+            grade,
+          class_name:
+            className
+        }
+      })
+    )
+  );
+
+}
+
+
+function createTeacherSerialPrompt() {
+
+  return {
+    type: "text",
+    text:
+      "請輸入老師序號。\n\n如果忘記老師序號，請到 iKey 指紋辨識器再辨識一次確認。"
+  };
+
+}
+
+
+function createStudentSeatPrompt(
+  department,
+  grade,
+  className
+) {
+
+  return {
+    type: "text",
+    text:
+      [
+        `科別：${department}`,
+        `年級：${grade} 年級`,
+        `班級：${className}`,
+        "",
+        "下一步請輸入座號。"
+      ].join("\n")
+  };
+
+}
+
+
 /*
  * ============================================================
  * Event Handler
@@ -1516,12 +1827,12 @@ async function handleTextMessage(
       await replyMessages(
         event.replyToken,
         [
-          createIdentitySelectionFlex()
+          createFingerprintQuestionFlex()
         ]
       );
 
       console.log(
-        "[LINE] identity selection Flex Message sent successfully"
+        "[LINE] fingerprint confirmation sent successfully"
       );
 
       return;
@@ -1578,6 +1889,326 @@ async function handlePostbackEvent(
   console.log(
     `[LINE] postback received: ${action}`
   );
+
+
+  if (
+    action ===
+    "fingerprint_check"
+  ) {
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createFingerprintQuestionFlex()
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "fingerprint_no"
+  ) {
+
+    await replyMessages(
+      event.replyToken,
+      [
+        {
+          type: "text",
+          text:
+            "請先到 iKey 指紋辨識器完成指紋註冊。\n完成後再回到 LINE 點選「帳號管理」。"
+        }
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "fingerprint_yes"
+  ) {
+
+    const boundUser =
+      await getBoundUserForEvent(
+        event
+      );
+
+
+    if (boundUser) {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          await createAccountManagementForEvent(
+            event
+          )
+        ]
+      );
+
+      return;
+
+    }
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createIdentitySelectionFlex()
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "update_data"
+  ) {
+
+    const boundUser =
+      await getBoundUserForEvent(
+        event
+      );
+
+
+    if (!boundUser) {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createFingerprintQuestionFlex()
+        ]
+      );
+
+      return;
+
+    }
+
+
+    const identity =
+      String(
+        boundUser.identity ||
+        ""
+      ).toLowerCase();
+
+
+    if (identity === "student") {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createStudentDepartmentFlex(
+            "update"
+          )
+        ]
+      );
+
+      return;
+
+    }
+
+
+    if (identity === "teacher") {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createTeacherSerialPrompt()
+        ]
+      );
+
+      return;
+
+    }
+
+
+    throw new Error(
+      "目前登入身分無法更新"
+    );
+
+  }
+
+
+  if (
+    action ===
+    "student_department"
+  ) {
+
+    const department =
+      params.get(
+        "department"
+      ) || "";
+
+    const mode =
+      params.get(
+        "mode"
+      ) || "login";
+
+
+    if (
+      !STUDENT_DEPARTMENTS.includes(
+        department
+      )
+    ) {
+      throw new Error(
+        "無效的科別選擇"
+      );
+    }
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createStudentGradeFlex(
+          department,
+          mode
+        )
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "student_grade"
+  ) {
+
+    const department =
+      params.get(
+        "department"
+      ) || "";
+
+    const grade =
+      params.get(
+        "grade"
+      ) || "";
+
+    const mode =
+      params.get(
+        "mode"
+      ) || "login";
+
+
+    if (
+      !STUDENT_DEPARTMENTS.includes(
+        department
+      ) ||
+      ![
+        "1",
+        "2",
+        "3"
+      ].includes(
+        grade
+      )
+    ) {
+      throw new Error(
+        "無效的學生資料選擇"
+      );
+    }
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createStudentClassFlex(
+          department,
+          grade,
+          mode
+        )
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "student_class"
+  ) {
+
+    const department =
+      params.get(
+        "department"
+      ) || "";
+
+    const grade =
+      params.get(
+        "grade"
+      ) || "";
+
+    const className =
+      params.get(
+        "class_name"
+      ) || "";
+
+
+    const allowedClasses =
+      department ===
+        "綜高"
+        ? [
+            "忠",
+            "孝",
+            "仁",
+            "愛"
+          ]
+        : [
+            "甲",
+            "乙"
+          ];
+
+
+    if (
+      !STUDENT_DEPARTMENTS.includes(
+        department
+      ) ||
+      ![
+        "1",
+        "2",
+        "3"
+      ].includes(
+        grade
+      ) ||
+      !allowedClasses.includes(
+        className
+      )
+    ) {
+      throw new Error(
+        "無效的班級選擇"
+      );
+    }
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createStudentSeatPrompt(
+          department,
+          grade,
+          className
+        )
+      ]
+    );
+
+    console.log(
+      `[LINE] student flow reached seat input boundary: ${department}/${grade}/${className}`
+    );
+
+    return;
+
+  }
 
 
   if (
@@ -1729,70 +2360,11 @@ async function handlePostbackEvent(
       "student"
     ) {
 
-      const [
-        users,
-        classes
-      ] =
-        await Promise.all([
-          databaseReadCollection(
-            "users",
-            "users"
-          ),
-          databaseReadCollection(
-            "classes",
-            "classes"
-          )
-        ]);
-
-
-      const students =
-        users.filter(
-          (user) =>
-            String(
-              user.identity ||
-              ""
-            ).toLowerCase() ===
-              "student" &&
-            isRecordEnabled(
-              user.enabled
-            )
-        );
-
-
-      const availableClasses =
-        classes
-          .filter(
-            (classData) =>
-              isRecordEnabled(
-                classData.enabled
-              ) &&
-              students.some(
-                (user) =>
-                  String(
-                    user.class_id ||
-                    ""
-                  ) ===
-                  String(
-                    classData.class_id ||
-                    ""
-                  )
-              )
-          )
-          .sort(
-            (a, b) =>
-              getClassLabel(a)
-                .localeCompare(
-                  getClassLabel(b),
-                  "zh-Hant"
-                )
-          );
-
-
       await replyMessages(
         event.replyToken,
         [
-          createStudentClassSelectionFlex(
-            availableClasses
+          createStudentDepartmentFlex(
+            "login"
           )
         ]
       );
@@ -1807,33 +2379,10 @@ async function handlePostbackEvent(
       "teacher"
     ) {
 
-      const users =
-        await databaseReadCollection(
-          "users",
-          "users"
-        );
-
-
-      const teachers =
-        users.filter(
-          (user) =>
-            String(
-              user.identity ||
-              ""
-            ).toLowerCase() ===
-              "teacher" &&
-            isRecordEnabled(
-              user.enabled
-            )
-        );
-
-
       await replyMessages(
         event.replyToken,
         [
-          createTeacherSelectionFlex(
-            teachers
-          )
+          createTeacherSerialPrompt()
         ]
       );
 
@@ -1841,8 +2390,12 @@ async function handlePostbackEvent(
 
     }
 
-  }
 
+    throw new Error(
+      "無效的身分選擇"
+    );
+
+  }
 
   if (
     action ===
