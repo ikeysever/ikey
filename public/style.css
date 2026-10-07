@@ -1827,3 +1827,362 @@ button {
   }
 
 }
+
+
+/* ========================================
+   新增課程視窗（第三階段：介面確認）
+   ======================================== */
+
+.schedule-hour-cell.is-empty {
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.schedule-hour-cell.is-empty:hover {
+  background:
+    rgba(99, 216, 232, 0.07);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(99, 216, 232, 0.2);
+}
+
+.schedule-hour-cell.is-occupied {
+  cursor: default;
+}
+
+.schedule-modal[hidden] {
+  display: none;
+}
+
+.schedule-modal {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 100000;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 24px;
+}
+
+.schedule-modal-backdrop {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    rgba(2, 7, 15, 0.72);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.schedule-modal-card {
+  position: relative;
+
+  z-index: 1;
+
+  width: min(460px, 100%);
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(148, 163, 184, 0.2);
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(20, 31, 52, 0.98),
+      rgba(11, 18, 32, 0.99)
+    );
+
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.5);
+}
+
+.schedule-modal-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 22px 22px 18px;
+
+  border-bottom:
+    1px solid var(--panel-border);
+}
+
+.schedule-modal-eyebrow {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--accent);
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+}
+
+.schedule-modal-header h2 {
+  margin: 0;
+
+  font-size: 22px;
+}
+
+.schedule-modal-close {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 34px;
+
+  height: 34px;
+
+  flex-shrink: 0;
+
+  border:
+    1px solid var(--panel-border);
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  color: var(--muted);
+
+  cursor: pointer;
+
+  font-size: 22px;
+
+  line-height: 1;
+}
+
+.schedule-modal-close:hover {
+  color: var(--text);
+
+  background:
+    rgba(255, 255, 255, 0.07);
+}
+
+.schedule-modal-body {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+
+  padding: 22px;
+}
+
+.schedule-field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.schedule-field > span {
+  color: var(--text);
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.schedule-field small {
+  color: #7f8da1;
+
+  font-size: 11px;
+}
+
+.schedule-search-control {
+  display: flex;
+
+  align-items: center;
+
+  min-height: 44px;
+
+  padding: 0 13px;
+
+  border:
+    1px solid var(--panel-border);
+
+  border-radius: 11px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+}
+
+.schedule-search-control input {
+  width: 100%;
+
+  border: 0;
+
+  outline: 0;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font: inherit;
+}
+
+.schedule-search-control input::placeholder {
+  color: #718096;
+}
+
+.schedule-search-control > span {
+  color: var(--muted);
+
+  font-size: 12px;
+}
+
+.schedule-selected-time {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 18px;
+
+  min-height: 50px;
+
+  padding: 0 14px;
+
+  border:
+    1px solid rgba(99, 216, 232, 0.18);
+
+  border-radius: 11px;
+
+  background:
+    rgba(99, 216, 232, 0.055);
+}
+
+.schedule-selected-time strong {
+  color: var(--accent);
+
+  font-size: 13px;
+}
+
+.schedule-selected-time span {
+  color: var(--text);
+
+  font-size: 14px;
+
+  font-weight: 700;
+}
+
+.schedule-modal-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding: 0 22px 22px;
+}
+
+.schedule-modal-button {
+  min-width: 88px;
+
+  min-height: 40px;
+
+  padding: 0 16px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  font-weight: 750;
+}
+
+.schedule-modal-button.secondary {
+  border:
+    1px solid var(--panel-border);
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  color: var(--muted);
+}
+
+.schedule-modal-button.primary {
+  border:
+    1px solid rgba(99, 216, 232, 0.35);
+
+  background:
+    rgba(99, 216, 232, 0.14);
+
+  color: var(--accent);
+}
+
+.schedule-modal-button:hover {
+  filter: brightness(1.12);
+}
+
+.schedule-modal-notice {
+  margin: -8px 22px 22px;
+
+  padding: 10px 12px;
+
+  border:
+    1px solid rgba(99, 216, 232, 0.14);
+
+  border-radius: 9px;
+
+  background:
+    rgba(99, 216, 232, 0.055);
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+
+@media (max-width: 520px) {
+
+  .schedule-modal {
+    align-items: flex-end;
+
+    padding: 12px;
+  }
+
+  .schedule-modal-card {
+    border-radius: 18px 18px 12px 12px;
+  }
+
+  .schedule-selected-time {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    padding-top: 11px;
+
+    padding-bottom: 11px;
+  }
+
+}
