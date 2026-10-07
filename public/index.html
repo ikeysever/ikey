@@ -911,24 +911,36 @@
             老師
           </span>
 
-          <div class="schedule-search-control">
+          <div class="schedule-search-wrapper">
 
-            <input
-              id="addCourseTeacher"
-              type="text"
-              placeholder="搜尋老師..."
-              autocomplete="off"
-              readonly
-            >
+            <div class="schedule-search-control">
 
-            <span aria-hidden="true">
-              ▾
-            </span>
+              <input
+                id="addCourseTeacher"
+                type="text"
+                placeholder="搜尋老師..."
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="addCourseTeacherOptions"
+              >
+
+              <span aria-hidden="true">
+                ▾
+              </span>
+
+            </div>
+
+            <div
+              id="addCourseTeacherOptions"
+              class="schedule-search-options"
+              role="listbox"
+              hidden
+            ></div>
 
           </div>
 
           <small>
-            下一階段再接入真實老師資料
+            可用姓名或老師序號搜尋
           </small>
 
         </label>
@@ -940,24 +952,36 @@
             班級
           </span>
 
-          <div class="schedule-search-control">
+          <div class="schedule-search-wrapper">
 
-            <input
-              id="addCourseClass"
-              type="text"
-              placeholder="搜尋班級..."
-              autocomplete="off"
-              readonly
-            >
+            <div class="schedule-search-control">
 
-            <span aria-hidden="true">
-              ▾
-            </span>
+              <input
+                id="addCourseClass"
+                type="text"
+                placeholder="搜尋班級..."
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="addCourseClassOptions"
+              >
+
+              <span aria-hidden="true">
+                ▾
+              </span>
+
+            </div>
+
+            <div
+              id="addCourseClassOptions"
+              class="schedule-search-options"
+              role="listbox"
+              hidden
+            ></div>
 
           </div>
 
           <small>
-            下一階段再接入真實班級資料
+            可用班級名稱或班級編號搜尋
           </small>
 
         </label>
