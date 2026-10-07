@@ -551,41 +551,107 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function parseScheduleTime(value) {
 
-    const match =
+    const text =
       String(value ?? "")
-        .trim()
-        .match(
-          /^(\d{1,2}):(\d{2})$/
+        .trim();
+
+
+    // 一般 API 時間格式：
+    // 08:00 / 8:00
+    const timeMatch =
+      text.match(
+        /^(\d{1,2}):(\d{2})(?::\d{2})?$/
+      );
+
+
+    if (timeMatch) {
+
+      const hour =
+        Number(timeMatch[1]);
+
+      const minute =
+        Number(timeMatch[2]);
+
+
+      if (
+        Number.isInteger(hour) &&
+        Number.isInteger(minute) &&
+        hour >= 0 &&
+        hour <= 23 &&
+        minute >= 0 &&
+        minute <= 59
+      ) {
+
+        return hour * 60 + minute;
+
+      }
+
+    }
+
+
+    // Google Sheet 的時間儲存格可能由 Apps Script
+    // 以 Date.toISOString() 回傳。
+    // 例如台灣 08:00 可能成為 1899-12-30T00:00:00.000Z。
+    // 網頁端用本地時間還原成課表時間。
+    if (
+      /^\d{4}-\d{2}-\d{2}T/.test(
+        text
+      )
+    ) {
+
+      const date =
+        new Date(text);
+
+
+      if (
+        !Number.isNaN(
+          date.getTime()
+        )
+      ) {
+
+        return (
+          date.getHours() * 60 +
+          date.getMinutes()
         );
 
+      }
 
-    if (!match) {
-      return null;
+    }
+
+
+    return null;
+
+  }
+
+
+  function formatScheduleTime(value) {
+
+    const minutes =
+      parseScheduleTime(value);
+
+
+    if (minutes === null) {
+
+      return String(
+        value ?? ""
+      );
+
     }
 
 
     const hour =
-      Number(match[1]);
+      Math.floor(
+        minutes / 60
+      );
 
     const minute =
-      Number(match[2]);
+      minutes % 60;
 
 
-    if (
-      !Number.isInteger(hour) ||
-      !Number.isInteger(minute) ||
-      hour < 0 ||
-      hour > 23 ||
-      minute < 0 ||
-      minute > 59
-    ) {
-
-      return null;
-
-    }
-
-
-    return hour * 60 + minute;
+    return (
+      `${String(hour).padStart(2, "0")}:` +
+      `${String(minute).padStart(2, "0")}`
+    );
 
   }
 
@@ -924,7 +990,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "schedule-course-time";
 
         timeLine.textContent =
-          `${schedule.start_time}－${schedule.end_time}`;
+          `${formatScheduleTime(schedule.start_time)}－${formatScheduleTime(schedule.end_time)}`;
 
 
         card.appendChild(courseName);
