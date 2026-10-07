@@ -856,6 +856,171 @@
 
 
   <!-- ========================================
+       新增課程視窗（第三階段：介面確認）
+       ======================================== -->
+
+  <div
+    id="addCourseModal"
+    class="schedule-modal"
+    hidden
+  >
+
+    <div
+      class="schedule-modal-backdrop"
+      data-close-add-course
+    ></div>
+
+    <section
+      class="schedule-modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="addCourseModalTitle"
+    >
+
+      <div class="schedule-modal-header">
+
+        <div>
+
+          <span class="schedule-modal-eyebrow">
+            教室 1
+          </span>
+
+          <h2 id="addCourseModalTitle">
+            新增課程
+          </h2>
+
+        </div>
+
+        <button
+          id="addCourseCloseButton"
+          class="schedule-modal-close"
+          type="button"
+          aria-label="關閉新增課程視窗"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="schedule-modal-body">
+
+        <label class="schedule-field">
+
+          <span>
+            老師
+          </span>
+
+          <div class="schedule-search-control">
+
+            <input
+              id="addCourseTeacher"
+              type="text"
+              placeholder="搜尋老師..."
+              autocomplete="off"
+              readonly
+            >
+
+            <span aria-hidden="true">
+              ▾
+            </span>
+
+          </div>
+
+          <small>
+            下一階段再接入真實老師資料
+          </small>
+
+        </label>
+
+
+        <label class="schedule-field">
+
+          <span>
+            班級
+          </span>
+
+          <div class="schedule-search-control">
+
+            <input
+              id="addCourseClass"
+              type="text"
+              placeholder="搜尋班級..."
+              autocomplete="off"
+              readonly
+            >
+
+            <span aria-hidden="true">
+              ▾
+            </span>
+
+          </div>
+
+          <small>
+            下一階段再接入真實班級資料
+          </small>
+
+        </label>
+
+
+        <div class="schedule-field">
+
+          <span>
+            時間
+          </span>
+
+          <div class="schedule-selected-time">
+
+            <strong id="addCourseDay">
+              星期一
+            </strong>
+
+            <span id="addCourseTime">
+              08:00 ～ 09:00
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="schedule-modal-actions">
+
+        <button
+          id="addCourseCancelButton"
+          class="schedule-modal-button secondary"
+          type="button"
+        >
+          取消
+        </button>
+
+        <button
+          id="addCourseConfirmButton"
+          class="schedule-modal-button primary"
+          type="button"
+        >
+          新增
+        </button>
+
+      </div>
+
+
+      <p
+        id="addCourseNotice"
+        class="schedule-modal-notice"
+        hidden
+      >
+        第三階段只確認介面，尚未寫入資料庫。
+      </p>
+
+    </section>
+
+  </div>
+
+
+  <!-- ========================================
        iKey 動畫系統
        ======================================== -->
 
