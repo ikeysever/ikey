@@ -1383,16 +1383,6 @@ document.addEventListener("DOMContentLoaded", () => {
         totalStartedAt;
 
 
-      const slowest =
-        timings.reduce(
-          (currentSlowest, item) =>
-            item.elapsedMs >
-            currentSlowest.elapsedMs
-              ? item
-              : currentSlowest
-        );
-
-
       console.table(
         timings.map(
           (item) => ({
@@ -1515,19 +1505,6 @@ document.addEventListener("DOMContentLoaded", () => {
           "success"
         );
 
-        const totalSeconds =
-          (
-            totalElapsedMs /
-            1000
-          ).toFixed(2);
-
-        const slowestSeconds =
-          (
-            slowest.elapsedMs /
-            1000
-          ).toFixed(2);
-
-
         const resultText =
           classroomSchedules.length > 0
             ? `已載入 ${classroomSchedules.length} 筆課程`
@@ -1535,7 +1512,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         scheduleLoadState.textContent =
-          `${resultText}｜總計 ${totalSeconds} 秒｜最慢：${slowest.endpoint} ${slowestSeconds} 秒`;
+          resultText;
 
       }
 
