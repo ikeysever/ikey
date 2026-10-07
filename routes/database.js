@@ -667,6 +667,26 @@ router.put(
 
 /*
  * ============================================================
+ * Borrow Transaction
+ * ============================================================
+ */
+
+router.post(
+  "/borrow",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "borrow",
+      "borrow",
+      req.body,
+      "Borrow completed successfully"
+    )
+);
+
+
+/*
+ * ============================================================
  * Borrow Records
  * ============================================================
  */
@@ -849,6 +869,11 @@ router.get(
             "GET /api/database/slots",
           update:
             "PUT /api/database/slots/:slotId"
+        },
+
+        borrow: {
+          create:
+            "POST /api/database/borrow"
         },
 
         borrow_records: {
