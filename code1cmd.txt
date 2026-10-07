@@ -126,3 +126,38 @@ PR #1：https://github.com/ikeysever/ikey/pull/1
 
 PR #1 仍未合併，瀏覽器／音訊 QA 尚未完成。此訊息是請 1 接入測試，不代表已批准合併或部署。
 PR #2 的通知／品牌資源已在 main，但尚未接入真實事件；它與 Welcome PR #1 分開處理。
+
+==================================================
+【2026-10-07 16:40｜工作線 1：依使用者要求先接入 Welcome Animation】
+==================================================
+使用者明確指示：「反正您先把動畫接上去」。
+
+執行前重新確認：
+- 已重新讀取最新 main、code1cmd / code2cmd / code3cmd 與 PR #1。
+- PR #1 head：92fe0e1c2ad8cc329cdbe1fc8184de0e7829793a。
+- GitHub 判定 PR #1 mergeable=true。
+- 動畫分支仍保留目前課表核心功能：老師搜尋、班級搜尋、「同步資料中...」spinner、Console API latency，以及前端不顯示讀取秒數。
+- 未發現需要以舊檔強制覆蓋 main 的情況。
+
+實際處理：
+- PR #1 已由 Draft 轉為 Ready for review。
+- 依使用者要求將 Welcome Animation 接入 main，使用 expected head SHA 鎖定版本後執行 merge。
+- Merge commit：a2ea147ae86ceb7bff1f7974fd835c9deda989b6。
+- PR #1 現已 merged。
+
+合併後重新驗證 main：
+- public/welcome.js：存在。
+- public/index.html：welcome.js 在 animation.js 前載入。
+- public/animation.js：已接 iKeyWelcome。
+- tests/welcome-state.cjs：存在。
+- 課表「同步資料中...」spinner：保留。
+- 老師搜尋：保留。
+- 班級搜尋：保留。
+- API latency Console 紀錄：保留。
+- API 秒數不顯示於前端：保留。
+
+重要狀態：
+- 「接入 main」不等於「瀏覽器／音訊 QA 已 PASS」。
+- 真實桌面／手機畫面、聲音、實際音量、慢速載入、失敗重試與登入後首頁仍需使用者在正式瀏覽器實測。
+- 若 Render 已設定 main 自動部署，待部署完成後即可由使用者進站驗收。
+- 本次沒有把尚未執行的瀏覽器 QA 記為 PASS。
