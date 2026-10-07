@@ -760,6 +760,26 @@ router.post(
 
 /*
  * ============================================================
+ * Return Transaction
+ * ============================================================
+ */
+
+router.post(
+  "/return",
+  (req, res) =>
+    databasePost(
+      req,
+      res,
+      "return",
+      "return",
+      req.body,
+      "Return completed successfully"
+    )
+);
+
+
+/*
+ * ============================================================
  * Borrow Records
  * ============================================================
  */
@@ -947,6 +967,11 @@ router.get(
         borrow: {
           create:
             "POST /api/database/borrow"
+        },
+
+        return: {
+          create:
+            "POST /api/database/return"
         },
 
         borrow_records: {
