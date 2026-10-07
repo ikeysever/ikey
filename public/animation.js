@@ -66,6 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const addCourseDay =
     document.getElementById("addCourseDay");
 
+  const addCourseClassroomLabel =
+    document.querySelector(
+      ".schedule-modal-eyebrow"
+    );
+
   const addCourseNotice =
     document.getElementById("addCourseNotice");
 
@@ -1465,6 +1470,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    if (addCourseClassroomLabel) {
+
+      addCourseClassroomLabel.textContent =
+        `教室 ${activeClassroomNumber}`;
+
+    }
+
+
     activeScheduleDayIndex =
       dayIndex;
 
@@ -1943,7 +1956,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  async function loadClassroomOneSchedule() {
+  async function loadClassroomSchedule(
+    classroomNumber =
+      activeClassroomNumber
+  ) {
+
+    const targetClassroomNumber =
+      String(
+        classroomNumber || ""
+      );
+
+    const targetClassroomId =
+      `R${targetClassroomNumber.padStart(2, "0")}`;
 
     const totalStartedAt =
       performance.now();
@@ -1980,7 +2004,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (classroomName) {
 
       classroomName.textContent =
-        "教室1";
+        `教室${targetClassroomNumber}`;
 
     }
 
@@ -2096,7 +2120,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // API 回來前如果已切去其他教室，就不覆蓋畫面。
       if (
-        activeClassroomNumber !== "1"
+        activeClassroomNumber !==
+        targetClassroomNumber
       ) {
 
         return;
@@ -2110,7 +2135,7 @@ document.addEventListener("DOMContentLoaded", () => {
             String(
               item.classroom_id || ""
             ).toUpperCase() ===
-            "R01"
+            targetClassroomId
         );
 
 
@@ -2120,7 +2145,7 @@ document.addEventListener("DOMContentLoaded", () => {
           classroom &&
           classroom.classroom_name
             ? classroom.classroom_name
-            : "教室1";
+            : `教室${targetClassroomNumber}`;
 
       }
 
@@ -2132,7 +2157,7 @@ document.addEventListener("DOMContentLoaded", () => {
               String(
                 item.classroom_id || ""
               ).toUpperCase() ===
-                "R01" &&
+                targetClassroomId &&
               isRecordEnabled(
                 item.enabled
               )
@@ -2219,7 +2244,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       if (
-        activeClassroomNumber !== "1"
+        activeClassroomNumber !==
+        targetClassroomNumber
       ) {
 
         return;
@@ -2231,7 +2257,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (classroomName) {
 
         classroomName.textContent =
-          "教室1";
+          `教室${targetClassroomNumber}`;
 
       }
 
@@ -2273,14 +2299,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    const isClassroomOne =
-      activeClassroomNumber === "1";
-
-
     if (classroomSchedulePanel) {
 
       classroomSchedulePanel.hidden =
-        !isClassroomOne;
+        false;
 
     }
 
@@ -2288,18 +2310,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (classroomPlaceholder) {
 
       classroomPlaceholder.hidden =
-        isClassroomOne;
-
-    }
-
-
-    if (
-      classroomPlaceholderTitle &&
-      !isClassroomOne
-    ) {
-
-      classroomPlaceholderTitle.textContent =
-        `教室 ${number}`;
+        true;
 
     }
 
@@ -2339,11 +2350,9 @@ document.addEventListener("DOMContentLoaded", () => {
     clearSidebarActive();
 
 
-    if (isClassroomOne) {
-
-      loadClassroomOneSchedule();
-
-    }
+    loadClassroomSchedule(
+      activeClassroomNumber
+    );
 
   }
 
@@ -2721,6 +2730,29 @@ document.addEventListener("DOMContentLoaded", () => {
             endTime
           );
 
+        const classroomNumber =
+          String(
+            activeClassroomNumber || ""
+          );
+
+        const classroomId =
+          `R${classroomNumber.padStart(2, "0")}`;
+
+
+        if (
+          !/^[1-8]$/.test(
+            classroomNumber
+          )
+        ) {
+
+          setAddCourseNotice(
+            "找不到要新增課程的教室，請重新開啟課表。"
+          );
+
+          return;
+
+        }
+
 
         if (!courseName) {
 
@@ -2824,7 +2856,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({
                   classroom_id:
-                    "R01",
+                    classroomId,
                   weekday:
                     scheduleDays[
                       activeScheduleDayIndex
@@ -2880,7 +2912,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const successLogId =
             addSystemLog(
-              `課表新增成功｜R01｜${scheduleDays[activeScheduleDayIndex].label} ${startTime}～${endTime}｜${courseName}${responseMessage}｜${writeElapsedMs}ms`
+              `課表新增成功｜${classroomId}｜${scheduleDays[activeScheduleDayIndex].label} ${startTime}～${endTime}｜${courseName}${responseMessage}｜${writeElapsedMs}ms`
             );
 
 
@@ -2907,7 +2939,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
           closeAddCourseModal();
 
-          await loadClassroomOneSchedule();
+          await loadClassroomSchedule(
+            classroomNumber
+          );
 
         } catch (error) {
 
@@ -2925,7 +2959,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const errorLogId =
             addSystemLog(
-              `課表新增失敗｜R01｜${courseName} ${startTime}～${endTime}｜原因：${error.message}｜${writeElapsedMs}ms`
+              `課表新增失敗｜${classroomId}｜${courseName} ${startTime}～${endTime}｜原因：${error.message}｜${writeElapsedMs}ms`
             );
 
 
