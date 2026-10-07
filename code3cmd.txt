@@ -351,3 +351,70 @@ LINE Official Account 第一階段，建立帳號管理與既有 iKey 身分選�
 3. Users 的老師序號正式欄位。
 4. 學生科別／年級／班別更新究竟直接更新 Users 還是由 class_id 對 Classes 表；需以現有正式 schema 為準。
 確認後才做真正 DB write＋歡迎成功訊息。
+
+
+========================================
+【2026-10-07｜LINE 下一刀：格位狀態＋系統狀態接真實來源】
+狀態：程式已建立，待 Render 部署後 LINE 實機驗收。
+
+本刀開始前：
+- 最新 main 已由工作線 1 更新至 e44db7b，內容是回覆 LINE 系統狀態資料來源。
+- routes/line.js 在工作線 1 commit 中沒有被修改，因此以最新 main 為基底繼續，不覆蓋 1 的變更。
+
+工作線 1 已確認的真實來源：
+1. ESP32：GET /api/device/status → devices["esp-robot"].online / lastSeen。
+2. 螢幕：同一 API → devices["lvgl-terminal"].online / lastSeen。
+3. UptimeRobot：目前沒有真實可讀來源。
+4. Database：可用 /api/database/health 的實際 Apps Script 連線結果判定當次健康；沒有正式 DB 上次更新時間。
+5. 格位：GET /api/database/slots 的 Slot_Status。
+6. 教室名稱：GET /api/database/classrooms 的 Classrooms.classroom_name；以 classroom_id 為主、slot_id 可交叉對應。
+
+本刀實作：
+A. routes/device.js
+- 把原 GET /status 使用的同一份 heartbeat 判定抽成 getDeviceStatusSnapshot()。
+- GET /api/device/status 回傳格式不變。
+- 將 snapshot helper 掛在既有 router module 上，讓 routes/line.js 直接讀同一個 process-memory heartbeat。
+- OFFLINE_TIMEOUT 仍為原本 30 秒，沒有改判定規格。
+
+B. LINE「格位狀態」
+- 新增文字路由：格位狀態。
+- 真實讀 slots + classrooms。
+- 固定顯示格位 1～8。
+- 每格顯示：
+  格位編號
+  教室名稱
+  已借出／未借出
+- Slot_Status.status === borrowed → 已借出。
+- status === available → 未借出。
+- 其他／缺資料 → 狀態未知。
+- 教室名稱沒有對應時顯示「未設定教室」，不虛構名稱。
+
+C. LINE「系統狀態」
+- 新增文字路由：系統狀態。
+- ESP32 控制器：esp-robot online / offline + lastSeen。
+- 螢幕控制器：lvgl-terminal online / offline + lastSeen。
+- 時間統一以 Asia/Taipei 顯示。
+- Database：直接呼叫同一個 Apps Script health 邏輯，顯示連線正常／連線異常。
+- UptimeRobot：明確顯示「尚未提供」。
+- DB 上次更新：明確顯示「尚未提供」。
+- 顯示本次 LINE 系統狀態更新時間。
+- 不建立假的 UptimeRobot ping，不把任意 System_Log 當 DB last update。
+
+本刀沒有：
+- 修改 Borrow/Return。
+- 修改課表。
+- 修改 ESP32。
+- 新增 Google Sheet 欄位／資料表。
+- 完成正式 LINE 綁定。
+- 修改 line_bind_status 成功值。
+
+修改檔案：
+- routes/device.js
+- routes/line.js
+- code3cmd.txt
+
+待實機測試：
+1. Rich Menu 點「格位狀態」→ 應顯示 1～8 與網站同一份教室名稱／借用狀態。
+2. Rich Menu 點「系統狀態」→ 應顯示 esp-robot、lvgl-terminal 真實 heartbeat。
+3. 裝置超過 30 秒未 heartbeat → LINE 下一次查詢應顯示斷線。
+4. Database health 失敗 → LINE 應顯示連線異常，而非捏造正常。

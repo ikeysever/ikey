@@ -68,11 +68,12 @@ router.post("/heartbeat", (req, res) => {
  * =========================================
  */
 
-router.get("/status", (req, res) => {
-
-  const now = Date.now();
+function getDeviceStatusSnapshot(
+  now = Date.now()
+) {
 
   const result = {};
+
 
   Object.entries(devices).forEach(
     ([deviceId, device]) => {
@@ -81,6 +82,7 @@ router.get("/status", (req, res) => {
         device.lastSeen !== null &&
         now - device.lastSeen <
         OFFLINE_TIMEOUT;
+
 
       result[deviceId] = {
         name: device.name,
@@ -91,12 +93,25 @@ router.get("/status", (req, res) => {
     }
   );
 
+
+  return result;
+
+}
+
+
+router.get("/status", (req, res) => {
+
   return res.json({
     success: true,
-    devices: result
+    devices:
+      getDeviceStatusSnapshot()
   });
 
 });
+
+
+router.getStatusSnapshot =
+  getDeviceStatusSnapshot;
 
 
 module.exports = router;

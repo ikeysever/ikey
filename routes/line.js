@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const deviceRoutes = require("./device");
 
 const router = express.Router();
 
@@ -615,6 +616,56 @@ async function databaseReadCollection(
 
 
   return collection;
+
+}
+
+
+async function databaseHealthCheck() {
+
+  const databaseApiUrl =
+    getDatabaseApiUrl();
+
+
+  if (!databaseApiUrl) {
+
+    return {
+      online: false,
+      status: "error"
+    };
+
+  }
+
+
+  try {
+
+    const data =
+      await appsScriptRequest(
+        databaseApiUrl
+      );
+
+
+    return {
+      online:
+        data.success === true,
+      status:
+        data.status ||
+        "unknown"
+    };
+
+  } catch (error) {
+
+    console.error(
+      "[LINE] database health check failed:",
+      error
+    );
+
+
+    return {
+      online: false,
+      status: "error"
+    };
+
+  }
 
 }
 
@@ -1485,6 +1536,516 @@ function createWelcomeMessage() {
 
 
 
+
+function formatTaipeiDateTime(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "尚未收到";
+  }
+
+
+  const date =
+    new Date(
+      Number.isFinite(
+        Number(value)
+      )
+        ? Number(value)
+        : value
+    );
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "時間格式異常";
+  }
+
+
+  return new Intl.DateTimeFormat(
+    "zh-TW",
+    {
+      timeZone:
+        "Asia/Taipei",
+      year:
+        "numeric",
+      month:
+        "2-digit",
+      day:
+        "2-digit",
+      hour:
+        "2-digit",
+      minute:
+        "2-digit",
+      second:
+        "2-digit",
+      hour12:
+        false
+    }
+  ).format(
+    date
+  );
+
+}
+
+
+function createStatusLine(
+  label,
+  value,
+  valueColor =
+    "#f8fafc"
+) {
+
+  return {
+    type: "box",
+    layout: "horizontal",
+    spacing: "md",
+    margin: "md",
+    contents: [
+      {
+        type: "text",
+        text: label,
+        size: "sm",
+        color: "#a6b2c5",
+        flex: 4,
+        wrap: true
+      },
+      {
+        type: "text",
+        text: value,
+        size: "sm",
+        weight: "bold",
+        color: valueColor,
+        flex: 6,
+        align: "end",
+        wrap: true
+      }
+    ]
+  };
+
+}
+
+
+function createSlotStatusFlex(
+  slots,
+  classrooms
+) {
+
+  const rows = [];
+
+
+  for (
+    let slotNumber = 1;
+    slotNumber <= 8;
+    slotNumber += 1
+  ) {
+
+    const slot =
+      slots.find(
+        (item) =>
+          String(
+            item.slot_id ||
+            ""
+          ) ===
+          String(
+            slotNumber
+          )
+      ) ||
+      null;
+
+
+    const classroom =
+      slot
+        ? (
+            classrooms.find(
+              (item) =>
+                String(
+                  item.classroom_id ||
+                  ""
+                ) ===
+                String(
+                  slot.classroom_id ||
+                  ""
+                )
+            ) ||
+            classrooms.find(
+              (item) =>
+                String(
+                  item.slot_id ||
+                  ""
+                ) ===
+                String(
+                  slotNumber
+                )
+            ) ||
+            null
+          )
+        : (
+            classrooms.find(
+              (item) =>
+                String(
+                  item.slot_id ||
+                  ""
+                ) ===
+                String(
+                  slotNumber
+                )
+            ) ||
+            null
+          );
+
+
+    const classroomName =
+      String(
+        (
+          classroom &&
+          classroom.classroom_name
+        ) ||
+        "未設定教室"
+      );
+
+
+    const rawStatus =
+      String(
+        (
+          slot &&
+          slot.status
+        ) ||
+        ""
+      ).toLowerCase();
+
+
+    let statusText =
+      "狀態未知";
+
+    let statusColor =
+      "#a6b2c5";
+
+
+    if (
+      rawStatus ===
+      "borrowed"
+    ) {
+
+      statusText =
+        "已借出";
+
+      statusColor =
+        "#ffb86b";
+
+    } else if (
+      rawStatus ===
+      "available"
+    ) {
+
+      statusText =
+        "未借出";
+
+      statusColor =
+        "#7de2b1";
+
+    }
+
+
+    rows.push({
+      type: "box",
+      layout: "vertical",
+      margin:
+        slotNumber === 1
+          ? "lg"
+          : "md",
+      paddingAll: "12px",
+      backgroundColor:
+        "#142034",
+      cornerRadius:
+        "10px",
+      contents: [
+        {
+          type: "box",
+          layout:
+            "horizontal",
+          contents: [
+            {
+              type: "text",
+              text:
+                `格位 ${slotNumber}`,
+              size: "sm",
+              weight:
+                "bold",
+              color:
+                "#f8fafc",
+              flex: 4
+            },
+            {
+              type: "text",
+              text:
+                statusText,
+              size: "sm",
+              weight:
+                "bold",
+              color:
+                statusColor,
+              align:
+                "end",
+              flex: 3
+            }
+          ]
+        },
+        {
+          type: "text",
+          text:
+            `教室名稱：${classroomName}`,
+          size: "xs",
+          color:
+            "#a6b2c5",
+          wrap: true,
+          margin: "sm"
+        }
+      ]
+    });
+
+  }
+
+
+  return {
+    type: "flex",
+    altText:
+      "iKey 格位狀態",
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor:
+          "#0b1220",
+        paddingAll:
+          "20px",
+        contents: [
+          {
+            type: "text",
+            text: "iKey",
+            size: "sm",
+            weight: "bold",
+            color:
+              "#63d8e8"
+          },
+          {
+            type: "text",
+            text:
+              "格位狀態",
+            size: "xl",
+            weight: "bold",
+            color:
+              "#f8fafc",
+            margin: "md"
+          },
+          {
+            type: "text",
+            text:
+              "教室名稱與借用狀態皆讀取目前資料庫",
+            size: "xs",
+            color:
+              "#a6b2c5",
+            wrap: true,
+            margin: "sm"
+          },
+          ...rows
+        ]
+      }
+    }
+  };
+
+}
+
+
+function createSystemStatusFlex(
+  devices,
+  databaseHealth
+) {
+
+  const esp =
+    devices[
+      "esp-robot"
+    ] ||
+    {
+      online: false,
+      lastSeen: null
+    };
+
+
+  const terminal =
+    devices[
+      "lvgl-terminal"
+    ] ||
+    {
+      online: false,
+      lastSeen: null
+    };
+
+
+  const contents = [
+    {
+      type: "text",
+      text: "iKey",
+      size: "sm",
+      weight: "bold",
+      color: "#63d8e8"
+    },
+    {
+      type: "text",
+      text:
+        "系統狀態",
+      size: "xl",
+      weight: "bold",
+      color:
+        "#f8fafc",
+      margin: "md"
+    },
+    createStatusLine(
+      "ESP32 控制器",
+      esp.online
+        ? "正常"
+        : "斷線",
+      esp.online
+        ? "#7de2b1"
+        : "#ffb86b"
+    ),
+    createStatusLine(
+      "上次連線",
+      formatTaipeiDateTime(
+        esp.lastSeen
+      )
+    ),
+    createStatusLine(
+      "螢幕控制器",
+      terminal.online
+        ? "正常"
+        : "斷線",
+      terminal.online
+        ? "#7de2b1"
+        : "#ffb86b"
+    ),
+    createStatusLine(
+      "上次連線",
+      formatTaipeiDateTime(
+        terminal.lastSeen
+      )
+    ),
+    createStatusLine(
+      "UptimeRobot",
+      "尚未提供",
+      "#a6b2c5"
+    ),
+    createStatusLine(
+      "資料庫",
+      databaseHealth.online
+        ? "連線正常"
+        : "連線異常",
+      databaseHealth.online
+        ? "#7de2b1"
+        : "#ff7b7b"
+    ),
+    createStatusLine(
+      "DB 上次更新",
+      "尚未提供",
+      "#a6b2c5"
+    ),
+    {
+      type: "separator",
+      margin: "lg",
+      color: "#31445f"
+    },
+    {
+      type: "text",
+      text:
+        `更新時間：${formatTaipeiDateTime(Date.now())}`,
+      size: "xs",
+      color:
+        "#a6b2c5",
+      wrap: true,
+      margin: "lg"
+    }
+  ];
+
+
+  return {
+    type: "flex",
+    altText:
+      "iKey 系統狀態",
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor:
+          "#0b1220",
+        paddingAll:
+          "22px",
+        contents:
+          contents
+      }
+    }
+  };
+
+}
+
+
+async function createSlotStatusForLine() {
+
+  const [
+    slots,
+    classrooms
+  ] =
+    await Promise.all([
+      databaseReadCollection(
+        "slots",
+        "slots"
+      ),
+      databaseReadCollection(
+        "classrooms",
+        "classrooms"
+      )
+    ]);
+
+
+  return createSlotStatusFlex(
+    slots,
+    classrooms
+  );
+
+}
+
+
+async function createSystemStatusForLine() {
+
+  const devices =
+    typeof deviceRoutes.getStatusSnapshot ===
+      "function"
+      ? deviceRoutes.getStatusSnapshot()
+      : {};
+
+
+  const databaseHealth =
+    await databaseHealthCheck();
+
+
+  return createSystemStatusFlex(
+    devices,
+    databaseHealth
+  );
+
+}
+
+
 const STUDENT_DEPARTMENTS = [
   "控制",
   "綜高",
@@ -2165,6 +2726,38 @@ async function handleTextMessage(
 
       console.log(
         "[LINE] account management Flex Message sent successfully"
+      );
+
+      return;
+
+
+    case "格位狀態":
+
+      await replyMessages(
+        event.replyToken,
+        [
+          await createSlotStatusForLine()
+        ]
+      );
+
+      console.log(
+        "[LINE] slot status Flex Message sent successfully"
+      );
+
+      return;
+
+
+    case "系統狀態":
+
+      await replyMessages(
+        event.replyToken,
+        [
+          await createSystemStatusForLine()
+        ]
+      );
+
+      console.log(
+        "[LINE] system status Flex Message sent successfully"
       );
 
       return;
