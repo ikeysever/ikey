@@ -248,3 +248,59 @@ docs/notifications-handoff-ruiqian.md
 - 修改前已重新讀取最新 main、code1cmd / code2cmd / code3cmd。
 - 不修改 LINE 綁定。
 - 不以舊檔整份覆蓋其他工作線的新內容。
+
+==================================================
+【2026-10-07｜工作線 1 完成：真正新增課表＋可重用班級】
+==================================================
+使用者指示開始實作後，本刀已完成程式接入。
+
+主要功能：
+1. 新增課程視窗新增 course_name，手動輸入且必填。
+2. 開始／結束時間改為可編輯 time input；範圍 06:00～22:00，step=60 秒，因此可輸入任意分鐘，不限制整點／半小時。
+3. 真正 POST /api/database/schedules；只有 API success=true 才關閉視窗並重新讀取課表。
+4. 成功後呼叫 loadClassroomOneSchedule()，讓新課程立即重新顯示。
+5. Server 建立 Schedule 時，如前端未送 schedule_id，會依現有 SCH###### 自動產生下一號。
+6. 班級搜尋若無該班級，可由「＋ 新增班級」建立；第一次寫入 Classes 後，後續可直接搜尋選取。
+7. 新增班級輸入：班級名稱、科別、年級；class_id 由 Server 依現有 C### 自動產生下一號。
+8. 班級選項滑鼠 hover / keyboard focus 時右側顯示 ×。
+9. × 刪除採安全軟刪除：若任何 enabled Schedule 已引用該 class_id，拒絕刪除；未被引用才 PUT enabled=false，使錯誤班級退出搜尋清單並保留資料歷程。
+10. 若新班級名稱與既有班級部分相似但非完全同名，仍保留「＋新增班級」入口，不會被模糊搜尋結果擋住。
+
+修改檔案：
+- public/index.html
+- public/style.css
+- public/animation.js
+- routes/database.js
+
+主要功能 commit：
+- d7c4742c3c384ca2d952e7cf8565b43376bec886
+後續小修：
+- b266fa5fa9ce1fe9582f5ad9c3fbd746229a4c40
+  清除已不用的 addCourseTime 舊引用，並補「部分符合但非完全同名」仍可新增班級。
+
+靜態驗證：
+- public/animation.js syntax：PASS
+- routes/database.js syntax：PASS
+- public/welcome.js syntax：PASS
+- 真實 Schedule POST 程式：存在
+- Classes POST：存在
+- 班級 enabled=false 軟刪除：存在
+- 已被 Schedule 使用的班級刪除保護：存在
+- course_name：存在
+- 任意分鐘 time inputs：存在
+- 老師搜尋：保留
+- 「同步資料中...」spinner：保留
+- welcome.js 仍在 animation.js 前載入：PASS
+- 定稿網站品牌圖：保留
+- LINE 綁定邏輯：本刀未修改
+
+尚未宣告整合 PASS：
+- Render 部署後的實際瀏覽器操作尚未由使用者驗收。
+- 真實新增班級 → Google Sheet → 再搜尋仍需實測。
+- 真實刪除未使用班級 → enabled=false → 清單消失仍需實測。
+- 已使用班級禁止刪除仍需實測。
+- 真實新增課程 → Google Sheet → 課表立即更新仍需實測。
+- Apps Script 的實際錯誤訊息／衝突提示仍需實測確認。
+- 工作線 2 最新通知樣稿規格尚未在本刀改寫 main 通知資源；避免在主功能尚未實測前把樣稿狀態誤記為真實整合完成。
+
+下一步：待 Render 部署後，由使用者依上述路徑做第一輪實機驗收；若出現錯誤，保留畫面訊息與 Console/API 回應再修。
