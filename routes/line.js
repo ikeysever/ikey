@@ -227,6 +227,84 @@ function createAccountManagementFlex() {
 }
 
 
+function createIdentitySelectionFlex() {
+
+  return {
+    type: "flex",
+    altText:
+      "iKey 登入：請選擇您的身分",
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#0b1220",
+        paddingAll: "24px",
+        contents: [
+          {
+            type: "text",
+            text: "iKey",
+            size: "sm",
+            weight: "bold",
+            color: "#63d8e8"
+          },
+          {
+            type: "text",
+            text: "登入",
+            size: "xl",
+            weight: "bold",
+            color: "#f8fafc",
+            margin: "md"
+          },
+          {
+            type: "text",
+            text: "請選擇您的身分",
+            size: "md",
+            color: "#a6b2c5",
+            wrap: true,
+            margin: "sm"
+          }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "horizontal",
+        spacing: "md",
+        backgroundColor: "#0b1220",
+        paddingAll: "20px",
+        paddingTop: "0px",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#2eb8d0",
+            action: {
+              type: "message",
+              label: "學生",
+              text: "學生"
+            }
+          },
+          {
+            type: "button",
+            style: "secondary",
+            height: "sm",
+            color: "#1b3150",
+            action: {
+              type: "message",
+              label: "老師",
+              text: "老師"
+            }
+          }
+        ]
+      }
+    }
+  };
+
+}
+
+
 /*
  * ============================================================
  * Event Handler
@@ -270,6 +348,22 @@ async function handleTextMessage(
 
       console.log(
         "[LINE] account management Flex Message sent successfully"
+      );
+
+      return;
+
+
+    case "登入":
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createIdentitySelectionFlex()
+        ]
+      );
+
+      console.log(
+        "[LINE] identity selection Flex Message sent successfully"
       );
 
       return;
