@@ -418,3 +418,75 @@ C. LINE「系統狀態」
 2. Rich Menu 點「系統狀態」→ 應顯示 esp-robot、lvgl-terminal 真實 heartbeat。
 3. 裝置超過 30 秒未 heartbeat → LINE 下一次查詢應顯示斷線。
 4. Database health 失敗 → LINE 應顯示連線異常，而非捏造正常。
+
+
+========================================
+【2026-10-07｜LINE 正式綁定刀：Users 寫入＋防覆蓋＋成功歡迎】
+狀態：程式已完成，待 Render 部署後以真實 LINE／Google Sheet 驗收。
+
+協作：
+- 第一次準備寫入時 GitHub API 回傳暫時性錯誤；重新檢查後確認沒有任何 LINE 檔案落盤。
+- 同期間工作線 1 已新增課表／通知 commit，main 前進到 01af54aee0dd9e43391ec365e66c8c8881a2657e。
+- 已重新讀取最新 main、code1cmd / code2cmd / code3cmd 與 routes/line.js 後才重新套用本刀。
+- 工作線 1 新增內容未修改 routes/line.js，因此無 LINE 邏輯衝突。
+
+Schema / 歷史確認：
+- Apps Script updateUser() 正式支援 name / department / grade / class_id / seat_number / line_user_id / line_bind_status / line_display_name。
+- 歷史正式綁定實驗版本曾使用 line_bind_status="bound"；當時撤回是因階段規定只做 UI，不是 bound 值錯誤。
+- 本刀沿用既有 bound / unbound 配對。
+- Users 沒有獨立 teacher_number / teacher_serial；教師現有識別為 user_id。
+
+正式登入綁定：
+1. 最終確認「正確」後直接執行綁定，不再停在 ready_to_bind。
+2. LINE User ID 取自已驗簽 webhook 的 event.source.userId。
+3. Server 呼叫 LINE Messaging API GET /v2/bot/profile/{userId} 取得 displayName。
+4. 寫入既有 Users：
+   name / line_user_id / line_bind_status="bound" / line_display_name。
+5. 學生另更新正式欄位 department / grade / class_id / seat_number。
+6. DB 成功後才清除 session 並顯示：
+   帳號綁定完成
+   歡迎使用 iKey
+   自動倉儲鑰匙借還系統
+
+學生定位：
+- 科別／年級／班別先對 enabled Classes。
+- 科別比對容許「電機」與「電機科」既有命名差異。
+- 再以 class_id + seat_number 找 enabled student。
+- 不建立新 User；找不到就要求先到指紋辨識器註冊。
+- 多筆衝突則拒絕，要求先整理資料。
+
+老師定位：
+- 使用者輸入的老師序號對應既有 identity=teacher 的 Users.user_id。
+- 不新增 teacher_number 欄位。
+
+防覆蓋：
+- 目標 iKey User 已綁不同 LINE → 拒絕。
+- 目前 LINE 已綁另一 enabled iKey User → 拒絕。
+- 換身分必須先登出。
+
+更新資料：
+- 學生：更新同一 targetUserId 的班級／座號／姓名並保留 LINE 綁定。
+- 老師：可更新姓名；因老師序號目前就是 primary key user_id，既有 update_user 不能改 user_id。
+- 若已登入老師輸入不同序號，拒絕並提示「若要切換老師身分請先登出」，不偷換帳號。
+
+失敗安全：
+- 找不到身分、重複綁定、LINE profile 失敗、DB update 失敗都不顯示成功。
+- 失敗時 session 回到 final_confirm，可修正後再試。
+- Fingerprint ID 仍不進 LINE / Users。
+
+修改：
+- routes/line.js
+- code3cmd.txt
+
+未修改：
+- Borrow/Return、ESP32、Google Sheet schema、Apps Script schema、網站課表、Welcome、device heartbeat。
+
+待 Render 實測：
+1. 學生正式綁定後檢查 Users LINE 欄位＋姓名。
+2. 老師以既有 user_id 綁定。
+3. iKey User 已綁其他 LINE → 拒絕。
+4. LINE 已綁其他 iKey User → 拒絕。
+5. 登出恢復 "" / unbound / ""。
+6. 學生更新資料寫回同一 user_id。
+7. 老師不同序號更新被拒絕。
+8. 成功後帳號管理顯示已登入資料。

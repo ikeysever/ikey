@@ -1537,6 +1537,571 @@ function createWelcomeMessage() {
 
 
 
+
+function normalizeDepartmentName(
+  value
+) {
+
+  return String(
+    value ||
+    ""
+  )
+    .replace(/\s+/g, "")
+    .replace(/科$/, "")
+    .replace(/^綜合高中$/, "綜高")
+    .trim();
+
+}
+
+
+function normalizeClassName(
+  value
+) {
+
+  return String(
+    value ||
+    ""
+  )
+    .replace(/\s+/g, "")
+    .replace(/科/g, "")
+    .trim();
+
+}
+
+
+function getChineseGrade(
+  grade
+) {
+
+  return (
+    {
+      "1": "一",
+      "2": "二",
+      "3": "三"
+    }[
+      String(
+        grade ||
+        ""
+      )
+    ] ||
+    ""
+  );
+
+}
+
+
+function findStudentClassForSession(
+  classes,
+  session
+) {
+
+  const expectedDepartment =
+    normalizeDepartmentName(
+      session.department
+    );
+
+  const expectedGrade =
+    String(
+      session.grade ||
+      ""
+    );
+
+  const expectedName =
+    normalizeClassName(
+      `${session.department || ""}${getChineseGrade(session.grade)}${session.className || ""}`
+    );
+
+
+  const matches =
+    classes.filter(
+      (classData) => {
+
+        if (
+          !isRecordEnabled(
+            classData.enabled
+          )
+        ) {
+          return false;
+        }
+
+
+        const departmentMatches =
+          normalizeDepartmentName(
+            classData.department
+          ) ===
+          expectedDepartment;
+
+        const gradeMatches =
+          String(
+            classData.grade ||
+            ""
+          ) ===
+          expectedGrade;
+
+        const className =
+          normalizeClassName(
+            classData.class_name
+          );
+
+        const nameMatches =
+          className ===
+            expectedName ||
+          className.endsWith(
+            `${getChineseGrade(session.grade)}${session.className || ""}`
+          );
+
+
+        return (
+          departmentMatches &&
+          gradeMatches &&
+          nameMatches
+        );
+
+      }
+    );
+
+
+  if (matches.length === 0) {
+    throw new Error(
+      "找不到對應班級，請確認網站 Classes 已建立這個班級"
+    );
+  }
+
+
+  if (matches.length > 1) {
+    throw new Error(
+      "找到多筆相同班級，請先整理 Classes 資料後再綁定"
+    );
+  }
+
+
+  return matches[0];
+
+}
+
+
+function findStudentUserForSession(
+  users,
+  classData,
+  session
+) {
+
+  const matches =
+    users.filter(
+      (user) =>
+        String(
+          user.identity ||
+          ""
+        ).toLowerCase() ===
+          "student" &&
+        String(
+          user.class_id ||
+          ""
+        ) ===
+          String(
+            classData.class_id ||
+            ""
+          ) &&
+        String(
+          getStudentSeat(
+            user
+          )
+        ) ===
+          String(
+            session.seat ||
+            ""
+          ) &&
+        isRecordEnabled(
+          user.enabled
+        )
+    );
+
+
+  if (matches.length === 0) {
+    throw new Error(
+      "找不到這個班級與座號的既有學生身分，請先到 iKey 指紋辨識器完成註冊"
+    );
+  }
+
+
+  if (matches.length > 1) {
+    throw new Error(
+      "這個班級與座號對應到多筆學生資料，請先整理 Users"
+    );
+  }
+
+
+  return matches[0];
+
+}
+
+
+function findTeacherUserForSession(
+  users,
+  teacherSerial
+) {
+
+  const serial =
+    String(
+      teacherSerial ||
+      ""
+    ).trim();
+
+
+  const exact =
+    users.find(
+      (user) =>
+        String(
+          user.identity ||
+          ""
+        ).toLowerCase() ===
+          "teacher" &&
+        String(
+          user.user_id ||
+          ""
+        ).trim() ===
+          serial &&
+        isRecordEnabled(
+          user.enabled
+        )
+    );
+
+
+  if (exact) {
+    return exact;
+  }
+
+
+  const insensitive =
+    users.filter(
+      (user) =>
+        String(
+          user.identity ||
+          ""
+        ).toLowerCase() ===
+          "teacher" &&
+        String(
+          user.user_id ||
+          ""
+        )
+          .trim()
+          .toLowerCase() ===
+          serial.toLowerCase() &&
+        isRecordEnabled(
+          user.enabled
+        )
+    );
+
+
+  if (insensitive.length === 1) {
+    return insensitive[0];
+  }
+
+
+  throw new Error(
+    "找不到這個老師序號的既有老師身分，請到 iKey 指紋辨識器重新辨識確認"
+  );
+
+}
+
+
+function ensureLineBindingAvailable(
+  users,
+  targetUser,
+  lineUserId
+) {
+
+  const targetUserId =
+    String(
+      targetUser.user_id ||
+      ""
+    );
+
+  const targetLineUserId =
+    String(
+      targetUser.line_user_id ||
+      ""
+    ).trim();
+
+
+  if (
+    targetLineUserId &&
+    targetLineUserId !==
+      lineUserId
+  ) {
+    throw new Error(
+      "此 iKey 身分已綁定其他 LINE 帳號，不能直接覆蓋"
+    );
+  }
+
+
+  const anotherUser =
+    users.find(
+      (user) =>
+        String(
+          user.line_user_id ||
+          ""
+        ).trim() ===
+          lineUserId &&
+        String(
+          user.user_id ||
+          ""
+        ) !==
+          targetUserId &&
+        isRecordEnabled(
+          user.enabled
+        )
+    );
+
+
+  if (anotherUser) {
+    throw new Error(
+      "此 LINE 帳號已綁定其他 iKey 身分，請先登出後再切換"
+    );
+  }
+
+}
+
+
+async function completeLineIdentityFlow(
+  event,
+  session
+) {
+
+  const lineUserId =
+    getLineSourceUserId(
+      event
+    );
+
+
+  if (!lineUserId) {
+    throw new Error(
+      "目前事件沒有 LINE User ID，無法完成綁定"
+    );
+  }
+
+
+  const [
+    users,
+    classes
+  ] =
+    await Promise.all([
+      databaseReadCollection(
+        "users",
+        "users"
+      ),
+      databaseReadCollection(
+        "classes",
+        "classes"
+      )
+    ]);
+
+
+  let targetUser;
+  let classData =
+    null;
+
+
+  if (
+    session.mode ===
+    "update"
+  ) {
+
+    targetUser =
+      users.find(
+        (user) =>
+          String(
+            user.user_id ||
+            ""
+          ) ===
+            String(
+              session.targetUserId ||
+              ""
+            ) &&
+          isRecordEnabled(
+            user.enabled
+          )
+      );
+
+
+    if (!targetUser) {
+      throw new Error(
+        "找不到目前登入的 iKey 身分"
+      );
+    }
+
+
+    if (
+      String(
+        targetUser.identity ||
+        ""
+      ).toLowerCase() !==
+        session.identity
+    ) {
+      throw new Error(
+        "目前登入身分與更新流程不一致"
+      );
+    }
+
+
+    if (
+      session.identity ===
+      "student"
+    ) {
+
+      classData =
+        findStudentClassForSession(
+          classes,
+          session
+        );
+
+    } else if (
+      String(
+        targetUser.user_id ||
+        ""
+      )
+        .trim()
+        .toLowerCase() !==
+      String(
+        session.teacherSerial ||
+        ""
+      )
+        .trim()
+        .toLowerCase()
+    ) {
+
+      throw new Error(
+        "老師序號目前就是 Users.user_id，更新資料不能直接更換 user_id；若要切換老師身分請先登出"
+      );
+
+    }
+
+  } else if (
+    session.identity ===
+    "student"
+  ) {
+
+    classData =
+      findStudentClassForSession(
+        classes,
+        session
+      );
+
+    targetUser =
+      findStudentUserForSession(
+        users,
+        classData,
+        session
+      );
+
+  } else if (
+    session.identity ===
+    "teacher"
+  ) {
+
+    targetUser =
+      findTeacherUserForSession(
+        users,
+        session.teacherSerial
+      );
+
+  } else {
+    throw new Error(
+      "無效的登入身分"
+    );
+  }
+
+
+  ensureLineBindingAvailable(
+    users,
+    targetUser,
+    lineUserId
+  );
+
+
+  const profile =
+    await getLineProfile(
+      lineUserId
+    );
+
+
+  const updates = {
+    name:
+      String(
+        session.name ||
+        ""
+      ).trim(),
+    line_user_id:
+      lineUserId,
+    line_bind_status:
+      "bound",
+    line_display_name:
+      String(
+        profile.displayName ||
+        ""
+      ).trim()
+  };
+
+
+  if (
+    session.identity ===
+    "student"
+  ) {
+
+    updates.department =
+      String(
+        classData.department ||
+        session.department ||
+        ""
+      );
+
+    updates.grade =
+      String(
+        classData.grade ||
+        session.grade ||
+        ""
+      );
+
+    updates.class_id =
+      String(
+        classData.class_id ||
+        ""
+      );
+
+    updates.seat_number =
+      String(
+        session.seat ||
+        ""
+      );
+
+  }
+
+
+  await databaseUpdateUser(
+    String(
+      targetUser.user_id ||
+      ""
+    ),
+    updates
+  );
+
+
+  return {
+    userId:
+      String(
+        targetUser.user_id ||
+        ""
+      ),
+    identity:
+      session.identity,
+    mode:
+      session.mode ||
+      "login"
+  };
+
+}
+
+
 function formatTaipeiDateTime(
   value
 ) {
@@ -2656,22 +3221,46 @@ async function handleFlowTextInput(
   }
 
 
-  if (
-    session.stage ===
-    "ready_to_bind"
-  ) {
+  return false;
 
-    await replyText(
-      event.replyToken,
-      "您的資料已完成確認。正式 LINE 綁定尚未寫入資料庫，請等待下一步完成綁定設定。"
+}
+
+
+async function getLineProfile(
+  lineUserId
+) {
+
+  const channelAccessToken =
+    getChannelAccessToken();
+
+
+  if (!channelAccessToken) {
+    throw new Error(
+      "LINE_CHANNEL_ACCESS_TOKEN is not configured"
     );
-
-    return true;
-
   }
 
 
-  return false;
+  const response =
+    await fetch(
+      `https://api.line.me/v2/bot/profile/${encodeURIComponent(lineUserId)}`,
+      {
+        headers: {
+          "Authorization":
+            `Bearer ${channelAccessToken}`
+        }
+      }
+    );
+
+
+  if (!response.ok) {
+    throw new Error(
+      "無法取得目前 LINE 帳號資料，請確認已加入 iKey 官方帳號後再試一次"
+    );
+  }
+
+
+  return response.json();
 
 }
 
@@ -3598,20 +4187,59 @@ async function handlePostbackEvent(
       event,
       {
         stage:
-          "ready_to_bind"
+          "binding"
       }
     );
 
 
-    await replyText(
-      event.replyToken,
-      "資料確認完成。\n正式 LINE 帳號綁定尚未寫入資料庫；待綁定狀態值確認後，才會完成登入並顯示「歡迎使用 iKey 自動倉儲鑰匙借還系統」。"
-    );
+    try {
+
+      const result =
+        await completeLineIdentityFlow(
+          event,
+          session
+        );
 
 
-    console.log(
-      `[LINE] flow data confirmed and waiting for formal binding: identity=${session.identity}, mode=${session.mode}`
-    );
+      clearLineFlowSession(
+        event
+      );
+
+
+      await replyMessages(
+        event.replyToken,
+        [
+          {
+            type: "text",
+            text:
+              result.mode ===
+                "update"
+                ? "資料更新完成\n\n歡迎使用 iKey\n自動倉儲鑰匙借還系統"
+                : "帳號綁定完成\n\n歡迎使用 iKey\n自動倉儲鑰匙借還系統"
+          }
+        ]
+      );
+
+
+      console.log(
+        `[LINE] identity flow completed: user_id=${result.userId}, identity=${result.identity}, mode=${result.mode}`
+      );
+
+    } catch (error) {
+
+      updateLineFlowSession(
+        event,
+        {
+          stage:
+            "final_confirm"
+        }
+      );
+
+
+      throw error;
+
+    }
+
 
     return;
 
