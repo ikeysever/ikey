@@ -652,18 +652,91 @@
           hidden
         >
 
-          <div class="empty-panel">
+          <!-- 第二階段：教室 1 唯讀課表 -->
+          <div
+            id="classroomSchedulePanel"
+            class="schedule-panel"
+            hidden
+          >
+
+            <div class="schedule-panel-header">
+
+              <div class="schedule-room-info">
+
+                <div
+                  id="classroomCode"
+                  class="schedule-room-code"
+                >
+                  R01
+                </div>
+
+                <div>
+
+                  <h2 id="classroomTitle">
+                    教室 1
+                  </h2>
+
+                  <p>
+                    教室名稱：
+                    <span id="classroomName">
+                      讀取中...
+                    </span>
+                  </p>
+
+                </div>
+
+              </div>
+
+              <button
+                class="schedule-rename-button"
+                type="button"
+                disabled
+                title="此階段只讀取課表，尚未開放修改教室名稱"
+              >
+                ✎ 修改教室名稱
+              </button>
+
+            </div>
+
+
+            <div
+              id="scheduleLoadState"
+              class="schedule-load-state"
+            >
+              正在讀取課表資料...
+            </div>
+
+
+            <div class="schedule-scroll">
+
+              <div
+                id="scheduleGrid"
+                class="schedule-grid"
+                aria-label="教室 1 課表"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+          <!-- 教室 2～8 暫時維持原本 Placeholder -->
+          <div
+            id="classroomPlaceholder"
+            class="empty-panel"
+            hidden
+          >
 
             <div class="empty-icon">
               ▦
             </div>
 
-            <h2 id="classroomTitle">
-              教室 1
+            <h2 id="classroomPlaceholderTitle">
+              教室
             </h2>
 
             <p>
-              課表功能即將建立
+              此階段先完成教室 1 的唯讀課表。
             </p>
 
           </div>
