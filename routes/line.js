@@ -310,7 +310,7 @@ function createIdentitySelectionFlex() {
           },
           {
             type: "button",
-            style: "secondary",
+            style: "primary",
             height: "sm",
             color: "#1b3150",
             action:
