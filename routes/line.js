@@ -160,12 +160,66 @@ async function replyText(
 }
 
 
-function createAccountManagementFlex() {
+function createAccountManagementFlex(
+  user = null,
+  classData = null
+) {
+
+  const isLoggedIn =
+    Boolean(
+      user &&
+      String(
+        user.user_id ||
+        ""
+      ).trim()
+    );
+
+
+  const isStudent =
+    isLoggedIn &&
+    String(
+      user.identity ||
+      ""
+    ).toLowerCase() ===
+      "student";
+
+
+  const detailText =
+    !isLoggedIn
+      ? "請登入您的 iKey 帳號"
+      : isStudent
+        ? [
+            `目前登入：${user.name || "未設定姓名"}`,
+            `學生｜${classData ? getClassLabel(classData) : String(user.class_id || "")}｜${getStudentSeat(user) || "未設定座號"}號`
+          ].join("\n")
+        : [
+            `目前登入：${user.name || "未設定姓名"}`,
+            `老師｜${getTeacherNumber(user) || "未設定老師序號"}`
+          ].join("\n");
+
+
+  const action =
+    isLoggedIn
+      ? createPostbackAction(
+          "登出",
+          {
+            action:
+              "logout"
+          }
+        )
+      : {
+          type: "message",
+          label: "登入",
+          text: "登入"
+        };
+
 
   return {
     type: "flex",
     altText:
-      "iKey 帳號管理：請登入 iKey 帳號",
+      isLoggedIn
+        ? "iKey 帳號管理：目前已登入"
+        : "iKey 帳號管理：請登入 iKey 帳號",
     contents: {
       type: "bubble",
       size: "mega",
@@ -192,7 +246,7 @@ function createAccountManagementFlex() {
           },
           {
             type: "text",
-            text: "請登入您的 iKey 帳號",
+            text: detailText,
             size: "md",
             color: "#a6b2c5",
             wrap: true,
@@ -212,12 +266,12 @@ function createAccountManagementFlex() {
             type: "button",
             style: "primary",
             height: "sm",
-            color: "#2eb8d0",
-            action: {
-              type: "message",
-              label: "登入",
-              text: "登入"
-            }
+            color:
+              isLoggedIn
+                ? "#1b3150"
+                : "#2eb8d0",
+            action:
+              action
           }
         ]
       }
@@ -512,6 +566,191 @@ async function databaseReadCollection(
 
 
   return collection;
+
+}
+
+
+async function databaseUpdateUser(
+  userId,
+  updates
+) {
+
+  const databaseApiUrl =
+    getDatabaseApiUrl();
+
+
+  if (!databaseApiUrl) {
+    throw new Error(
+      "IKEY_DATABASE_API_URL is not configured"
+    );
+  }
+
+
+  const data =
+    await appsScriptRequest(
+      databaseApiUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "text/plain;charset=utf-8"
+        },
+        body:
+          JSON.stringify({
+            action:
+              "update_user",
+            user: {
+              ...updates,
+              user_id:
+                userId
+            }
+          })
+      }
+    );
+
+
+  if (data.success !== true) {
+    throw new Error(
+      data.message ||
+      "User update failed"
+    );
+  }
+
+
+  return data;
+
+}
+
+
+function getLineSourceUserId(
+  event
+) {
+
+  return String(
+    (
+      event &&
+      event.source &&
+      event.source.userId
+    ) ||
+    ""
+  ).trim();
+
+}
+
+
+function findBoundUser(
+  users,
+  lineUserId
+) {
+
+  if (!lineUserId) {
+    return null;
+  }
+
+
+  return (
+    users.find(
+      (user) =>
+        String(
+          user.line_user_id ||
+          ""
+        ).trim() ===
+          lineUserId &&
+        isRecordEnabled(
+          user.enabled
+        )
+    ) ||
+    null
+  );
+
+}
+
+
+async function getBoundUserForEvent(
+  event
+) {
+
+  const lineUserId =
+    getLineSourceUserId(
+      event
+    );
+
+
+  if (!lineUserId) {
+    return null;
+  }
+
+
+  const users =
+    await databaseReadCollection(
+      "users",
+      "users"
+    );
+
+
+  return findBoundUser(
+    users,
+    lineUserId
+  );
+
+}
+
+
+async function createAccountManagementForEvent(
+  event
+) {
+
+  const boundUser =
+    await getBoundUserForEvent(
+      event
+    );
+
+
+  if (!boundUser) {
+    return createAccountManagementFlex();
+  }
+
+
+  let classData =
+    null;
+
+
+  if (
+    String(
+      boundUser.identity ||
+      ""
+    ).toLowerCase() ===
+      "student"
+  ) {
+
+    const classes =
+      await databaseReadCollection(
+        "classes",
+        "classes"
+      );
+
+
+    classData =
+      classes.find(
+        (item) =>
+          String(
+            item.class_id ||
+            ""
+          ) ===
+          String(
+            boundUser.class_id ||
+            ""
+          )
+      ) ||
+      null;
+
+  }
+
+
+  return createAccountManagementFlex(
+    boundUser,
+    classData
+  );
 
 }
 
@@ -1233,7 +1472,9 @@ async function handleTextMessage(
       await replyMessages(
         event.replyToken,
         [
-          createAccountManagementFlex()
+          await createAccountManagementForEvent(
+            event
+          )
         ]
       );
 
@@ -1244,7 +1485,33 @@ async function handleTextMessage(
       return;
 
 
-    case "登入":
+    case "登入": {
+
+      const boundUser =
+        await getBoundUserForEvent(
+          event
+        );
+
+
+      if (boundUser) {
+
+        await replyMessages(
+          event.replyToken,
+          [
+            await createAccountManagementForEvent(
+              event
+            )
+          ]
+        );
+
+        console.log(
+          `[LINE] login blocked until logout: user_id=${boundUser.user_id}`
+        );
+
+        return;
+
+      }
+
 
       await replyMessages(
         event.replyToken,
@@ -1258,6 +1525,8 @@ async function handleTextMessage(
       );
 
       return;
+
+    }
 
 
     default:
@@ -1313,6 +1582,103 @@ async function handlePostbackEvent(
 
   if (
     action ===
+    "logout"
+  ) {
+
+    const boundUser =
+      await getBoundUserForEvent(
+        event
+      );
+
+
+    if (!boundUser) {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createAccountManagementFlex()
+        ]
+      );
+
+      return;
+
+    }
+
+
+    await databaseUpdateUser(
+      String(
+        boundUser.user_id ||
+        ""
+      ),
+      {
+        line_user_id: "",
+        line_bind_status:
+          "unbound",
+        line_display_name: ""
+      }
+    );
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        {
+          type: "text",
+          text:
+            "已登出 iKey 帳號"
+        },
+        createAccountManagementFlex()
+      ]
+    );
+
+
+    console.log(
+      `[LINE] logout completed: user_id=${boundUser.user_id}`
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action.startsWith(
+      "login_"
+    ) &&
+    action !==
+      "login_cancel"
+  ) {
+
+    const boundUser =
+      await getBoundUserForEvent(
+        event
+      );
+
+
+    if (boundUser) {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          await createAccountManagementForEvent(
+            event
+          )
+        ]
+      );
+
+      console.log(
+        `[LINE] login postback blocked until logout: user_id=${boundUser.user_id}`
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  if (
+    action ===
     "login_restart"
   ) {
 
@@ -1336,7 +1702,9 @@ async function handlePostbackEvent(
     await replyMessages(
       event.replyToken,
       [
-        createAccountManagementFlex()
+        await createAccountManagementForEvent(
+          event
+        )
       ]
     );
 

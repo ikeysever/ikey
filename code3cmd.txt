@@ -121,3 +121,42 @@ LINE Official Account 第一階段，建立帳號管理與既有 iKey 身分選�
 
 衝突注意：
 - 本次只更新 code3cmd 規格紀錄，沒有修改 routes/line.js、database.js、Apps Script、Borrow/Return 或 ESP32。
+
+
+========================================
+【2026-10-07｜LINE 下一刀：登入狀態辨識＋登出】
+狀態：程式已建立，待 Render 部署後實機測試
+
+本刀依已確認規格實作：
+- LINE 已綁定某個 iKey User 時，「帳號管理」改顯示目前登入資料與「登出」。
+- 已登入狀態下按「登入」或使用舊的 login postback，不允許直接切換其他學生／老師，必須先登出。
+- 登出只使用目前已確認的既有 Users 欄位，不新增 schema：
+  line_user_id = ""
+  line_bind_status = "unbound"
+  line_display_name = ""
+- 登出完成後重新顯示未登入的帳號管理畫面。
+- 判斷目前登入身分以目前 LINE event.source.userId 對照既有 Users.line_user_id。
+- 本刀仍未實作「登入確認後正式寫入綁定」，因為成功綁定時 line_bind_status 的正式字串值尚未被專案確認；不自行假設為 bound。
+
+修改檔案：
+- routes/line.js
+- code3cmd.txt
+
+網站圖片同步狀態：
+- 使用者要求網站圖片一併更換。
+- 工作線 1 已先完成 main 的品牌圖片更新，因此工作線 3 不重複修改網站檔案，避免衝突。
+- 已存在 commit：0e37bdd ui: apply approved iKey brand images
+- 已使用定稿素材 public/assets/brand/ikey-approved.png 與 public/assets/brand/favicon.png。
+- 實際 Render 畫面仍依工作線 1 紀錄待目視驗收。
+
+下一步測試：
+1. 未登入 LINE → 帳號管理應顯示「登入」。
+2. 已有 line_user_id 對應的 LINE → 帳號管理應顯示目前登入資料＋「登出」。
+3. 已登入狀態按登入／舊 login postback → 必須被擋回帳號管理，不可直接換身分。
+4. 按登出 → Users 三個 LINE 欄位應恢復 "" / "unbound" / ""。
+5. 登出後 → 再次允許進入學生／老師登入選擇。
+6. 上述 PASS 後，再確認正式綁定成功時 line_bind_status 的字串值，接上最後的登入寫入。
+
+衝突注意：
+- 本刀沒有修改網站、課表、Welcome、Borrow/Return、ESP32 或資料表 schema。
+- 網站品牌圖片由工作線 1 最新 main 維護，本刀只記錄其已完成狀態。
