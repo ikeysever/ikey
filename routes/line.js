@@ -165,7 +165,7 @@ function createAccountManagementFlex() {
   return {
     type: "flex",
     altText:
-      "iKey 帳號管理：請選擇登入或註冊",
+      "iKey 帳號管理：請登入 iKey 帳號",
     contents: {
       type: "bubble",
       size: "mega",
@@ -192,7 +192,7 @@ function createAccountManagementFlex() {
           },
           {
             type: "text",
-            text: "您要登入或註冊？",
+            text: "請登入您的 iKey 帳號",
             size: "md",
             color: "#a6b2c5",
             wrap: true,
@@ -217,17 +217,6 @@ function createAccountManagementFlex() {
               type: "message",
               label: "登入",
               text: "登入"
-            }
-          },
-          {
-            type: "button",
-            style: "secondary",
-            height: "sm",
-            color: "#1b3150",
-            action: {
-              type: "message",
-              label: "註冊",
-              text: "註冊"
             }
           }
         ]
