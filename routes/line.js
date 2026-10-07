@@ -516,58 +516,6 @@ async function databaseReadCollection(
 }
 
 
-async function databaseUpdateUser(
-  user
-) {
-
-  const databaseApiUrl =
-    getDatabaseApiUrl();
-
-
-  if (!databaseApiUrl) {
-
-    throw new Error(
-      "IKEY_DATABASE_API_URL is not configured"
-    );
-
-  }
-
-
-  const data =
-    await appsScriptRequest(
-      databaseApiUrl,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "text/plain;charset=utf-8"
-        },
-        body:
-          JSON.stringify({
-            action:
-              "update_user",
-            user:
-              user
-          })
-      }
-    );
-
-
-  if (data.success !== true) {
-
-    throw new Error(
-      data.message ||
-      "Failed to update LINE binding"
-    );
-
-  }
-
-
-  return data;
-
-}
-
-
 function isRecordEnabled(
   value
 ) {
@@ -1062,6 +1010,44 @@ function createIdentityConfirmationFlex(
     type: "flex",
     altText:
       "iKey 登入：請確認身分資料",
+    quickReply: {
+      items:
+        createQuickReplyItems([
+          createPostbackAction(
+            "確認",
+            {
+              action:
+                "login_confirm",
+              user_id:
+                String(
+                  user.user_id ||
+                  ""
+                )
+            }
+          ),
+          createPostbackAction(
+            "取消",
+            {
+              action:
+                "login_cancel"
+            }
+          ),
+          createPostbackAction(
+            "重新選擇",
+            {
+              action:
+                "login_restart"
+            }
+          )
+        ])
+          .map(
+            (item) => ({
+              type: "action",
+              action:
+                item
+            })
+          )
+    },
     contents: {
       type: "bubble",
       size: "mega",
@@ -1099,63 +1085,21 @@ function createIdentityConfirmationFlex(
           }
         ]
       },
-      footer: {
-        type: "box",
-        layout: "horizontal",
-        spacing: "md",
-        backgroundColor: "#0b1220",
-        paddingAll: "20px",
-        paddingTop: "0px",
-        contents: [
-          {
-            type: "button",
-            style: "secondary",
-            height: "sm",
-            color: "#1b3150",
-            action:
-              createPostbackAction(
-                "取消",
-                {
-                  action:
-                    "login_restart"
-                }
-              )
-          },
-          {
-            type: "button",
-            style: "primary",
-            height: "sm",
-            color: "#2eb8d0",
-            action:
-              createPostbackAction(
-                "確認",
-                {
-                  action:
-                    "login_confirm",
-                  user_id:
-                    String(
-                      user.user_id ||
-                      ""
-                    )
-                }
-              )
-          }
-        ]
-      }
+
     }
   };
 
 }
 
 
-function createLoginSuccessFlex(
+function createIdentityConfirmedFlex(
   user
 ) {
 
   return {
     type: "flex",
     altText:
-      "iKey LINE 帳號登入成功",
+      "iKey LINE 身分資料確認完成",
     contents: {
       type: "bubble",
       size: "mega",
@@ -1174,7 +1118,7 @@ function createLoginSuccessFlex(
           },
           {
             type: "text",
-            text: "登入成功",
+            text: "身分確認完成",
             size: "xl",
             weight: "bold",
             color: "#7de2b1",
@@ -1184,12 +1128,21 @@ function createLoginSuccessFlex(
             type: "text",
             text:
               user.name
-                ? `${user.name}，您的 LINE 帳號已與 iKey 身分完成綁定。`
-                : "您的 LINE 帳號已與 iKey 身分完成綁定。",
+                ? `${user.name}，已完成本階段的身分資料確認。`
+                : "已完成本階段的身分資料確認。",
             size: "md",
             color: "#f8fafc",
             wrap: true,
             margin: "lg"
+          },
+          {
+            type: "text",
+            text:
+              "正式 LINE 帳號綁定尚未寫入資料庫。",
+            size: "sm",
+            color: "#a6b2c5",
+            wrap: true,
+            margin: "md"
           }
         ]
       }
@@ -1199,131 +1152,53 @@ function createLoginSuccessFlex(
 }
 
 
-async function getLineProfile(
-  lineUserId
+function createQuickReplyItems(
+  actions
 ) {
 
-  const channelAccessToken =
-    getChannelAccessToken();
-
-
-  const response =
-    await fetch(
-      `https://api.line.me/v2/bot/profile/${encodeURIComponent(lineUserId)}`,
-      {
-        headers: {
-          "Authorization":
-            `Bearer ${channelAccessToken}`
-        }
-      }
+  return actions
+    .slice(
+      0,
+      13
+    )
+    .map(
+      (action) => ({
+        type: "action",
+        action:
+          action
+      })
     );
-
-
-  if (!response.ok) {
-
-    const responseText =
-      await response.text();
-
-    throw new Error(
-      `LINE profile HTTP ${response.status}: ${responseText.slice(0, 300)}`
-    );
-
-  }
-
-
-  return response.json();
 
 }
 
 
-async function bindLineAccount(
-  selectedUser,
-  lineUserId,
-  allUsers
-) {
+function createWelcomeMessage() {
 
-  const selectedBoundId =
-    String(
-      selectedUser.line_user_id ||
-      ""
-    ).trim();
-
-  const selectedStatus =
-    String(
-      selectedUser.line_bind_status ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
-
-
-  if (
-    selectedBoundId &&
-    selectedBoundId !== lineUserId &&
-    selectedStatus !== "unbound"
-  ) {
-
-    throw new Error(
-      "此 iKey 身分已綁定其他 LINE 帳號"
-    );
-
-  }
-
-
-  const existingBinding =
-    allUsers.find(
-      (user) =>
-        String(
-          user.line_user_id ||
-          ""
-        ).trim() ===
-          lineUserId &&
-        String(
-          user.user_id ||
-          ""
-        ) !==
-          String(
-            selectedUser.user_id ||
-            ""
-          )
-    );
-
-
-  if (existingBinding) {
-
-    throw new Error(
-      "此 LINE 帳號已綁定其他 iKey 身分"
-    );
-
-  }
-
-
-  const profile =
-    await getLineProfile(
-      lineUserId
-    );
-
-
-  const updatedUser = {
-    ...selectedUser,
-    line_user_id:
-      lineUserId,
-    line_bind_status:
-      "bound",
-    line_display_name:
-      String(
-        profile.displayName ||
-        ""
-      )
+  return {
+    type: "text",
+    text:
+      "歡迎使用 iKey 智慧鑰匙管理系統",
+    quickReply: {
+      items:
+        createQuickReplyItems([
+          {
+            type: "message",
+            label: "帳號管理",
+            text: "帳號管理"
+          },
+          {
+            type: "message",
+            label: "格位狀態",
+            text: "格位狀態"
+          },
+          {
+            type: "message",
+            label: "系統狀態",
+            text: "系統狀態"
+          }
+        ])
+    }
   };
-
-
-  await databaseUpdateUser(
-    updatedUser
-  );
-
-
-  return updatedUser;
 
 }
 
@@ -1398,6 +1273,14 @@ async function handleTextMessage(
         `[LINE] no text route matched: ${messageText}`
       );
 
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createWelcomeMessage()
+        ]
+      );
+
   }
 
 }
@@ -1444,6 +1327,23 @@ async function handlePostbackEvent(
       event.replyToken,
       [
         createIdentitySelectionFlex()
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "login_cancel"
+  ) {
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createAccountManagementFlex()
       ]
     );
 
@@ -1747,19 +1647,6 @@ async function handlePostbackEvent(
     "login_confirm"
   ) {
 
-    if (
-      !event.source ||
-      event.source.type !== "user" ||
-      !event.source.userId
-    ) {
-
-      throw new Error(
-        "帳號綁定只能在與 iKey 官方帳號的一對一聊天室完成"
-      );
-
-    }
-
-
     const userId =
       params.get(
         "user_id"
@@ -1795,26 +1682,18 @@ async function handlePostbackEvent(
     }
 
 
-    const updatedUser =
-      await bindLineAccount(
-        selectedUser,
-        event.source.userId,
-        users
-      );
-
-
     await replyMessages(
       event.replyToken,
       [
-        createLoginSuccessFlex(
-          updatedUser
+        createIdentityConfirmedFlex(
+          selectedUser
         )
       ]
     );
 
 
     console.log(
-      `[LINE] account bound successfully: user_id=${updatedUser.user_id}`
+      `[LINE] identity UI confirmed: user_id=${selectedUser.user_id}`
     );
 
     return;
@@ -1870,6 +1749,28 @@ async function handleLineEvent(
 
       await handlePostbackEvent(
         event
+      );
+
+      return;
+
+    }
+
+
+    if (
+      event &&
+      event.type === "follow" &&
+      event.replyToken
+    ) {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createWelcomeMessage()
+        ]
+      );
+
+      console.log(
+        "[LINE] follow welcome message sent successfully"
       );
 
       return;
