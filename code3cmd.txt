@@ -490,3 +490,48 @@ Schema / 歷史確認：
 6. 學生更新資料寫回同一 user_id。
 7. 老師不同序號更新被拒絕。
 8. 成功後帳號管理顯示已登入資料。
+
+
+========================================
+【2026-10-07｜LINE 效能優化第 1 刀：Users/Classes Cache＋重複讀取消除＋計時】
+狀態：程式完成／靜態語法 PASS，待 Render 部署後量測真實 LINE 延遲。
+
+背景：
+- 使用者實測 LINE 回覆有時接近 30 秒。
+- routes/line.js 原本每次 Users / Classes 都直接打 Apps Script。
+- 部分流程同一 event 已查到 boundUser 後，又呼叫 createAccountManagementForEvent() 再查一次 Users。
+- appsScriptRequest() 既有 ContentService 404 保護仍可能固定等待 3 秒；本刀先不修改 retry 規則。
+
+本刀：
+1. Users / Classes 加入 Render process-memory 30 秒短期 Cache。
+2. 同一 cache key 冷啟動若有併發請求，後來者 join 第一個 in-flight Promise，不重複打 Apps Script。
+3. databaseUpdateUser() 成功後立即 invalidate Users cache；登入綁定／更新資料／登出都適用。
+4. 消除同一 event 三個已知重複 Users read：
+   - 文字「登入」已取得 boundUser 後直接重用。
+   - fingerprint_yes 直接重用。
+   - login_* 防切換 guard 直接重用。
+5. 加入 [LINE PERF]：
+   - db users/classes cache-hit / cache-miss / cache-join
+   - update_user
+   - LINE profile
+   - LINE reply
+   - event total
+6. Slot_Status、classrooms、device heartbeat、database health 不套 30 秒 Cache。
+7. appsScriptRequest() 的 3 秒 404 retry 完全未改；先以 PERF log 確認是否仍為主要瓶頸。
+
+安全邊界：
+- 不新增 Google Sheet 欄位／API／資料表。
+- 不修改 Apps Script、Borrow/Return、ESP32、LINE schema。
+- Users 寫入成功立即清 cache；失敗不清，也不顯示假成功。
+- Render 重啟後 cache 自然清空。
+
+修改：
+- routes/line.js
+- code3cmd.txt
+
+部署後量測：
+A. 第一次帳號管理：db users=cache-miss。
+B. 30 秒內第二次：db users=cache-hit，應明顯變快。
+C. 學生帳號管理第二次 Classes 也應 cache-hit。
+D. 登出／更新後下一次 Users 應 cache-miss，驗證 invalidation。
+E. 若仍慢，檢查是否出現「ContentService returned 404; retrying final response URL after 3 seconds」，再決定效能第 2 刀。

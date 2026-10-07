@@ -99,6 +99,10 @@ async function replyMessages(
   messages
 ) {
 
+  const startedAt =
+    Date.now();
+
+
   const channelAccessToken =
     getChannelAccessToken();
 
@@ -134,11 +138,20 @@ async function replyMessages(
     const responseText =
       await response.text();
 
+    console.warn(
+      `[LINE PERF] reply failed after ${Date.now() - startedAt}ms status=${response.status}`
+    );
+
     throw new Error(
       `LINE Reply API HTTP ${response.status}: ${responseText.slice(0, 500)}`
     );
 
   }
+
+
+  console.log(
+    `[LINE PERF] reply=${Date.now() - startedAt}ms messages=${messages.length}`
+  );
 
 }
 
@@ -552,73 +565,94 @@ async function appsScriptRequest(
 }
 
 
-async function databaseReadCollection(
-  action,
-  key
-) {
+const LINE_DATA_CACHE_TTL_MS = 30000;
+const lineDataCache = new Map();
 
-  const databaseApiUrl =
-    getDatabaseApiUrl();
-
-
-  if (!databaseApiUrl) {
-
-    throw new Error(
-      "IKEY_DATABASE_API_URL is not configured"
-    );
-
-  }
-
-
-  const url =
-    new URL(
-      databaseApiUrl
-    );
-
-
-  url.searchParams.set(
-    "action",
-    action
-  );
-
-
-  const data =
-    await appsScriptRequest(
-      url.toString()
-    );
-
-
-  if (data.success !== true) {
-
-    throw new Error(
-      data.message ||
-      `Database read failed: ${action}`
-    );
-
-  }
-
-
-  const collection =
-    data[key] ||
-    (
-      data.data &&
-      data.data[key]
-    );
-
-
-  if (!Array.isArray(collection)) {
-
-    throw new Error(
-      `Database collection missing: ${key}`
-    );
-
-  }
-
-
-  return collection;
-
+function invalidateLineDataCache(action, key) {
+  lineDataCache.delete(`${action}:${key}`);
 }
 
+async function databaseReadCollection(action, key) {
+  const startedAt = Date.now();
+  const cacheable = action === "users" || action === "classes";
+  const cacheKey = `${action}:${key}`;
+
+  if (cacheable) {
+    const cached = lineDataCache.get(cacheKey);
+
+    if (cached && Array.isArray(cached.value) && cached.expiresAt > Date.now()) {
+      console.log(`[LINE PERF] db ${action}=cache-hit total=${Date.now() - startedAt}ms`);
+      return cached.value;
+    }
+
+    if (cached && cached.promise) {
+      const collection = await cached.promise;
+      console.log(`[LINE PERF] db ${action}=cache-join total=${Date.now() - startedAt}ms`);
+      return collection;
+    }
+  }
+
+  const requestPromise = (async () => {
+    const databaseApiUrl = getDatabaseApiUrl();
+
+    if (!databaseApiUrl) {
+      throw new Error("IKEY_DATABASE_API_URL is not configured");
+    }
+
+    const url = new URL(databaseApiUrl);
+    url.searchParams.set("action", action);
+
+    const data = await appsScriptRequest(url.toString());
+
+    if (data.success !== true) {
+      throw new Error(data.message || `Database read failed: ${action}`);
+    }
+
+    const collection = data[key] || (data.data && data.data[key]);
+
+    if (!Array.isArray(collection)) {
+      throw new Error(`Database collection missing: ${key}`);
+    }
+
+    return collection;
+  })();
+
+  if (cacheable) {
+    lineDataCache.set(cacheKey, {
+      value: null,
+      expiresAt: 0,
+      promise: requestPromise
+    });
+  }
+
+  try {
+    const collection = await requestPromise;
+
+    if (cacheable) {
+      lineDataCache.set(cacheKey, {
+        value: collection,
+        expiresAt: Date.now() + LINE_DATA_CACHE_TTL_MS,
+        promise: null
+      });
+    }
+
+    console.log(
+      `[LINE PERF] db ${action}=${cacheable ? "cache-miss" : "live"} total=${Date.now() - startedAt}ms`
+    );
+
+    return collection;
+  } catch (error) {
+    if (cacheable) {
+      const current = lineDataCache.get(cacheKey);
+      if (current && current.promise === requestPromise) {
+        lineDataCache.delete(cacheKey);
+      }
+    }
+
+    console.warn(`[LINE PERF] db ${action}=failed total=${Date.now() - startedAt}ms`);
+    throw error;
+  }
+}
 
 async function databaseHealthCheck() {
 
@@ -675,6 +709,10 @@ async function databaseUpdateUser(
   updates
 ) {
 
+  const startedAt =
+    Date.now();
+
+
   const databaseApiUrl =
     getDatabaseApiUrl();
 
@@ -715,6 +753,17 @@ async function databaseUpdateUser(
       "User update failed"
     );
   }
+
+
+  invalidateLineDataCache(
+    "users",
+    "users"
+  );
+
+
+  console.log(
+    `[LINE PERF] db update_user=${Date.now() - startedAt}ms cache=invalidated`
+  );
 
 
   return data;
@@ -797,13 +846,18 @@ async function getBoundUserForEvent(
 
 
 async function createAccountManagementForEvent(
-  event
+  event,
+  knownBoundUser =
+    undefined
 ) {
 
   const boundUser =
-    await getBoundUserForEvent(
-      event
-    );
+    knownBoundUser ===
+      undefined
+      ? await getBoundUserForEvent(
+          event
+        )
+      : knownBoundUser;
 
 
   if (!boundUser) {
@@ -3230,6 +3284,10 @@ async function getLineProfile(
   lineUserId
 ) {
 
+  const startedAt =
+    Date.now();
+
+
   const channelAccessToken =
     getChannelAccessToken();
 
@@ -3260,7 +3318,16 @@ async function getLineProfile(
   }
 
 
-  return response.json();
+  const profile =
+    await response.json();
+
+
+  console.log(
+    `[LINE PERF] profile=${Date.now() - startedAt}ms`
+  );
+
+
+  return profile;
 
 }
 
@@ -3371,7 +3438,8 @@ async function handleTextMessage(
           event.replyToken,
           [
             await createAccountManagementForEvent(
-              event
+              event,
+              boundUser
             )
           ]
         );
@@ -3528,7 +3596,8 @@ async function handlePostbackEvent(
         event.replyToken,
         [
           await createAccountManagementForEvent(
-            event
+            event,
+            boundUser
           )
         ]
       );
@@ -3959,7 +4028,8 @@ async function handlePostbackEvent(
         event.replyToken,
         [
           await createAccountManagementForEvent(
-            event
+            event,
+            boundUser
           )
         ]
       );
@@ -4847,7 +4917,17 @@ router.post(
       const results =
         await Promise.allSettled(
           events.map(
-            handleLineEvent
+            async (event) => {
+              const startedAt = Date.now();
+
+              try {
+                return await handleLineEvent(event);
+              } finally {
+                console.log(
+                  `[LINE PERF] event=${event && event.type ? event.type : "unknown"} total=${Date.now() - startedAt}ms`
+                );
+              }
+            }
           )
         );
 
