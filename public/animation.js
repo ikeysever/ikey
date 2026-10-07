@@ -66,9 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const addCourseDay =
     document.getElementById("addCourseDay");
 
-  const addCourseTime =
-    document.getElementById("addCourseTime");
-
   const addCourseNotice =
     document.getElementById("addCourseNotice");
 
@@ -679,6 +676,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    const hasExactClassMatch =
+      !isTeacher &&
+      filtered.some(
+        (item) =>
+          String(
+            item.class_name || ""
+          ).trim().toLowerCase() ===
+          String(query)
+            .trim()
+            .toLowerCase()
+      );
+
+
     filtered.forEach(
       (item) => {
 
@@ -837,6 +847,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
       }
     );
+
+
+    if (
+      !isTeacher &&
+      keyword &&
+      !hasExactClassMatch
+    ) {
+
+      const addButton =
+        document.createElement("button");
+
+      addButton.type = "button";
+      addButton.className =
+        "schedule-search-add";
+
+      addButton.textContent =
+        `＋ 新增班級「${query.trim()}」`;
+
+      addButton.addEventListener(
+        "click",
+        () => {
+
+          openScheduleClassCreatePanel(
+            query.trim()
+          );
+
+        }
+      );
+
+      container.appendChild(
+        addButton
+      );
+
+    }
 
 
     container.hidden = false;
