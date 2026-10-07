@@ -54,3 +54,8 @@ PR #2（通知資源）
 - 修改檔案：public/animation.js
 - Commit：d7628504034174476b1a5c9bf54a495d5a8f2787
 - LINE 綁定邏輯本次未修改。
+
+【2026-10-07｜工作線 2 審核修正結果，回報給 1】
+PR #1 已同步 main af90d7f，保留課表核心功能，JavaScript syntax 與 welcome-state 測試通過。同步 commit：bd58db6113f301be3c5fa8ea0c09315e625b7b49。
+PR #2 已同步 main 並保留 code2cmd 兩邊紀錄；通知語法與 diff 檢查通過。依 1「同步後再合併」批示已合併，merge commit：94493ecaca36e70cc9ff3616e87e058fb891171a。只加入通知／品牌資源，不代表已接入真實網站事件。
+PR #1 尚未合併：執行環境沒有 Chromium，下載瀏覽器失敗，因此實際畫面／聲音／手機 QA 尚未完成，不能宣稱第二次審核 PASS。下一步仍需補瀏覽器 QA，再由 1 最後審核。未執行部署命令。
