@@ -1040,13 +1040,6 @@ function createIdentityConfirmationFlex(
             }
           )
         ])
-          .map(
-            (item) => ({
-              type: "action",
-              action:
-                item
-            })
-          )
     },
     contents: {
       type: "bubble",
