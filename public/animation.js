@@ -163,11 +163,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const systemLog =
     document.getElementById("systemLog");
 
+  const terminalOutput =
+    document.getElementById("terminalOutput");
+
 
   let previousEspRobotOnline = null;
   let previousLvglTerminalOnline = null;
 
   let pollingStarted = false;
+
+  let systemLogSequence = 0;
+
+  const systemLogRows =
+    new Map();
 
 
   // =========================================
@@ -176,9 +184,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function addSystemLog(message) {
 
-    if (!systemLog) {
-      return;
-    }
+    const logId =
+      `ikey-log-${Date.now()}-${++systemLogSequence}`;
 
     const time =
       new Date().toLocaleTimeString(
@@ -188,15 +195,105 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-    const line =
-      document.createElement("div");
 
-    line.className = "log-line";
+    function createLogLine(
+      className
+    ) {
 
-    line.innerHTML =
-      `<span>[${time}]</span> ${message}`;
+      const line =
+        document.createElement("div");
 
-    systemLog.prepend(line);
+      line.className =
+        className;
+
+      line.dataset.logId =
+        logId;
+
+
+      const timeSpan =
+        document.createElement("span");
+
+      timeSpan.textContent =
+        `[${time}]`;
+
+
+      line.append(
+        timeSpan,
+        document.createTextNode(
+          ` ${message}`
+        )
+      );
+
+
+      return line;
+
+    }
+
+
+    let targetRow = null;
+
+
+    if (systemLog) {
+
+      const dashboardLine =
+        createLogLine("log-line");
+
+      systemLog.prepend(
+        dashboardLine
+      );
+
+      targetRow =
+        dashboardLine;
+
+    }
+
+
+    if (terminalOutput) {
+
+      const terminalLine =
+        createLogLine(
+          "terminal-log-line"
+        );
+
+      const cursor =
+        terminalOutput.querySelector(
+          ".terminal-cursor"
+        );
+
+
+      if (cursor) {
+
+        terminalOutput.insertBefore(
+          terminalLine,
+          cursor
+        );
+
+      } else {
+
+        terminalOutput.append(
+          terminalLine
+        );
+
+      }
+
+
+      targetRow =
+        terminalLine;
+
+    }
+
+
+    if (targetRow) {
+
+      systemLogRows.set(
+        logId,
+        targetRow
+      );
+
+    }
+
+
+    return logId;
 
   }
 
@@ -2331,6 +2428,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  if (window.iKeyNotices) {
+
+    window.iKeyNotices.configure({
+      openTerminal(logId) {
+
+        showTerminal();
+
+        const row =
+          systemLogRows.get(
+            logId
+          );
+
+        window.iKeyNotices.highlightLog(
+          row
+        );
+
+      }
+    });
+
+  }
+
+
   // =========================================
   // Sidebar 頁面切換
   // =========================================
@@ -2670,6 +2789,28 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
+        let scheduleNoticeId = null;
+
+        const scheduleWriteStartedAt =
+          performance.now();
+
+
+        if (window.iKeyNotices) {
+
+          window.iKeyNotices.unlockAudio();
+
+          scheduleNoticeId =
+            window.iKeyNotices.show({
+              type: "uploading",
+              title:
+                "正在上傳課表…",
+              detail:
+                "正在更新資料"
+            });
+
+        }
+
+
         try {
 
           const response =
@@ -2726,13 +2867,47 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
 
+          const writeElapsedMs =
+            Math.round(
+              performance.now() -
+              scheduleWriteStartedAt
+            );
+
+          const responseMessage =
+            data.message
+              ? `；API：${data.message}`
+              : "";
+
+          const successLogId =
+            addSystemLog(
+              `課表新增成功｜R01｜${scheduleDays[activeScheduleDayIndex].label} ${startTime}～${endTime}｜${courseName}${responseMessage}｜${writeElapsedMs}ms`
+            );
+
+
+          if (
+            window.iKeyNotices &&
+            scheduleNoticeId
+          ) {
+
+            window.iKeyNotices.show({
+              id:
+                scheduleNoticeId,
+              type:
+                "success",
+              title:
+                "課表更新完成",
+              detail:
+                "資料已儲存 · 點擊查看詳細資料",
+              logId:
+                successLogId
+            });
+
+          }
+
+
           closeAddCourseModal();
 
           await loadClassroomOneSchedule();
-
-          addSystemLog(
-            `課表新增成功：${courseName} ${startTime}～${endTime}`
-          );
 
         } catch (error) {
 
@@ -2740,6 +2915,40 @@ document.addEventListener("DOMContentLoaded", () => {
             "Create Schedule Error:",
             error
           );
+
+
+          const writeElapsedMs =
+            Math.round(
+              performance.now() -
+              scheduleWriteStartedAt
+            );
+
+          const errorLogId =
+            addSystemLog(
+              `課表新增失敗｜R01｜${courseName} ${startTime}～${endTime}｜原因：${error.message}｜${writeElapsedMs}ms`
+            );
+
+
+          if (
+            window.iKeyNotices &&
+            scheduleNoticeId
+          ) {
+
+            window.iKeyNotices.show({
+              id:
+                scheduleNoticeId,
+              type:
+                "error",
+              title:
+                "課表上傳失敗",
+              detail:
+                `${error.message} · 點擊查看詳細資料`,
+              logId:
+                errorLogId
+            });
+
+          }
+
 
           setAddCourseNotice(
             `新增課程失敗：${error.message}`
@@ -2928,11 +3137,49 @@ document.addEventListener("DOMContentLoaded", () => {
         previousEspRobotOnline !== espOnline
       ) {
 
-        addSystemLog(
-          espOnline
-            ? "ESP Robot 已連線"
-            : "ESP Robot 已離線"
-        );
+        if (espOnline) {
+
+          addSystemLog(
+            "ESP Robot 已連線"
+          );
+
+        } else {
+
+          const lastSeenText =
+            espRobot &&
+            espRobot.lastSeen
+              ? new Date(
+                  espRobot.lastSeen
+                ).toLocaleString(
+                  "zh-TW",
+                  {
+                    hour12: false
+                  }
+                )
+              : "無可用時間";
+
+          const disconnectLogId =
+            addSystemLog(
+              `ESP Robot 已離線｜上次 heartbeat：${lastSeenText}`
+            );
+
+
+          if (window.iKeyNotices) {
+
+            window.iKeyNotices.show({
+              type:
+                "warning",
+              title:
+                "ESP32 連線中斷",
+              detail:
+                `上次 heartbeat：${lastSeenText} · 點擊查看詳細資料`,
+              logId:
+                disconnectLogId
+            });
+
+          }
+
+        }
 
       }
 
