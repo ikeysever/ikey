@@ -1550,8 +1550,12 @@ document.addEventListener("DOMContentLoaded", () => {
         "error"
       );
 
+      scheduleLoadState.classList.add(
+        "loading"
+      );
+
       scheduleLoadState.textContent =
-        "課表已顯示，背景同步資料中...";
+        "同步資料中...";
 
     }
 
@@ -1796,6 +1800,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (scheduleLoadState) {
 
+        scheduleLoadState.classList.remove(
+          "loading"
+        );
+
         scheduleLoadState.classList.add(
           "success"
         );
@@ -1851,6 +1859,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       if (scheduleLoadState) {
+
+        scheduleLoadState.classList.remove(
+          "loading"
+        );
 
         scheduleLoadState.classList.add(
           "error"
