@@ -748,6 +748,59 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  async function fetchTimedDatabaseCollection(
+    endpoint,
+    key
+  ) {
+
+    const startedAt =
+      performance.now();
+
+
+    try {
+
+      const collection =
+        await fetchDatabaseCollection(
+          endpoint,
+          key
+        );
+
+      const elapsedMs =
+        performance.now() -
+        startedAt;
+
+
+      console.log(
+        `[Schedule API] ${endpoint}: ${elapsedMs.toFixed(0)} ms`
+      );
+
+
+      return {
+        endpoint,
+        collection,
+        elapsedMs
+      };
+
+    } catch (error) {
+
+      const elapsedMs =
+        performance.now() -
+        startedAt;
+
+
+      console.error(
+        `[Schedule API] ${endpoint}: failed after ${elapsedMs.toFixed(0)} ms`,
+        error
+      );
+
+
+      throw error;
+
+    }
+
+  }
+
+
   function openAddCourseModal(
     dayIndex,
     hour
@@ -812,7 +865,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function buildScheduleGrid(
     schedules,
     classes,
-    users
+    users,
+    allowInteraction = true
   ) {
 
     if (!scheduleGrid) {
@@ -968,7 +1022,7 @@ document.addEventListener("DOMContentLoaded", () => {
           hourCell.title =
             "此時段已有課程";
 
-        } else {
+        } else if (allowInteraction) {
 
           hourCell.classList.add(
             "is-empty"
@@ -988,6 +1042,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
           );
+
+        } else {
+
+          hourCell.title =
+            "課表資料背景載入中";
 
         }
 
@@ -1215,6 +1274,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadClassroomOneSchedule() {
 
+    const totalStartedAt =
+      performance.now();
+
+
+    // 先立即畫出課表骨架，不等 Google Sheet / Apps Script。
+    // 資料完成前先鎖住空白格互動，避免把尚未載入的
+    // 已有課程誤判成可新增時段。
+    buildScheduleGrid(
+      [],
+      [],
+      [],
+      false
+    );
+
+
     if (scheduleLoadState) {
 
       scheduleLoadState.classList.remove(
@@ -1223,7 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       scheduleLoadState.textContent =
-        "正在讀取課表資料...";
+        "課表已顯示，背景同步資料中...";
 
     }
 
@@ -1231,7 +1305,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (classroomName) {
 
       classroomName.textContent =
-        "讀取中...";
+        "教室1";
 
     }
 
@@ -1239,29 +1313,82 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
 
       const [
-        schedules,
-        classrooms,
-        classes,
-        users
+        schedulesResult,
+        classroomsResult,
+        classesResult,
+        usersResult
       ] =
         await Promise.all([
-          fetchDatabaseCollection(
+          fetchTimedDatabaseCollection(
             "schedules",
             "schedules"
           ),
-          fetchDatabaseCollection(
+          fetchTimedDatabaseCollection(
             "classrooms",
             "classrooms"
           ),
-          fetchDatabaseCollection(
+          fetchTimedDatabaseCollection(
             "classes",
             "classes"
           ),
-          fetchDatabaseCollection(
+          fetchTimedDatabaseCollection(
             "users",
             "users"
           )
         ]);
+
+
+      const schedules =
+        schedulesResult.collection;
+
+      const classrooms =
+        classroomsResult.collection;
+
+      const classes =
+        classesResult.collection;
+
+      const users =
+        usersResult.collection;
+
+
+      const timings = [
+        schedulesResult,
+        classroomsResult,
+        classesResult,
+        usersResult
+      ];
+
+
+      const totalElapsedMs =
+        performance.now() -
+        totalStartedAt;
+
+
+      const slowest =
+        timings.reduce(
+          (currentSlowest, item) =>
+            item.elapsedMs >
+            currentSlowest.elapsedMs
+              ? item
+              : currentSlowest
+        );
+
+
+      console.table(
+        timings.map(
+          (item) => ({
+            api: item.endpoint,
+            milliseconds:
+              Math.round(
+                item.elapsedMs
+              )
+          })
+        )
+      );
+
+      console.log(
+        `[Schedule API] total: ${totalElapsedMs.toFixed(0)} ms`
+      );
 
 
       // API 回來前如果已切去其他教室，就不覆蓋畫面。
@@ -1354,7 +1481,8 @@ document.addEventListener("DOMContentLoaded", () => {
       buildScheduleGrid(
         classroomSchedules,
         classes,
-        users
+        users,
+        true
       );
 
 
@@ -1364,10 +1492,27 @@ document.addEventListener("DOMContentLoaded", () => {
           "success"
         );
 
-        scheduleLoadState.textContent =
+        const totalSeconds =
+          (
+            totalElapsedMs /
+            1000
+          ).toFixed(2);
+
+        const slowestSeconds =
+          (
+            slowest.elapsedMs /
+            1000
+          ).toFixed(2);
+
+
+        const resultText =
           classroomSchedules.length > 0
             ? `已載入 ${classroomSchedules.length} 筆課程`
             : "目前沒有課程";
+
+
+        scheduleLoadState.textContent =
+          `${resultText}｜總計 ${totalSeconds} 秒｜最慢：${slowest.endpoint} ${slowestSeconds} 秒`;
 
       }
 
@@ -1388,17 +1533,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
 
-      if (scheduleGrid) {
-
-        scheduleGrid.innerHTML = "";
-
-      }
-
-
+      // 保留已經立即顯示的空課表骨架，不讓整頁消失。
       if (classroomName) {
 
         classroomName.textContent =
-          "讀取失敗";
+          "教室1";
 
       }
 
@@ -1410,7 +1549,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         scheduleLoadState.textContent =
-          `課表讀取失敗：${error.message}`;
+          `背景資料讀取失敗：${error.message}`;
 
       }
 
