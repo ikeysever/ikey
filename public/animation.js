@@ -30,6 +30,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const classroomTitle = document.getElementById("classroomTitle");
 
+  const classroomSchedulePanel =
+    document.getElementById("classroomSchedulePanel");
+
+  const classroomPlaceholder =
+    document.getElementById("classroomPlaceholder");
+
+  const classroomPlaceholderTitle =
+    document.getElementById("classroomPlaceholderTitle");
+
+  const classroomCode =
+    document.getElementById("classroomCode");
+
+  const classroomName =
+    document.getElementById("classroomName");
+
+  const scheduleLoadState =
+    document.getElementById("scheduleLoadState");
+
+  const scheduleGrid =
+    document.getElementById("scheduleGrid");
+
+  let activeClassroomNumber = null;
+
 
   // =========================================
   // Sidebar
@@ -494,16 +517,718 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // =========================================
+  // 教室課表：共用工具
+  // =========================================
+
+  const scheduleDays = [
+    { value: "Monday", label: "星期一" },
+    { value: "Tuesday", label: "星期二" },
+    { value: "Wednesday", label: "星期三" },
+    { value: "Thursday", label: "星期四" },
+    { value: "Friday", label: "星期五" },
+    { value: "Saturday", label: "星期六" },
+    { value: "Sunday", label: "星期日" }
+  ];
+
+
+  function isRecordEnabled(value) {
+
+    const normalized =
+      String(value ?? "")
+        .trim()
+        .toLowerCase();
+
+
+    return ![
+      "false",
+      "0",
+      "disabled",
+      "no"
+    ].includes(normalized);
+
+  }
+
+
+  function parseScheduleTime(value) {
+
+    const match =
+      String(value ?? "")
+        .trim()
+        .match(
+          /^(\d{1,2}):(\d{2})$/
+        );
+
+
+    if (!match) {
+      return null;
+    }
+
+
+    const hour =
+      Number(match[1]);
+
+    const minute =
+      Number(match[2]);
+
+
+    if (
+      !Number.isInteger(hour) ||
+      !Number.isInteger(minute) ||
+      hour < 0 ||
+      hour > 23 ||
+      minute < 0 ||
+      minute > 59
+    ) {
+
+      return null;
+
+    }
+
+
+    return hour * 60 + minute;
+
+  }
+
+
+  async function fetchDatabaseCollection(
+    endpoint,
+    key
+  ) {
+
+    const response =
+      await fetch(
+        `/api/database/${endpoint}`,
+        {
+          cache: "no-store"
+        }
+      );
+
+
+    let data = null;
+
+
+    try {
+
+      data =
+        await response.json();
+
+    } catch (error) {
+
+      throw new Error(
+        `${endpoint} 回傳格式錯誤`
+      );
+
+    }
+
+
+    if (
+      !response.ok ||
+      data.success !== true
+    ) {
+
+      throw new Error(
+        data.message ||
+        `無法讀取 ${endpoint}`
+      );
+
+    }
+
+
+    const database =
+      data.database || data;
+
+
+    const collection =
+      database[key] ||
+      (
+        database.data &&
+        database.data[key]
+      ) ||
+      data[key];
+
+
+    if (!Array.isArray(collection)) {
+
+      throw new Error(
+        `${endpoint} 資料格式錯誤`
+      );
+
+    }
+
+
+    return collection;
+
+  }
+
+
+  function buildScheduleGrid(
+    schedules,
+    classes,
+    users
+  ) {
+
+    if (!scheduleGrid) {
+      return;
+    }
+
+
+    scheduleGrid.innerHTML = "";
+
+
+    // Header：時間＋星期一～星期日
+    const header =
+      document.createElement("div");
+
+    header.className =
+      "schedule-grid-header";
+
+
+    const timeHeader =
+      document.createElement("div");
+
+    timeHeader.className =
+      "schedule-grid-header-cell";
+
+    timeHeader.textContent =
+      "時間";
+
+    header.appendChild(timeHeader);
+
+
+    scheduleDays.forEach(
+      (day) => {
+
+        const cell =
+          document.createElement("div");
+
+        cell.className =
+          "schedule-grid-header-cell";
+
+        cell.textContent =
+          day.label;
+
+        header.appendChild(cell);
+
+      }
+    );
+
+
+    scheduleGrid.appendChild(header);
+
+
+    // 06:00～22:00。
+    // 22:00 是最晚結束邊界，不建立 22:00～23:00 格位。
+    const body =
+      document.createElement("div");
+
+    body.className =
+      "schedule-grid-body";
+
+
+    for (
+      let hour = 6;
+      hour < 22;
+      hour++
+    ) {
+
+      const timeCell =
+        document.createElement("div");
+
+      timeCell.className =
+        "schedule-time-cell";
+
+      timeCell.textContent =
+        `${String(hour).padStart(2, "0")}:00`;
+
+      body.appendChild(timeCell);
+
+
+      for (
+        let dayIndex = 0;
+        dayIndex < 7;
+        dayIndex++
+      ) {
+
+        const hourCell =
+          document.createElement("div");
+
+        hourCell.className =
+          "schedule-hour-cell";
+
+        body.appendChild(hourCell);
+
+      }
+
+    }
+
+
+    const courseLayer =
+      document.createElement("div");
+
+    courseLayer.className =
+      "schedule-course-layer";
+
+
+    const classMap =
+      new Map(
+        classes.map(
+          (item) => [
+            String(item.class_id || ""),
+            item
+          ]
+        )
+      );
+
+
+    const userMap =
+      new Map(
+        users.map(
+          (item) => [
+            String(item.user_id || ""),
+            item
+          ]
+        )
+      );
+
+
+    schedules.forEach(
+      (schedule) => {
+
+        const dayIndex =
+          scheduleDays.findIndex(
+            (day) =>
+              day.value ===
+              String(
+                schedule.weekday || ""
+              )
+          );
+
+
+        const startMinutes =
+          parseScheduleTime(
+            schedule.start_time
+          );
+
+        const endMinutes =
+          parseScheduleTime(
+            schedule.end_time
+          );
+
+
+        if (
+          dayIndex < 0 ||
+          startMinutes === null ||
+          endMinutes === null ||
+          startMinutes < 360 ||
+          endMinutes > 1320 ||
+          endMinutes <= startMinutes
+        ) {
+
+          return;
+
+        }
+
+
+        const card =
+          document.createElement("div");
+
+        card.className =
+          "schedule-course-card";
+
+
+        // 一小時 64px；課程依真正分鐘數比例定位。
+        const top =
+          (
+            startMinutes - 360
+          ) /
+          60 *
+          64;
+
+        const height =
+          (
+            endMinutes -
+            startMinutes
+          ) /
+          60 *
+          64;
+
+        const dayWidth =
+          100 / 7;
+
+
+        card.style.top =
+          `${top + 4}px`;
+
+        card.style.height =
+          `${Math.max(height - 8, 12)}px`;
+
+        card.style.left =
+          `calc(${dayIndex * dayWidth}% + 4px)`;
+
+        card.style.width =
+          `calc(${dayWidth}% - 8px)`;
+
+
+        const courseName =
+          document.createElement("strong");
+
+        courseName.textContent =
+          schedule.course_name ||
+          "未命名課程";
+
+
+        const classData =
+          classMap.get(
+            String(
+              schedule.class_id || ""
+            )
+          );
+
+        const classLine =
+          document.createElement("span");
+
+        classLine.textContent =
+          classData &&
+          classData.class_name
+            ? classData.class_name
+            : (
+                schedule.class_id ||
+                "未指定班級"
+              );
+
+
+        const teacher =
+          userMap.get(
+            String(
+              schedule.teacher_id || ""
+            )
+          );
+
+        const teacherLine =
+          document.createElement("span");
+
+        teacherLine.textContent =
+          teacher &&
+          teacher.name
+            ? teacher.name
+            : (
+                schedule.teacher_id ||
+                "未指定老師"
+              );
+
+
+        const timeLine =
+          document.createElement("span");
+
+        timeLine.className =
+          "schedule-course-time";
+
+        timeLine.textContent =
+          `${schedule.start_time}－${schedule.end_time}`;
+
+
+        card.appendChild(courseName);
+        card.appendChild(classLine);
+        card.appendChild(teacherLine);
+        card.appendChild(timeLine);
+
+        courseLayer.appendChild(card);
+
+      }
+    );
+
+
+    body.appendChild(courseLayer);
+
+    scheduleGrid.appendChild(body);
+
+
+    // 22:00 只顯示為最下面的結束邊界。
+    const footer =
+      document.createElement("div");
+
+    footer.className =
+      "schedule-grid-footer";
+
+
+    const footerTime =
+      document.createElement("div");
+
+    footerTime.className =
+      "schedule-grid-footer-time";
+
+    footerTime.textContent =
+      "22:00";
+
+
+    const footerLine =
+      document.createElement("div");
+
+    footerLine.className =
+      "schedule-grid-footer-line";
+
+
+    footer.appendChild(footerTime);
+    footer.appendChild(footerLine);
+
+    scheduleGrid.appendChild(footer);
+
+  }
+
+
+  async function loadClassroomOneSchedule() {
+
+    if (scheduleLoadState) {
+
+      scheduleLoadState.classList.remove(
+        "success",
+        "error"
+      );
+
+      scheduleLoadState.textContent =
+        "正在讀取課表資料...";
+
+    }
+
+
+    if (classroomName) {
+
+      classroomName.textContent =
+        "讀取中...";
+
+    }
+
+
+    try {
+
+      const [
+        schedules,
+        classrooms,
+        classes,
+        users
+      ] =
+        await Promise.all([
+          fetchDatabaseCollection(
+            "schedules",
+            "schedules"
+          ),
+          fetchDatabaseCollection(
+            "classrooms",
+            "classrooms"
+          ),
+          fetchDatabaseCollection(
+            "classes",
+            "classes"
+          ),
+          fetchDatabaseCollection(
+            "users",
+            "users"
+          )
+        ]);
+
+
+      // API 回來前如果已切去其他教室，就不覆蓋畫面。
+      if (
+        activeClassroomNumber !== "1"
+      ) {
+
+        return;
+
+      }
+
+
+      const classroom =
+        classrooms.find(
+          (item) =>
+            String(
+              item.classroom_id || ""
+            ).toUpperCase() ===
+            "R01"
+        );
+
+
+      if (classroomName) {
+
+        classroomName.textContent =
+          classroom &&
+          classroom.classroom_name
+            ? classroom.classroom_name
+            : "教室1";
+
+      }
+
+
+      const classroomSchedules =
+        schedules
+          .filter(
+            (item) =>
+              String(
+                item.classroom_id || ""
+              ).toUpperCase() ===
+                "R01" &&
+              isRecordEnabled(
+                item.enabled
+              )
+          )
+          .sort(
+            (a, b) => {
+
+              const dayA =
+                scheduleDays.findIndex(
+                  (day) =>
+                    day.value ===
+                    String(
+                      a.weekday || ""
+                    )
+                );
+
+              const dayB =
+                scheduleDays.findIndex(
+                  (day) =>
+                    day.value ===
+                    String(
+                      b.weekday || ""
+                    )
+                );
+
+
+              if (dayA !== dayB) {
+                return dayA - dayB;
+              }
+
+
+              return (
+                (
+                  parseScheduleTime(
+                    a.start_time
+                  ) || 0
+                ) -
+                (
+                  parseScheduleTime(
+                    b.start_time
+                  ) || 0
+                )
+              );
+
+            }
+          );
+
+
+      buildScheduleGrid(
+        classroomSchedules,
+        classes,
+        users
+      );
+
+
+      if (scheduleLoadState) {
+
+        scheduleLoadState.classList.add(
+          "success"
+        );
+
+        scheduleLoadState.textContent =
+          classroomSchedules.length > 0
+            ? `已載入 ${classroomSchedules.length} 筆課程`
+            : "目前沒有課程";
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Schedule Load Error:",
+        error
+      );
+
+
+      if (
+        activeClassroomNumber !== "1"
+      ) {
+
+        return;
+
+      }
+
+
+      if (scheduleGrid) {
+
+        scheduleGrid.innerHTML = "";
+
+      }
+
+
+      if (classroomName) {
+
+        classroomName.textContent =
+          "讀取失敗";
+
+      }
+
+
+      if (scheduleLoadState) {
+
+        scheduleLoadState.classList.add(
+          "error"
+        );
+
+        scheduleLoadState.textContent =
+          `課表讀取失敗：${error.message}`;
+
+      }
+
+    }
+
+  }
+
+
+  // =========================================
   // 教室
   // =========================================
 
   function showClassroom(number) {
+
+    activeClassroomNumber =
+      String(number);
+
 
     hideAllContentPages();
 
     if (classroomPage) {
       classroomPage.hidden = false;
     }
+
+
+    const isClassroomOne =
+      activeClassroomNumber === "1";
+
+
+    if (classroomSchedulePanel) {
+
+      classroomSchedulePanel.hidden =
+        !isClassroomOne;
+
+    }
+
+
+    if (classroomPlaceholder) {
+
+      classroomPlaceholder.hidden =
+        isClassroomOne;
+
+    }
+
+
+    if (
+      classroomPlaceholderTitle &&
+      !isClassroomOne
+    ) {
+
+      classroomPlaceholderTitle.textContent =
+        `教室 ${number}`;
+
+    }
+
 
     if (classroomTitle) {
 
@@ -512,12 +1237,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+
+    if (classroomCode) {
+
+      classroomCode.textContent =
+        `R${String(number).padStart(2, "0")}`;
+
+    }
+
+
     if (pageTitle) {
 
       pageTitle.textContent =
         `教室 ${number} 課表`;
 
     }
+
 
     if (pageDescription) {
 
@@ -526,7 +1261,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+
     clearSidebarActive();
+
+
+    if (isClassroomOne) {
+
+      loadClassroomOneSchedule();
+
+    }
 
   }
 
