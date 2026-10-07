@@ -274,3 +274,80 @@ LINE Official Account 第一階段，建立帳號管理與既有 iKey 身分選�
 修改檔案：
 - routes/line.js
 - code3cmd.txt
+
+
+========================================
+【2026-10-07｜LINE 新版流程實作第 2 刀：短期 session＋自由文字＋雙重確認】
+狀態：程式已建立，待 Render 部署後實機驗收。
+
+本刀使用者指示「下一刀」，承接上一刀提出的 Render 短期記憶體 session 方案。
+
+暫存方式：
+- routes/line.js 新增 process-memory Map，只暫存尚未完成的 LINE 登入／更新流程。
+- key 使用 LINE event.source.userId。
+- 不新增 Google Sheet 表、不新增 Users 欄位、不新增 API。
+- 點帳號管理／登入重開流程、登出、取消等會清除暫存。
+- Render 重啟／重新部署時 Map 自然清空，因此未完成流程需重新開始；不會把半套資料寫入正式 Users。
+
+已完成學生互動：
+學生
+→ 科別
+→ 年級
+→ 班別
+→ session 保存 department / grade / className
+→ 使用者直接輸入座號
+→ 驗證座號為正整數
+→ 顯示身分資料：
+  身分／科別／年級／班級／座號
+→ [正確] [錯誤]
+  - 錯誤：回科別重新一次
+  - 正確：提示輸入姓名
+→ 使用者輸入姓名
+→ 顯示所有資料最終確認
+→ [正確] [錯誤]
+  - 錯誤：只重新輸入姓名
+  - 正確：stage=ready_to_bind
+
+已完成老師互動：
+老師
+→ session stage=teacher_serial
+→ 使用者直接輸入老師序號
+→ 顯示身分／老師序號
+→ [正確] [錯誤]
+  - 錯誤：重新輸入老師序號
+  - 正確：輸入姓名
+→ 顯示老師序號＋姓名最終確認
+→ [正確] [錯誤]
+  - 錯誤：只重新輸入姓名
+  - 正確：stage=ready_to_bind
+
+更新資料：
+- 已登入學生按「更新資料」時，session 記住目前 targetUserId，重新走學生資料流程。
+- 已登入老師按「更新資料」時，session 記住目前 targetUserId，重新輸入老師序號與姓名。
+- 本刀尚未把更新內容寫回 Users，避免在欄位正式對應未確認前自行修改 schema／資料。
+
+重要安全界線：
+- 最終按「正確」目前只代表「資料確認完成」。
+- 尚未宣告「綁定完成」，也不顯示正式歡迎成功訊息。
+- 原因：成功綁定時 line_bind_status 的正式值仍未由專案確認；現階段只確認未綁定為 "unbound"。
+- 不自行假設 "bound"。
+- 也尚未確認學生座號正式 Users 欄位與老師序號正式 Users 欄位，因此本刀不把相容 helper 當成 schema 決策。
+- Fingerprint ID 仍只存在 ESP32，LINE session / DB 均不儲存 Fingerprint ID。
+
+按鈕：
+- 本刀新增的「正確／錯誤」仍使用 postback + displayText，點擊後聊天室立即顯示文字。
+- 老師按鈕風格維持 primary 深藍底＋白字。
+
+系統狀態：
+- 工作線 1 仍尚未回覆 ESP32／螢幕／UptimeRobot／Database 真實狀態來源；3 不假造。
+
+修改檔案：
+- routes/line.js
+- code3cmd.txt
+
+下一刀需要確認：
+1. 成功綁定時 line_bind_status 的正式值。
+2. Users 的學生座號正式欄位。
+3. Users 的老師序號正式欄位。
+4. 學生科別／年級／班別更新究竟直接更新 Users 還是由 class_id 對 Classes 表；需以現有正式 schema 為準。
+確認後才做真正 DB write＋歡迎成功訊息。

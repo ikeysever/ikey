@@ -1498,6 +1498,123 @@ const STUDENT_DEPARTMENTS = [
 ];
 
 
+const lineFlowSessions =
+  new Map();
+
+
+function getLineFlowSessionKey(
+  event
+) {
+
+  return getLineSourceUserId(
+    event
+  );
+
+}
+
+
+function getLineFlowSession(
+  event
+) {
+
+  const key =
+    getLineFlowSessionKey(
+      event
+    );
+
+
+  if (!key) {
+    return null;
+  }
+
+
+  return (
+    lineFlowSessions.get(
+      key
+    ) ||
+    null
+  );
+
+}
+
+
+function setLineFlowSession(
+  event,
+  session
+) {
+
+  const key =
+    getLineFlowSessionKey(
+      event
+    );
+
+
+  if (!key) {
+    return null;
+  }
+
+
+  const nextSession = {
+    ...session,
+    updatedAt:
+      Date.now()
+  };
+
+
+  lineFlowSessions.set(
+    key,
+    nextSession
+  );
+
+
+  return nextSession;
+
+}
+
+
+function clearLineFlowSession(
+  event
+) {
+
+  const key =
+    getLineFlowSessionKey(
+      event
+    );
+
+
+  if (key) {
+    lineFlowSessions.delete(
+      key
+    );
+  }
+
+}
+
+
+function updateLineFlowSession(
+  event,
+  changes
+) {
+
+  const current =
+    getLineFlowSession(
+      event
+    ) ||
+    {};
+
+
+  return setLineFlowSession(
+    event,
+    {
+      ...current,
+      ...changes
+    }
+  );
+
+}
+
+
+
 function createFlowChoiceFlex(
   title,
   subtitle,
@@ -1746,6 +1863,258 @@ function createStudentSeatPrompt(
 }
 
 
+
+function createFlowDataConfirmationFlex(
+  session,
+  finalConfirmation = false
+) {
+
+  const isStudent =
+    session.identity ===
+      "student";
+
+
+  const lines =
+    isStudent
+      ? [
+          "身分：學生",
+          `科別：${session.department || "未設定"}`,
+          `年級：${session.grade || "未設定"} 年級`,
+          `班級：${session.className || "未設定"}`,
+          `座號：${session.seat || "未設定"}`
+        ]
+      : [
+          "身分：老師",
+          `老師序號：${session.teacherSerial || "未設定"}`
+        ];
+
+
+  if (finalConfirmation) {
+    lines.push(
+      `姓名：${session.name || "未設定"}`
+    );
+  }
+
+
+  lines.push(
+    "",
+    finalConfirmation
+      ? "請確認以上所有資料是否正確。"
+      : "請確認以上身分資料是否正確。"
+  );
+
+
+  return createFlowChoiceFlex(
+    finalConfirmation
+      ? "最終資料確認"
+      : "身分資料確認",
+    lines.join("\n"),
+    [
+      {
+        label:
+          "正確",
+        color:
+          "#2eb8d0",
+        params: {
+          action:
+            finalConfirmation
+              ? "flow_final_correct"
+              : "flow_identity_correct"
+        }
+      },
+      {
+        label:
+          "錯誤",
+        params: {
+          action:
+            finalConfirmation
+              ? "flow_name_wrong"
+              : "flow_identity_wrong"
+        }
+      }
+    ]
+  );
+
+}
+
+
+async function handleFlowTextInput(
+  event,
+  messageText
+) {
+
+  const session =
+    getLineFlowSession(
+      event
+    );
+
+
+  if (!session) {
+    return false;
+  }
+
+
+  if (
+    session.stage ===
+    "student_seat"
+  ) {
+
+    if (
+      !/^\d+$/.test(
+        messageText
+      ) ||
+      Number(
+        messageText
+      ) <= 0
+    ) {
+
+      await replyText(
+        event.replyToken,
+        "座號請輸入正整數，例如：12"
+      );
+
+      return true;
+
+    }
+
+
+    const nextSession =
+      updateLineFlowSession(
+        event,
+        {
+          seat:
+            String(
+              Number(
+                messageText
+              )
+            ),
+          stage:
+            "identity_confirm"
+        }
+      );
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createFlowDataConfirmationFlex(
+          nextSession
+        )
+      ]
+    );
+
+    return true;
+
+  }
+
+
+  if (
+    session.stage ===
+    "teacher_serial"
+  ) {
+
+    if (!messageText) {
+
+      await replyText(
+        event.replyToken,
+        "請輸入老師序號。"
+      );
+
+      return true;
+
+    }
+
+
+    const nextSession =
+      updateLineFlowSession(
+        event,
+        {
+          teacherSerial:
+            messageText,
+          stage:
+            "identity_confirm"
+        }
+      );
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createFlowDataConfirmationFlex(
+          nextSession
+        )
+      ]
+    );
+
+    return true;
+
+  }
+
+
+  if (
+    session.stage ===
+    "name"
+  ) {
+
+    if (!messageText) {
+
+      await replyText(
+        event.replyToken,
+        "請輸入姓名。"
+      );
+
+      return true;
+
+    }
+
+
+    const nextSession =
+      updateLineFlowSession(
+        event,
+        {
+          name:
+            messageText,
+          stage:
+            "final_confirm"
+        }
+      );
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createFlowDataConfirmationFlex(
+          nextSession,
+          true
+        )
+      ]
+    );
+
+    return true;
+
+  }
+
+
+  if (
+    session.stage ===
+    "ready_to_bind"
+  ) {
+
+    await replyText(
+      event.replyToken,
+      "您的資料已完成確認。正式 LINE 綁定尚未寫入資料庫，請等待下一步完成綁定設定。"
+    );
+
+    return true;
+
+  }
+
+
+  return false;
+
+}
+
+
 /*
  * ============================================================
  * Event Handler
@@ -1780,6 +2149,11 @@ async function handleTextMessage(
 
     case "帳號管理":
 
+      clearLineFlowSession(
+        event
+      );
+
+
       await replyMessages(
         event.replyToken,
         [
@@ -1797,6 +2171,11 @@ async function handleTextMessage(
 
 
     case "登入": {
+
+      clearLineFlowSession(
+        event
+      );
+
 
       const boundUser =
         await getBoundUserForEvent(
@@ -1840,7 +2219,19 @@ async function handleTextMessage(
     }
 
 
-    default:
+    default: {
+
+      const handledFlowInput =
+        await handleFlowTextInput(
+          event,
+          messageText
+        );
+
+
+      if (handledFlowInput) {
+        return;
+      }
+
 
       console.log(
         `[LINE] no text route matched: ${messageText}`
@@ -1853,6 +2244,10 @@ async function handleTextMessage(
           createWelcomeMessage()
         ]
       );
+
+      return;
+
+    }
 
   }
 
@@ -1913,6 +2308,11 @@ async function handlePostbackEvent(
     "fingerprint_no"
   ) {
 
+    clearLineFlowSession(
+      event
+    );
+
+
     await replyMessages(
       event.replyToken,
       [
@@ -1954,6 +2354,17 @@ async function handlePostbackEvent(
       return;
 
     }
+
+
+    setLineFlowSession(
+      event,
+      {
+        mode:
+          "login",
+        stage:
+          "identity"
+      }
+    );
 
 
     await replyMessages(
@@ -1998,6 +2409,26 @@ async function handlePostbackEvent(
         boundUser.identity ||
         ""
       ).toLowerCase();
+
+
+    setLineFlowSession(
+      event,
+      {
+        mode:
+          "update",
+        identity:
+          identity,
+        targetUserId:
+          String(
+            boundUser.user_id ||
+            ""
+          ),
+        stage:
+          identity === "student"
+            ? "student_department"
+            : "teacher_serial"
+      }
+    );
 
 
     if (identity === "student") {
@@ -2064,6 +2495,21 @@ async function handlePostbackEvent(
     }
 
 
+    updateLineFlowSession(
+      event,
+      {
+        mode:
+          mode,
+        identity:
+          "student",
+        department:
+          department,
+        stage:
+          "student_grade"
+      }
+    );
+
+
     await replyMessages(
       event.replyToken,
       [
@@ -2116,6 +2562,23 @@ async function handlePostbackEvent(
         "無效的學生資料選擇"
       );
     }
+
+
+    updateLineFlowSession(
+      event,
+      {
+        mode:
+          mode,
+        identity:
+          "student",
+        department:
+          department,
+        grade:
+          grade,
+        stage:
+          "student_class"
+      }
+    );
 
 
     await replyMessages(
@@ -2191,6 +2654,23 @@ async function handlePostbackEvent(
     }
 
 
+    updateLineFlowSession(
+      event,
+      {
+        identity:
+          "student",
+        department:
+          department,
+        grade:
+          grade,
+        className:
+          className,
+        stage:
+          "student_seat"
+      }
+    );
+
+
     await replyMessages(
       event.replyToken,
       [
@@ -2203,7 +2683,7 @@ async function handlePostbackEvent(
     );
 
     console.log(
-      `[LINE] student flow reached seat input boundary: ${department}/${grade}/${className}`
+      `[LINE] student flow waiting for seat input: ${department}/${grade}/${className}`
     );
 
     return;
@@ -2215,6 +2695,11 @@ async function handlePostbackEvent(
     action ===
     "logout"
   ) {
+
+    clearLineFlowSession(
+      event
+    );
+
 
     const boundUser =
       await getBoundUserForEvent(
@@ -2310,8 +2795,245 @@ async function handlePostbackEvent(
 
   if (
     action ===
+    "flow_identity_correct"
+  ) {
+
+    const session =
+      getLineFlowSession(
+        event
+      );
+
+
+    if (
+      !session ||
+      session.stage !==
+        "identity_confirm"
+    ) {
+
+      await replyText(
+        event.replyToken,
+        "登入流程已失效，請重新點選「帳號管理」。"
+      );
+
+      return;
+
+    }
+
+
+    updateLineFlowSession(
+      event,
+      {
+        stage:
+          "name"
+      }
+    );
+
+
+    await replyText(
+      event.replyToken,
+      "身分資料已確認。\n下一步請輸入姓名。"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "flow_identity_wrong"
+  ) {
+
+    const session =
+      getLineFlowSession(
+        event
+      );
+
+
+    if (!session) {
+
+      await replyMessages(
+        event.replyToken,
+        [
+          await createAccountManagementForEvent(
+            event
+          )
+        ]
+      );
+
+      return;
+
+    }
+
+
+    if (
+      session.identity ===
+      "student"
+    ) {
+
+      updateLineFlowSession(
+        event,
+        {
+          department:
+            "",
+          grade:
+            "",
+          className:
+            "",
+          seat:
+            "",
+          name:
+            "",
+          stage:
+            "student_department"
+        }
+      );
+
+
+      await replyMessages(
+        event.replyToken,
+        [
+          createStudentDepartmentFlex(
+            session.mode ||
+            "login"
+          )
+        ]
+      );
+
+      return;
+
+    }
+
+
+    updateLineFlowSession(
+      event,
+      {
+        teacherSerial:
+          "",
+        name:
+          "",
+        stage:
+          "teacher_serial"
+      }
+    );
+
+
+    await replyMessages(
+      event.replyToken,
+      [
+        createTeacherSerialPrompt()
+      ]
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "flow_name_wrong"
+  ) {
+
+    const session =
+      getLineFlowSession(
+        event
+      );
+
+
+    if (!session) {
+
+      await replyText(
+        event.replyToken,
+        "登入流程已失效，請重新點選「帳號管理」。"
+      );
+
+      return;
+
+    }
+
+
+    updateLineFlowSession(
+      event,
+      {
+        name:
+          "",
+        stage:
+          "name"
+      }
+    );
+
+
+    await replyText(
+      event.replyToken,
+      "請重新輸入姓名。"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
+    "flow_final_correct"
+  ) {
+
+    const session =
+      getLineFlowSession(
+        event
+      );
+
+
+    if (
+      !session ||
+      session.stage !==
+        "final_confirm"
+    ) {
+
+      await replyText(
+        event.replyToken,
+        "登入流程已失效，請重新點選「帳號管理」。"
+      );
+
+      return;
+
+    }
+
+
+    updateLineFlowSession(
+      event,
+      {
+        stage:
+          "ready_to_bind"
+      }
+    );
+
+
+    await replyText(
+      event.replyToken,
+      "資料確認完成。\n正式 LINE 帳號綁定尚未寫入資料庫；待綁定狀態值確認後，才會完成登入並顯示「歡迎使用 iKey 自動倉儲鑰匙借還系統」。"
+    );
+
+
+    console.log(
+      `[LINE] flow data confirmed and waiting for formal binding: identity=${session.identity}, mode=${session.mode}`
+    );
+
+    return;
+
+  }
+
+
+  if (
+    action ===
     "login_restart"
   ) {
+
+    clearLineFlowSession(
+      event
+    );
+
 
     await replyMessages(
       event.replyToken,
@@ -2329,6 +3051,11 @@ async function handlePostbackEvent(
     action ===
     "login_cancel"
   ) {
+
+    clearLineFlowSession(
+      event
+    );
+
 
     await replyMessages(
       event.replyToken,
@@ -2360,6 +3087,19 @@ async function handlePostbackEvent(
       "student"
     ) {
 
+      setLineFlowSession(
+        event,
+        {
+          mode:
+            "login",
+          identity:
+            "student",
+          stage:
+            "student_department"
+        }
+      );
+
+
       await replyMessages(
         event.replyToken,
         [
@@ -2378,6 +3118,19 @@ async function handlePostbackEvent(
       identity ===
       "teacher"
     ) {
+
+      setLineFlowSession(
+        event,
+        {
+          mode:
+            "login",
+          identity:
+            "teacher",
+          stage:
+            "teacher_serial"
+        }
+      );
+
 
       await replyMessages(
         event.replyToken,
