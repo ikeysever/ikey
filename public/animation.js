@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginMessage = document.getElementById("loginMessage");
   const logoutButton = document.getElementById("logoutButton");
 
-  const animationRoot = document.getElementById("animationRoot");
+  // The former welcome overlay has been removed; retain the app controller.
 
 
   // =========================================
@@ -307,11 +307,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 歡迎動畫
   // =========================================
 
-  function playWelcomeAnimation() {
-    return window.iKeyWelcome.play(animationRoot, async () => {
-      showDashboard();
-      await fetchDeviceStatus(true);
-    });
+  async function enterDashboard() {
+    showDashboard();
+    await fetchDeviceStatus(true);
   }
 
 
@@ -3300,7 +3298,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async (event) => {
 
         event.preventDefault();
-        window.iKeyWelcome.unlockAudio();
+        // No welcome audio is required.
 
 
         const account =
@@ -3390,7 +3388,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Hide login immediately after successful authentication.
           if (loginPage) loginPage.hidden = true;
-          await playWelcomeAnimation();
+          await enterDashboard();
 
 
           // 切換頁面
