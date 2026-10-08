@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dashboardPage = document.getElementById("dashboardPage");
   const projectCenterPage = document.getElementById("projectCenterPage");
   const ikeyOverviewPage = document.getElementById("ikeyOverviewPage");
+  const ikeyAdminPage = document.getElementById("ikeyAdminPage");
   const classroomPage = document.getElementById("classroomPage");
   const slotStatusPage = document.getElementById("slotStatusPage");
   const terminalPage = document.getElementById("terminalPage");
@@ -322,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function hideAllContentPages() {
     if (projectCenterPage) projectCenterPage.hidden = true;
     if (ikeyOverviewPage) ikeyOverviewPage.hidden = true;
+    if (ikeyAdminPage) ikeyAdminPage.hidden = true;
 
     if (dashboardPage) {
       dashboardPage.hidden = true;
@@ -360,6 +362,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // 首頁
   // =========================================
+
+  function showAdminConsole() {
+    hideAllContentPages();
+    if (ikeyAdminPage) ikeyAdminPage.hidden = false;
+    clearSidebarActive();
+    const button = document.querySelector('.sidebar-item[data-page="admin"]');
+    if (button) button.classList.add("active");
+    if (pageTitle) pageTitle.textContent = "管理員控制台";
+    if (pageDescription) pageDescription.textContent = "iKey · 伺服器驗證";
+  }
 
   function showOperationsOverview() {
     hideAllContentPages();
@@ -2494,6 +2506,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const page =
           item.dataset.page;
 
+        if (page === "admin") {
+          showAdminConsole();
+        }
+
         if (page === "overview") {
           showOperationsOverview();
         }
@@ -3478,6 +3494,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutButton.addEventListener(
       "click",
       () => {
+        fetch("/api/login/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
 
         if (homePage) {
           homePage.hidden = true;
