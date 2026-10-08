@@ -2,7 +2,7 @@ name: iKey CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/ibox-data-model-foundation]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -24,6 +24,8 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           find . -path './node_modules' -prune -o \( -name '*.js' -o -name '*.cjs' \) -type f -print0 | xargs -0 -r -n 1 node --check
+      - name: iBox permission regression tests
+        run: node --test tests/ibox-project-access.cjs
       - name: Welcome regression test
         run: node tests/welcome-state.cjs
       - name: Start server and verify HTTP health
