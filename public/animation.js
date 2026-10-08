@@ -136,6 +136,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarItems =
     document.querySelectorAll(".sidebar-item[data-page]");
 
+  const sidebar = document.getElementById("ikeySidebar");
+  const sidebarMenuButton = document.getElementById("sidebarMenuButton");
+  const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+  const narrowSidebar = window.matchMedia("(max-width: 700px)");
+  function setSidebarOpen(open) {
+    const shouldOpen = Boolean(open && narrowSidebar.matches);
+    if (sidebar) sidebar.classList.toggle("is-open", shouldOpen);
+    if (sidebarBackdrop) sidebarBackdrop.hidden = !shouldOpen;
+    if (sidebarMenuButton) {
+      sidebarMenuButton.setAttribute("aria-expanded", String(shouldOpen));
+      sidebarMenuButton.setAttribute("aria-label", shouldOpen ? "關閉頁面選單" : "開啟頁面選單");
+      sidebarMenuButton.textContent = shouldOpen ? "×" : "☰";
+    }
+  }
+  if (sidebarMenuButton) sidebarMenuButton.addEventListener("click", () => {
+    setSidebarOpen(!sidebar?.classList.contains("is-open"));
+  });
+  if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", () => setSidebarOpen(false));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") setSidebarOpen(false);
+  });
+  narrowSidebar.addEventListener("change", () => setSidebarOpen(false));
+
   const scheduleToggle =
     document.getElementById("scheduleToggle");
 
@@ -2503,8 +2526,8 @@ document.addEventListener("DOMContentLoaded", () => {
       "click",
       () => {
 
-        const page =
-          item.dataset.page;
+        const page = item.dataset.page;
+        setSidebarOpen(false);
 
         if (page === "admin") {
           showAdminConsole();
