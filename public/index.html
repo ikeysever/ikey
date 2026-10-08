@@ -91,13 +91,22 @@
         </button>
 
         <p id="loginMessage"></p>
+        <div class="ikey-account-actions">
+          <button id="ikeyRegisterOpen" type="button" class="ikey-account-link">註冊帳號</button>
+          <button id="ikeyForgotOpen" type="button" class="ikey-account-link">忘記密碼？</button>
+        </div>
 
       </form>
 
     </section>
-
+    <section id="ikeyAccountDialog" class="ikey-account-dialog" role="dialog" aria-modal="true" aria-labelledby="ikeyAccountTitle" hidden>
+      <div class="ikey-account-card">
+        <button id="ikeyAccountClose" type="button" class="ikey-account-close" aria-label="關閉">×</button>
+        <h2 id="ikeyAccountTitle"></h2>
+        <div id="ikeyAccountBody"></div>
+      </div>
+    </section>
   </main>
-
 
   <!-- ========================================
        iKey 主系統
@@ -1235,6 +1244,7 @@
   <script src="./project-center.js"></script>
   <script src="./operations-overview.js"></script>
   <script src="./admin-console.js"></script>
+  <script src="./account-entry.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./animation.js"></script>
 
