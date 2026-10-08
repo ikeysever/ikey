@@ -294,26 +294,10 @@
           </div>
 
 
-          <!-- ==================================
-               格位目前狀態
-               ================================== -->
-
-          <button
-            class="sidebar-item"
-            type="button"
-            data-page="slot-status"
-          >
-
-            <span class="sidebar-icon">
-              ▣
-            </span>
-
-            <span>
-              格位目前狀態
-            </span>
-
+          <button class="sidebar-item" type="button" data-page="connections" hidden>
+            <span class="sidebar-icon" aria-hidden="true">⌁</span>
+            <span>連線監測</span>
           </button>
-
 
           <!-- ==================================
                系統終端機
@@ -322,7 +306,7 @@
           <button
             class="sidebar-item"
             type="button"
-            data-page="terminal"
+            data-page="terminal" hidden
           >
 
             <span class="sidebar-icon">
@@ -810,30 +794,14 @@
              格位目前狀態
              ================================== -->
 
-        <section
-          id="slotStatusPage"
-          class="content-page"
-          hidden
-        >
-
-          <div class="empty-panel">
-
-            <div class="empty-icon">
-              ▣
-            </div>
-
-            <h2>
-              格位目前狀態
-            </h2>
-
-            <p>
-              此處將顯示目前每個格位由誰借用。
-            </p>
-
+        <section id="connectionMonitorPage" class="content-page" hidden>
+          <div class="terminal-panel">
+            <div class="terminal-header"><div class="terminal-title">連線監測</div><span class="terminal-status">HEARTBEAT</span></div>
+            <p id="ikeyConnectionNotice" role="status">等待管理員驗證。</p>
+            <div id="ikeyConnectionDevices" class="terminal-output"></div>
+            <button id="ikeyConnectionRefresh" type="button">立即更新</button>
           </div>
-
         </section>
-
 
         <!-- ==================================
              系統終端機
@@ -858,7 +826,7 @@
                   class="terminal-dot"
                 ></span>
 
-                系統終端機
+                批次操作終端機
 
               </div>
 
@@ -877,7 +845,7 @@
             >
 
               <div>
-                iKey System Terminal
+                iKey Admin Operations Terminal
               </div>
 
               <div>
@@ -885,19 +853,19 @@
               </div>
 
               <div>
-                系統初始化完成
+                此工作區僅供 Super Admin 使用
               </div>
 
               <div>
-                ESP Robot：等待連線
+                批次寫入尚未開放，避免未授權變更
               </div>
 
               <div>
-                LVGL Terminal：等待連線
+                後續將加入預覽、確認、審計與回復機制
               </div>
 
               <div>
-                等待系統指令與事件...
+                本頁目前僅顯示管理員診斷資訊
               </div>
 
               <div class="terminal-cursor">
@@ -1235,6 +1203,7 @@
   <script src="./project-center.js"></script>
   <script src="./operations-overview.js"></script>
   <script src="./admin-console.js"></script>
+  <script src="./admin-operations.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./animation.js"></script>
 
