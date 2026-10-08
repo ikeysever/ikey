@@ -1,0 +1,48 @@
+name: iKey CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install production dependencies
+        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Check JavaScript syntax
+        run: |
+          find . -path './node_modules' -prune -o \( -name '*.js' -o -name '*.cjs' \) -type f -print0 | xargs -0 -r -n 1 node --check
+      - name: Welcome regression test
+        run: node tests/welcome-state.cjs
+      - name: Start server and verify HTTP health
+        shell: bash
+        run: |
+          set -euo pipefail
+          PORT=3100 node server.js > /tmp/ikey-ci-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl --silent --show-error --fail http://127.0.0.1:3100/api/health > /tmp/ikey-ci-health.json 2>/dev/null; then
+              cat /tmp/ikey-ci-health.json
+              exit 0
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat /tmp/ikey-ci-server.log
+              exit 1
+            fi
+            sleep 1
+          done
+          cat /tmp/ikey-ci-server.log
+          exit 1
