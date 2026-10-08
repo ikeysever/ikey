@@ -55,3 +55,16 @@ test("operations overview is read-only and wired to existing endpoints", () => {
   assert.doesNotMatch(overview, /method:\s*["'](?:POST|PUT|PATCH|DELETE)/);
   assert.doesNotMatch(overview, /\/api\/device\/heartbeat/);
 });
+
+test("admin console uses server-side authorization rather than client role", () => {
+  const consoleScript = fs.readFileSync(path.join(root, "public/admin-console.js"), "utf8");
+  const adminRoutes = fs.readFileSync(path.join(root, "lib/ibox/admin-auth-routes.js"), "utf8");
+  assert.match(html, /id="ikeyAdminPage"/);
+  assert.match(html, /data-page="admin"/);
+  assert.match(html, /admin-console\.js/);
+  assert.match(app, /function showAdminConsole\(/);
+  assert.match(consoleScript, /\/api\/login\/admin\/summary/);
+  assert.match(adminRoutes, /sessionFromRequest/);
+  assert.match(adminRoutes, /status\(403\)/);
+  assert.doesNotMatch(consoleScript, /localStorage|sessionStorage/);
+});
