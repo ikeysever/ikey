@@ -81,3 +81,15 @@ test("narrow screens use an accessible collapsed sidebar drawer", () => {
   assert.match(app, /setSidebarOpen\(false\)/);
   assert.match(app, /event\.key === "Escape"/);
 });
+
+test("placeholder slot navigation removed and admin operations are guarded", () => {
+  const operations = fs.readFileSync(path.join(root, "public/admin-operations.js"), "utf8");
+  const auth = fs.readFileSync(path.join(root, "lib/ibox/admin-auth-routes.js"), "utf8");
+  assert.doesNotMatch(html, /data-page="slot-status"/);
+  assert.match(html, /data-page="terminal" hidden/);
+  assert.match(html, /data-page="connections" hidden/);
+  assert.match(html, /id="connectionMonitorPage"/);
+  assert.match(operations, /\/api\/login\/admin\/summary/);
+  assert.match(operations, /\/api\/login\/admin\/connections/);
+  assert.match(auth, /router\.get\("\/admin\/connections", requireSuperadmin/);
+});
