@@ -6,6 +6,7 @@
 
   <title>iKey 智慧鑰匙管理系統</title>
   <link rel="icon" type="image/png" href="./assets/brand/favicon.png">
+  <link rel="stylesheet" href="./project-center.css">
 
   <link
     rel="stylesheet"
@@ -149,6 +150,11 @@
 
         <nav class="sidebar-nav">
 
+
+          <button class="sidebar-item" type="button" data-page="projects">
+            <span class="sidebar-icon" aria-hidden="true">▦</span>
+            <span>專案中心</span>
+          </button>
 
           <!-- 首頁 -->
 
@@ -384,6 +390,22 @@
         <!-- ==================================
              首頁 Dashboard
              ================================== -->
+
+        <section id="projectCenterPage" class="content-page" hidden>
+          <div class="ikey-project-hero">
+            <p class="ikey-project-kicker">iKey · 多專案管理</p>
+            <h2>一個平台，管理不同場域</h2>
+            <p>依專案需求配置借還、門禁與監測功能。下列為介面範本，尚未建立實際專案或取得操作權限。</p>
+          </div>
+          <div class="ikey-project-layout">
+            <section aria-label="專案範本">
+              <label class="ikey-project-search-label" for="ikeyProjectSearch">搜尋專案範本</label>
+              <input id="ikeyProjectSearch" type="search" placeholder="搜尋名稱或功能">
+              <div id="ikeyProjectCards" class="ikey-project-cards"></div>
+            </section>
+            <aside id="ikeyProjectDetail" class="ikey-project-detail" aria-live="polite"></aside>
+          </div>
+        </section>
 
         <section
           id="dashboardPage"
@@ -1171,14 +1193,11 @@
        iKey 動畫系統
        ======================================== -->
 
-  <div id="animationRoot"></div>
-
 
   <!-- ========================================
        JavaScript
        ======================================== -->
-
-  <script src="./welcome.js"></script>
+  <script src="./project-center.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./animation.js"></script>
 

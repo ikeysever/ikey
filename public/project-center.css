@@ -1,0 +1,31 @@
+/* iKey multi-project workspace: interface only, no device controls. */
+#projectCenterPage[hidden] { display: none !important; }
+.ikey-project-hero {
+  padding: clamp(22px, 3vw, 38px);
+  margin-bottom: 24px;
+  border-radius: 22px;
+  background: radial-gradient(circle at 5% 0%, #254d76, #13243e 55%, #0d1729);
+  border: 1px solid rgba(148, 163, 184, .16);
+  color: #f8fafc;
+}
+.ikey-project-hero h2 { font-size: clamp(24px, 3vw, 36px); margin: 8px 0; }
+.ikey-project-hero p { max-width: 720px; line-height: 1.8; color: #cbd5e1; }
+.ikey-project-kicker { color: #8dd4ff !important; font-size: 13px; letter-spacing: .1em; font-weight: 700; }
+.ikey-project-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(270px, 1fr); gap: 20px; align-items: start; }
+.ikey-project-search-label { display: block; margin: 0 0 10px; font-weight: 700; }
+#ikeyProjectSearch { width: 100%; min-height: 45px; padding: 10px 14px; border: 1px solid #536b86; border-radius: 12px; background: #101d32; color: #fff; margin-bottom: 16px; }
+.ikey-project-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ikey-project-card { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; padding: 22px; text-align: left; color: #f8fafc; background: #172740; border: 1px solid #334963; border-radius: 16px; cursor: pointer; }
+.ikey-project-card:hover, .ikey-project-card:focus-visible { border-color: #80c7ff; }
+.ikey-project-card.is-selected { border-color: #67e8f9; box-shadow: inset 0 0 0 1px #67e8f9; }
+.ikey-project-card-icon { font-size: 30px; }
+.ikey-project-card-title { font-size: 19px; font-weight: 750; }
+.ikey-project-card-category { font-size: 12px; color: #a5f3fc; margin-top: 8px; }
+.ikey-project-muted { color: #b6c5d7; line-height: 1.6; }
+.ikey-project-detail { padding: 26px; background: #172740; border: 1px solid #334963; border-radius: 18px; color: #f8fafc; }
+.ikey-project-detail h3 { font-size: 24px; margin: 12px 0; }
+.ikey-project-tags { display: flex; flex-wrap: wrap; gap: 9px; margin: 24px 0; }
+.ikey-project-tags span { border-radius: 99px; padding: 7px 11px; color: #a5f3fc; background: #203951; font-size: 13px; }
+.ikey-project-note { border-top: 1px solid #334963; padding-top: 16px; line-height: 1.7; color: #cbd5e1; }
+@media (max-width: 900px) { .ikey-project-layout { grid-template-columns: 1fr; } }
+@media (max-width: 540px) { .ikey-project-cards { grid-template-columns: 1fr; } }

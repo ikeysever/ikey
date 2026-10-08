@@ -2590,18 +2590,3 @@ button {
   }
 
 }
-
-/* Approved welcome animation: same background as login and home. */
-@font-face { font-family: 'iKey Welcome TC'; src: url('./assets/welcome/welcome-text-subset.ttf'); font-weight: 400; font-display: block; }
-@font-face { font-family: 'iKey Status TC'; src: url('./assets/welcome/status-text-subset.ttf'); font-weight: 400; font-display: block; }
-#animationRoot.welcome-active { display: flex; align-items: center; justify-content: center; pointer-events: auto; background: radial-gradient(circle at 20% 0%, #1b3150 0, #0b1220 42%, #070c16 100%); overflow: hidden; }
-.ikey-welcome-canvas { display: block; width: min(100vw, 177.7778vh); height: auto; }
-.ikey-welcome-status { position: absolute; top: 3.333%; right: 5.2%; display: flex; align-items: center; gap: 14px; color: #f8fafc; font: 400 clamp(14px, 1.25vw, 24px) 'iKey Status TC', sans-serif; }
-.ikey-welcome-status small { display: block; margin-top: 6px; font-size: .8333em; }
-.ikey-welcome-spinner { width: 24px; height: 24px; border: 3px solid transparent; border-top-color: #f8fafc; border-left-color: #f8fafc; border-bottom-color: #f8fafc; border-radius: 50%; animation: ikey-spin 1.257s linear infinite; }
-.ikey-welcome-check { width: 30px; height: 30px; fill: none; stroke: #f8fafc; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.ikey-welcome-check path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: ikey-check .45s cubic-bezier(.215,.61,.355,1) forwards; }
-.ikey-welcome-actions { position: absolute; right: 5.2%; top: 110px; }
-.ikey-welcome-actions button { color: #f8fafc; background: rgba(20,31,52,.94); border: 1px solid rgba(148,163,184,.18); border-radius: 14px; padding: 12px 20px; cursor: pointer; }
-@keyframes ikey-spin { to { transform: rotate(360deg); } }
-@keyframes ikey-check { to { stroke-dashoffset: 0; } }
