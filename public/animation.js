@@ -3358,6 +3358,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  // Restore only a server-validated signed session after a page reload.
+  // Never trust localStorage or a client-side login flag for authentication.
+  async function restoreSignedSession() {
+    try {
+      const response = await fetch("/api/login/session", {
+        credentials: "same-origin", cache: "no-store"
+      });
+      if (!response.ok) return;
+      const session = await response.json();
+      if (!session.authenticated) return;
+      if (loginPage) loginPage.hidden = true;
+      if (passwordInput) passwordInput.value = "";
+      await enterDashboard();
+    } catch {
+      // Stay on login page if the server cannot verify the session.
+    }
+  }
+  restoreSignedSession();
+
   // =========================================
   // 登入
   // =========================================
