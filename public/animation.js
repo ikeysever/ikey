@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
 
   const dashboardPage = document.getElementById("dashboardPage");
+  const projectCenterPage = document.getElementById("projectCenterPage");
   const classroomPage = document.getElementById("classroomPage");
   const slotStatusPage = document.getElementById("slotStatusPage");
   const terminalPage = document.getElementById("terminalPage");
@@ -318,6 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
 
   function hideAllContentPages() {
+    if (projectCenterPage) projectCenterPage.hidden = true;
 
     if (dashboardPage) {
       dashboardPage.hidden = true;
@@ -356,6 +358,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // 首頁
   // =========================================
+
+  function showProjectCenter() {
+    hideAllContentPages();
+    if (projectCenterPage) projectCenterPage.hidden = false;
+    clearSidebarActive();
+    const button = document.querySelector('.sidebar-item[data-page="projects"]');
+    if (button) button.classList.add("active");
+    if (pageTitle) pageTitle.textContent = "專案中心";
+    if (pageDescription) pageDescription.textContent = "iKey 多專案管理 · 範本預覽";
+  }
 
   function showDashboard() {
 
@@ -2469,6 +2481,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const page =
           item.dataset.page;
+
+        if (page === "projects") {
+          showProjectCenter();
+        }
 
         if (page === "dashboard") {
           showDashboard();
