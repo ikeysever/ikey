@@ -69,11 +69,15 @@ test("admin console uses server-side authorization rather than client role", () 
   assert.doesNotMatch(consoleScript, /localStorage|sessionStorage/);
 });
 
-test("mobile navigation remains a vertical left sidebar", () => {
+test("narrow screens use an accessible collapsed sidebar drawer", () => {
   const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
-  const override = css.slice(css.lastIndexOf("/* iKey unified navigation"));
-  assert.match(override, /@media \(max-width: 520px\)/);
-  assert.match(override, /--sidebar-width: 76px/);
-  assert.match(override, /flex-direction: column/);
-  assert.match(override, /margin-left: var\(--sidebar-width\)/);
+  const drawer = css.slice(css.lastIndexOf("/* Responsive sidebar drawer"));
+  assert.match(html, /id="sidebarMenuButton"/);
+  assert.match(html, /id="sidebarBackdrop"/);
+  assert.match(html, /id="ikeySidebar"/);
+  assert.match(drawer, /@media \(max-width: 700px\)/);
+  assert.match(drawer, /translateX\(-105%\)/);
+  assert.match(drawer, /\.sidebar\.is-open/);
+  assert.match(app, /setSidebarOpen\(false\)/);
+  assert.match(app, /event\.key === "Escape"/);
 });
