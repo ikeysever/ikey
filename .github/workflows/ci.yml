@@ -27,7 +27,7 @@ jobs:
       - name: Frontend static integrity tests
         run: node --test tests/ibox-frontend-smoke.cjs
       - name: iBox permission regression tests
-        run: node --test tests/ibox-project-access.cjs
+        run: node --test tests/ibox-project-access.cjs tests/ibox-project-workflow.cjs
       - name: Start server and verify HTTP health
         shell: bash
         run: |
