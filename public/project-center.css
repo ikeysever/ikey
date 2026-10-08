@@ -29,3 +29,15 @@
 .ikey-project-note { border-top: 1px solid #334963; padding-top: 16px; line-height: 1.7; color: #cbd5e1; }
 @media (max-width: 900px) { .ikey-project-layout { grid-template-columns: 1fr; } }
 @media (max-width: 540px) { .ikey-project-cards { grid-template-columns: 1fr; } }
+
+/* Read-only operations overview */
+#ikeyOverviewPage[hidden] { display: none !important; }
+.ikey-overview-refresh { margin-top: 18px; padding: 11px 19px; border: 1px solid #67e8f9; border-radius: 12px; background: #164e63; color: white; font-weight: 700; cursor: pointer; }
+.ikey-overview-refresh:disabled { opacity: .55; cursor: wait; }
+.ikey-overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
+.ikey-overview-stat { min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 23px; background: #172740; border: 1px solid #334963; border-radius: 16px; color: #fff; }
+.ikey-overview-stat strong { font-size: 36px; font-variant-numeric: tabular-nums; }
+.ikey-overview-success { color: #86efac; font-size: 12px; }
+.ikey-overview-error { color: #fda4af; font-size: 12px; }
+@media (max-width: 900px) { .ikey-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .ikey-overview-grid { grid-template-columns: 1fr; } }
