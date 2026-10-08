@@ -68,3 +68,12 @@ test("admin console uses server-side authorization rather than client role", () 
   assert.match(adminRoutes, /status\(403\)/);
   assert.doesNotMatch(consoleScript, /localStorage|sessionStorage/);
 });
+
+test("mobile navigation remains a vertical left sidebar", () => {
+  const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
+  const override = css.slice(css.lastIndexOf("/* iKey unified navigation"));
+  assert.match(override, /@media \(max-width: 520px\)/);
+  assert.match(override, /--sidebar-width: 76px/);
+  assert.match(override, /flex-direction: column/);
+  assert.match(override, /margin-left: var\(--sidebar-width\)/);
+});
