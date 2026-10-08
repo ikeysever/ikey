@@ -6,6 +6,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const output = document.getElementById("ikeyConnectionDevices");
   const notice = document.getElementById("ikeyConnectionNotice");
   const refresh = document.getElementById("ikeyConnectionRefresh");
+  const terminalPage = document.getElementById("terminalPage");
+  const terminalOutput = document.getElementById("terminalOutput");
+  let eventCursor = 0;
+  let terminalBusy = false;
+  async function updateTerminalEvents() {
+    if (!allowed || !terminalPage || terminalPage.hidden || terminalBusy) return;
+    terminalBusy = true;
+    try {
+      const response = await fetch("/api/login/admin/events?after=" + eventCursor, {
+        credentials: "same-origin", cache: "no-store",
+      });
+      if (!response.ok) {
+        if (response.status === 403) await checkAdmin();
+        return;
+      }
+      const data = await response.json();
+      for (const entry of data.events || []) {
+        const row = document.createElement("div");
+        const time = new Date(entry.time).toLocaleTimeString("zh-TW", { hour12: false });
+        const detail = entry.details?.deviceId ? " [" + entry.details.deviceId + "]" : "";
+        row.textContent = "[" + time + "] " + entry.type.toUpperCase() + " · " + entry.message + detail;
+        terminalOutput.append(row);
+      }
+      eventCursor = Math.max(eventCursor, Number(data.latestId) || 0);
+      while (terminalOutput.children.length > 180) terminalOutput.firstElementChild.remove();
+      if ((data.events || []).length) terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    } catch {
+      // Transient network failures must not fabricate terminal events.
+    } finally { terminalBusy = false; }
+  }
   let allowed = false;
   let running = false;
   function textLine(message) {
@@ -67,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   refresh?.addEventListener("click", updateConnections);
+  setInterval(() => { if (terminalPage && !terminalPage.hidden) updateTerminalEvents(); }, 2000);
   document.getElementById("loginForm")?.addEventListener("submit", () => {
     setTimeout(checkAdmin, 800);
   });
