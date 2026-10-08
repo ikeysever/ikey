@@ -41,3 +41,95 @@
 .ikey-overview-error { color: #fda4af; font-size: 12px; }
 @media (max-width: 900px) { .ikey-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .ikey-overview-grid { grid-template-columns: 1fr; } }
+
+/* iKey semantic palettes for future status/toast/upload animations.
+   Welcome animation stays fixed; only its circular mark needs dark/light variants.
+   Color is never the sole signal for success, failure, or connectivity. */
+:root,
+[data-ikey-theme="midnight"] {
+  --ikey-theme-bg: #0b1220;
+  --ikey-theme-surface: #172740;
+  --ikey-theme-accent: #67e8f9;
+  --ikey-theme-success: #7de2b1;
+  --ikey-theme-warning: #fbbf24;
+  --ikey-theme-error: #fb7185;
+  --ikey-theme-text: #f8fafc;
+}
+[data-ikey-theme="arctic"] {
+  --ikey-theme-bg: #f2f7fb;
+  --ikey-theme-surface: #ffffff;
+  --ikey-theme-accent: #0369a1;
+  --ikey-theme-success: #047857;
+  --ikey-theme-warning: #92400e;
+  --ikey-theme-error: #be123c;
+  --ikey-theme-text: #102334;
+}
+[data-ikey-theme="laboratory"] {
+  --ikey-theme-bg: #0b1716;
+  --ikey-theme-surface: #142c29;
+  --ikey-theme-accent: #5eead4;
+  --ikey-theme-success: #86efac;
+  --ikey-theme-warning: #fbbf24;
+  --ikey-theme-error: #fda4af;
+  --ikey-theme-text: #effffb;
+}
+[data-ikey-theme="copper"] {
+  --ikey-theme-bg: #19140f;
+  --ikey-theme-surface: #30231a;
+  --ikey-theme-accent: #fdba74;
+  --ikey-theme-success: #86efac;
+  --ikey-theme-warning: #fcd34d;
+  --ikey-theme-error: #fda4af;
+  --ikey-theme-text: #fff7ed;
+}
+[data-ikey-theme="violet"] {
+  --ikey-theme-bg: #161229;
+  --ikey-theme-surface: #272043;
+  --ikey-theme-accent: #c4b5fd;
+  --ikey-theme-success: #86efac;
+  --ikey-theme-warning: #fcd34d;
+  --ikey-theme-error: #fda4af;
+  --ikey-theme-text: #faf5ff;
+}
+[data-ikey-theme="graphite"] {
+  --ikey-theme-bg: #101316;
+  --ikey-theme-surface: #252a30;
+  --ikey-theme-accent: #cbd5e1;
+  --ikey-theme-success: #86efac;
+  --ikey-theme-warning: #fcd34d;
+  --ikey-theme-error: #fda4af;
+  --ikey-theme-text: #f8fafc;
+}
+
+/* Chemical lab storage cabinet has its own restrained emerald identity. */
+.ikey-project-card[data-project-theme="laboratory"] {
+  background: linear-gradient(135deg, #173b35, #102b29 70%, #0e2222);
+  border-color: #397c70;
+  color: #f0fffb;
+}
+.ikey-project-card[data-project-theme="laboratory"] .ikey-project-card-category {
+  color: #99f6e4;
+}
+.ikey-project-card[data-project-theme="laboratory"]:hover,
+.ikey-project-card[data-project-theme="laboratory"]:focus-visible {
+  border-color: #99f6e4;
+}
+.ikey-project-card[data-project-theme="laboratory"].is-selected {
+  border-color: #5eead4;
+  box-shadow: inset 0 0 0 1px #5eead4, 0 0 0 2px rgba(94,234,212,.15);
+}
+.ikey-project-detail[data-project-theme="laboratory"] {
+  background: linear-gradient(145deg, #173b35, #112825);
+  border-color: #397c70;
+}
+.ikey-project-detail[data-project-theme="laboratory"] .ikey-project-kicker,
+.ikey-project-detail[data-project-theme="laboratory"] .ikey-project-tags span {
+  color: #99f6e4 !important;
+}
+.ikey-project-detail[data-project-theme="laboratory"] .ikey-project-tags span {
+  background: #205247;
+}
+.ikey-project-detail[data-project-theme="laboratory"] .ikey-project-muted,
+.ikey-project-detail[data-project-theme="laboratory"] .ikey-project-note {
+  color: #d0ebe5;
+}
