@@ -42,3 +42,16 @@ test("project center is connected and clearly identified as preview", () => {
   assert.match(projectUi, /化學實驗室/);
   assert.doesNotMatch(projectUi, /fetch\(|XMLHttpRequest|WebSocket/);
 });
+
+test("operations overview is read-only and wired to existing endpoints", () => {
+  const overview = fs.readFileSync(path.join(root, "public/operations-overview.js"), "utf8");
+  assert.match(html, /data-page="overview"/);
+  assert.match(html, /id="ikeyOverviewPage"/);
+  assert.match(html, /id="ikeyOverviewStats"/);
+  assert.match(html, /operations-overview\.js/);
+  assert.match(app, /function showOperationsOverview\(/);
+  assert.match(overview, /Promise\.allSettled/);
+  assert.match(overview, /\/api\/database\//);
+  assert.doesNotMatch(overview, /method:\s*["'](?:POST|PUT|PATCH|DELETE)/);
+  assert.doesNotMatch(overview, /\/api\/device\/heartbeat/);
+});

@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const dashboardPage = document.getElementById("dashboardPage");
   const projectCenterPage = document.getElementById("projectCenterPage");
+  const ikeyOverviewPage = document.getElementById("ikeyOverviewPage");
   const classroomPage = document.getElementById("classroomPage");
   const slotStatusPage = document.getElementById("slotStatusPage");
   const terminalPage = document.getElementById("terminalPage");
@@ -320,6 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function hideAllContentPages() {
     if (projectCenterPage) projectCenterPage.hidden = true;
+    if (ikeyOverviewPage) ikeyOverviewPage.hidden = true;
 
     if (dashboardPage) {
       dashboardPage.hidden = true;
@@ -358,6 +360,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // 首頁
   // =========================================
+
+  function showOperationsOverview() {
+    hideAllContentPages();
+    if (ikeyOverviewPage) ikeyOverviewPage.hidden = false;
+    clearSidebarActive();
+    const button = document.querySelector('.sidebar-item[data-page="overview"]');
+    if (button) button.classList.add("active");
+    if (pageTitle) pageTitle.textContent = "營運總覽";
+    if (pageDescription) pageDescription.textContent = "iKey 現有資料來源 · 唯讀";
+  }
 
   function showProjectCenter() {
     hideAllContentPages();
@@ -2481,6 +2493,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const page =
           item.dataset.page;
+
+        if (page === "overview") {
+          showOperationsOverview();
+        }
 
         if (page === "projects") {
           showProjectCenter();

@@ -156,6 +156,11 @@
             <span>專案中心</span>
           </button>
 
+          <button class="sidebar-item" type="button" data-page="overview">
+            <span class="sidebar-icon" aria-hidden="true">▤</span>
+            <span>營運總覽</span>
+          </button>
+
           <!-- 首頁 -->
 
           <button
@@ -405,6 +410,18 @@
             </section>
             <aside id="ikeyProjectDetail" class="ikey-project-detail" aria-live="polite"></aside>
           </div>
+        </section>
+
+        <section id="ikeyOverviewPage" class="content-page" hidden>
+          <div class="ikey-project-hero">
+            <p class="ikey-project-kicker">iKey · 現有資料來源</p>
+            <h2>營運總覽</h2>
+            <p>使用既有 API 讀取使用者、教室、登錄設備與借還紀錄數量；不會更動任何資料或操作實體設備。</p>
+            <button id="ikeyOverviewRefresh" type="button" class="ikey-overview-refresh">重新整理資料</button>
+          </div>
+          <div id="ikeyOverviewStats" class="ikey-overview-grid" aria-live="polite"></div>
+          <p id="ikeyOverviewMessage" class="ikey-project-muted" role="status">開啟頁面後將讀取資料。</p>
+          <p class="ikey-project-note">注意：此處的設備數量為資料庫登錄筆數，不代表裝置目前在線；測試用 ESP32-01 不代表已接上實體硬體。</p>
         </section>
 
         <section
@@ -1198,6 +1215,7 @@
        JavaScript
        ======================================== -->
   <script src="./project-center.js"></script>
+  <script src="./operations-overview.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./animation.js"></script>
 
