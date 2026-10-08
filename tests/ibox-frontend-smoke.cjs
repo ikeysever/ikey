@@ -27,3 +27,18 @@ test("local script and stylesheet assets exist", () => {
     assert.ok(fs.existsSync(path.join(root, "public", relative)), `missing asset: ${ref}`);
   }
 });
+
+test("project center is connected and clearly identified as preview", () => {
+  const projectUi = fs.readFileSync(path.join(root, "public/project-center.js"), "utf8");
+  assert.match(html, /data-page="projects"/);
+  assert.match(html, /id="projectCenterPage"/);
+  assert.match(html, /id="ikeyProjectCards"/);
+  assert.match(html, /id="ikeyProjectDetail"/);
+  assert.match(html, /project-center\.js/);
+  assert.match(html, /尚未建立實際專案/);
+  assert.match(app, /function showProjectCenter\(/);
+  assert.match(app, /projectCenterPage\.hidden = true/);
+  assert.match(projectUi, /工具櫃管理/);
+  assert.match(projectUi, /化學實驗室/);
+  assert.doesNotMatch(projectUi, /fetch\(|XMLHttpRequest|WebSocket/);
+});
