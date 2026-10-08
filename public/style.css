@@ -2628,3 +2628,62 @@ button {
   .main-header h1 { font-size: 18px; }
   .content-page { padding: 12px; }
 }
+
+/* Responsive sidebar drawer: desktop persistent, narrow screens collapsed. */
+.sidebar-menu-button, .sidebar-backdrop { display: none; }
+@media (max-width: 700px) {
+  :root { --sidebar-width: 0px; }
+  .sidebar-menu-button {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 1002;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    color: #fff;
+    background: #142034;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .sidebar-backdrop:not([hidden]) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .58);
+    z-index: 1000;
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 84vw);
+    height: 100dvh;
+    z-index: 1001;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid var(--panel-border);
+    border-bottom: 0;
+    transform: translateX(-105%);
+    transition: transform .2s ease;
+  }
+  .sidebar.is-open { transform: translateX(0); }
+  .sidebar-brand { display: flex; padding: 18px 14px; }
+  .sidebar-brand-text { display: block; }
+  .sidebar-nav { display: flex; flex-direction: column; overflow-x: hidden; overflow-y: visible; padding: 12px 8px; }
+  .sidebar-item { width: 100%; min-height: 46px; padding: 10px 12px; flex-direction: row; justify-content: flex-start; text-align: left; font-size: inherit; white-space: normal; }
+  .sidebar-group { width: 100%; }
+  .classroom-menu { position: static; width: auto; margin: 0 0 0 22px; }
+  .sidebar-footer { display: flex; }
+  .main-area { width: 100%; margin-left: 0; padding-top: 0; min-width: 0; }
+  .main-header { padding-left: 68px; min-height: 68px; }
+  .content-page { padding: 16px; }
+  .sidebar.is-open ~ .main-area { pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
