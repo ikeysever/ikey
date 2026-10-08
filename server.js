@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 
 const loginRoutes = require("./routes/login");
+const adminAuthRoutes = require("./lib/ibox/admin-auth-routes");
 const healthRoutes = require("./routes/health");
 const deviceRoutes = require("./routes/device");
 const databaseRoutes = require("./routes/database");
@@ -34,6 +35,7 @@ app.use(express.json());
  * =========================================
  */
 
+app.use("/api/login", adminAuthRoutes);
 app.use(
   "/api/login",
   loginRoutes
