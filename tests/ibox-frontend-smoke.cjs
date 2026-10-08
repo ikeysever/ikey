@@ -93,3 +93,17 @@ test("placeholder slot navigation removed and admin operations are guarded", () 
   assert.match(operations, /\/api\/login\/admin\/connections/);
   assert.match(auth, /router\.get\("\/admin\/connections", requireSuperadmin/);
 });
+
+test("chemical storage cabinet uses its own emerald theme and six status palettes exist", () => {
+  const projects = fs.readFileSync(path.join(root, "public/project-center.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "public/project-center.css"), "utf8");
+  assert.match(projects, /title: "化學實驗室儲存櫃"/);
+  assert.match(projects, /theme: "laboratory"/);
+  assert.match(projects, /detail\.dataset\.projectTheme/);
+  assert.match(projects, /button\.dataset\.projectTheme/);
+  for (const theme of ["midnight", "arctic", "laboratory", "copper", "violet", "graphite"]) {
+    assert.ok(css.includes('[data-ikey-theme="' + theme + '"]'));
+  }
+  assert.match(css, /\.ikey-project-card\[data-project-theme="laboratory"\]/);
+  assert.match(css, /\.ikey-project-detail\[data-project-theme="laboratory"\]/);
+});

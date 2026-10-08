@@ -15,8 +15,9 @@
     },
     {
       id: "chemical-lab",
-      title: "化學實驗室",
-      subtitle: "門禁排程、物品與環境監測",
+      theme: "laboratory",
+      title: "化學實驗室儲存櫃",
+      subtitle: "藥品儲存、安全門禁與環境監測",
       category: "門禁與安全",
       icon: "🧪",
       capabilities: ["時段門禁", "環境監測", "物品管理", "安全紀錄"],
@@ -42,6 +43,7 @@
       const project = templates.find(p => p.id === selected);
       detail.replaceChildren();
       if (!project) return;
+      detail.dataset.projectTheme = project.theme || "default";
       detail.append(
         create("p", "ikey-project-kicker", "專案範本預覽 · 尚未啟用"),
         create("h3", "", project.icon + " " + project.title),
@@ -62,6 +64,7 @@
         count++;
         const button = create("button", "ikey-project-card" + (selected === project.id ? " is-selected" : ""));
         button.type = "button";
+        button.dataset.projectTheme = project.theme || "default";
         button.setAttribute("aria-pressed", String(selected === project.id));
         button.append(
           create("span", "ikey-project-card-icon", project.icon),
