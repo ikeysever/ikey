@@ -161,6 +161,11 @@
             <span>營運總覽</span>
           </button>
 
+          <button class="sidebar-item" type="button" data-page="admin">
+            <span class="sidebar-icon" aria-hidden="true">⚙</span>
+            <span>管理員控制台</span>
+          </button>
+
           <!-- 首頁 -->
 
           <button
@@ -422,6 +427,17 @@
           <div id="ikeyOverviewStats" class="ikey-overview-grid" aria-live="polite"></div>
           <p id="ikeyOverviewMessage" class="ikey-project-muted" role="status">開啟頁面後將讀取資料。</p>
           <p class="ikey-project-note">注意：此處的設備數量為資料庫登錄筆數，不代表裝置目前在線；測試用 ESP32-01 不代表已接上實體硬體。</p>
+        </section>
+
+        <section id="ikeyAdminPage" class="content-page" hidden>
+          <div class="ikey-project-hero">
+            <p class="ikey-project-kicker">iKey · 權限驗證</p>
+            <h2>超級管理員控制台</h2>
+            <p>管理員權限由後端驗證，未登入者無法取得管理資料。尚未完成的操作不會開放。</p>
+            <button id="ikeyAdminRefresh" type="button" class="ikey-overview-refresh">重新驗證</button>
+          </div>
+          <p id="ikeyAdminStatus" class="ikey-project-muted" role="status">等待伺服器驗證。</p>
+          <div id="ikeyAdminPanel" class="ikey-project-detail"></div>
         </section>
 
         <section
@@ -1216,6 +1232,7 @@
        ======================================== -->
   <script src="./project-center.js"></script>
   <script src="./operations-overview.js"></script>
+  <script src="./admin-console.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./animation.js"></script>
 
