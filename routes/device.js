@@ -1,3 +1,4 @@
+const { record } = require("../lib/ibox/operational-events");
 const express = require("express");
 
 const router = express.Router();
@@ -48,8 +49,12 @@ router.post("/heartbeat", (req, res) => {
 
   }
 
+  const wasOnline = devices[deviceId].lastSeen !== null &&
+    Date.now() - devices[deviceId].lastSeen < OFFLINE_TIMEOUT;
   devices[deviceId].lastSeen =
     Date.now();
+  record("device_heartbeat", "Device heartbeat received", { deviceId });
+  if (!wasOnline) record("device_online", "Device heartbeat resumed", { deviceId });
 
   return res.json({
     success: true,
