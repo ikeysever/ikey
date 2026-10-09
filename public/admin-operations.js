@@ -36,6 +36,19 @@ document.addEventListener("DOMContentLoaded", () => {
       // Transient network failures must not fabricate terminal events.
     } finally { terminalBusy = false; }
   }
+  const monitorTab = document.getElementById("ikeyTerminalMonitorTab");
+  const commandTab = document.getElementById("ikeyTerminalCommandTab");
+  const monitorView = document.getElementById("ikeyTerminalMonitorView");
+  const commandView = document.getElementById("ikeyTerminalCommandView");
+  function switchTerminalTab(command) {
+    if (monitorView) monitorView.hidden = command;
+    if (commandView) commandView.hidden = !command;
+    monitorTab?.setAttribute("aria-pressed", String(!command));
+    commandTab?.setAttribute("aria-pressed", String(command));
+  }
+  monitorTab?.addEventListener("click", () => switchTerminalTab(false));
+  commandTab?.addEventListener("click", () => switchTerminalTab(true));
+  document.getElementById("ikeyTerminalCommandForm")?.addEventListener("submit", e => e.preventDefault());
   let allowed = false;
   let running = false;
   function textLine(message) {
