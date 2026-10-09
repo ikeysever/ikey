@@ -18,12 +18,13 @@
     const duration = 9.8, C = "#67e8f9", G = "#7de2b1";
     let t = 0, origin = performance.now(), raf = 0, finished = false, resolved = false, ready = false, cancelled = false, failed = false, finalize = false;
     let audio = null;
+    let endTimer = 0;
     let loadTimeout = 0;
     let onResolve, onReject, attemptCounter = 0;
     const completion = new Promise((resolve, reject) => { onResolve = resolve; onReject = reject; });
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const onResize = () => { if (!cancelled) draw(t); };
-    const cleanup = () => { clearTimeout(loadTimeout); cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (audio) {audio.pause(); audio.src="";} overlay.remove(); if (current === controller) current = null; };
+    const cleanup = () => { clearTimeout(loadTimeout); clearTimeout(endTimer); cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (audio) {audio.pause(); audio.src="";} overlay.remove(); if (current === controller) current = null; };
     const controller = { cancel() { if (cancelled) return; cancelled = true; cleanup(); if (!resolved) { resolved = true; onReject(new Error("歡迎動畫已取消")); } }, promise: completion };
     current = controller;
     const seedAudio = () => {
@@ -32,7 +33,7 @@
     const paintFinal = () => { t=duration; draw(t); };
     const finish = () => {
       if (cancelled || resolved || !ready || !finished) return;
-      if (!finalize) { finalize = true; status.textContent = "載入成功　歡迎使用"; status.classList.add("done"); window.setTimeout(() => { if (cancelled) return; resolved = true; cleanup(); onResolve(); }, reduced ? 0 : 500); }
+      if (!finalize) { finalize = true; status.textContent = "載入成功　歡迎使用"; status.classList.add("done"); endTimer = window.setTimeout(() => { if (cancelled) return; resolved = true; cleanup(); onResolve(); }, reduced ? 0 : 500); }
     };
     const attempt = () => {
       if (cancelled) return;
