@@ -18,11 +18,12 @@
     const duration = 9.8, C = "#67e8f9", G = "#7de2b1";
     let t = 0, origin = performance.now(), raf = 0, finished = false, resolved = false, ready = false, cancelled = false, failed = false, finalize = false;
     let audio = null;
-    let onResolve, onReject;
+    let loadTimeout = 0;
+    let onResolve, onReject, attemptCounter = 0;
     const completion = new Promise((resolve, reject) => { onResolve = resolve; onReject = reject; });
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const onResize = () => { if (!cancelled) draw(t); };
-    const cleanup = () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (audio) {audio.pause(); audio.src="";} overlay.remove(); if (current === controller) current = null; };
+    const cleanup = () => { clearTimeout(loadTimeout); cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (audio) {audio.pause(); audio.src="";} overlay.remove(); if (current === controller) current = null; };
     const controller = { cancel() { if (cancelled) return; cancelled = true; cleanup(); if (!resolved) { resolved = true; onReject(new Error("歡迎動畫已取消")); } }, promise: completion };
     current = controller;
     const seedAudio = () => {
@@ -36,8 +37,11 @@
     const attempt = () => {
       if (cancelled) return;
       failed = false; ready = false; finalize = false; retry.hidden = true;
+      clearTimeout(loadTimeout);
+      const thisAttempt = ++attemptCounter;
       status.textContent = "登入成功　載入中…"; status.classList.remove("done");
-      Promise.resolve().then(prepareHome).then(() => { if (cancelled) return; ready = true; finish(); }, err => { if (cancelled) return; failed = true; status.textContent = "首頁載入失敗：" + (err && err.message ? err.message : "請重試"); retry.hidden = false; });
+      loadTimeout = setTimeout(() => { if (cancelled || thisAttempt !== attemptCounter) return; failed = true; ready = false; status.textContent = "首頁載入逾時，請重新載入"; retry.hidden = false; }, 15000);
+      Promise.resolve().then(prepareHome).then(() => { if (cancelled || thisAttempt !== attemptCounter || failed) return; clearTimeout(loadTimeout); ready = true; finish(); }, err => { if (cancelled || thisAttempt !== attemptCounter) return; clearTimeout(loadTimeout); failed = true; status.textContent = "首頁載入失敗：" + (err && err.message ? err.message : "請重試"); retry.hidden = false; });
     };
     retry.addEventListener("click", attempt);
     const clamp=x=>Math.max(0,Math.min(1,x)),p=(t,s,d)=>clamp((t-s)/d),ease=x=>1-(1-x)**3,mix=(a,b,v)=>a+(b-a)*v;
@@ -50,7 +54,7 @@ function dot(x,y,r,color=C,alpha=1){ctx.save();ctx.globalAlpha*=alpha;ctx.fillSt
 function key(x,y,scale,build=1,alpha=1){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.globalAlpha*=alpha;arc(-48,0,30,0,2*Math.PI*Math.min(1,build*2),3);if(build>.22)arc(-59,0,8,0,2*Math.PI*p(build,.22,.25),2);const pts=[[-25,11],[-18,11],[-18,9],[57,9],[65,1],[57,-10],[49,-10],[44,-6],[39,-10],[34,-6],[29,-10],[24,-6],[19,-10],[14,-6],[9,-10],[4,-6],[-1,-10],[-6,-10],[-6,-13],[-18,-13],[-18,-11],[-25,-11],[-25,11]];const lengths=pts.slice(1).map((v,i)=>Math.hypot(v[0]-pts[i][0],v[1]-pts[i][1]));let remaining=lengths.reduce((a,b)=>a+b,0)*p(build,.4,.6);for(let i=0;i<lengths.length&&remaining>0;i++){let q=Math.min(1,remaining/lengths[i]);line([pts[i],[mix(pts[i][0],pts[i+1][0],q),mix(pts[i][1],pts[i+1][1],q)]],3);remaining-=lengths[i]}if(build>.8)line([[-15,0],[54,0]],.8,C,.45);ctx.restore()}
 function padlock(x,y,scale=1,open=0,alpha=1){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);rect(0,20,74,48,5,3,alpha,true);const ax=-12*open,ay=-15-11*open;arc(ax,ay,23,Math.PI,Math.PI*2,3.5,C,alpha);line([[ax-23,ay],[ax-23,-4]],3.5,C,alpha);line([[ax+23,ay],[ax+23,ay+12*(1-open)]],3.5,C,alpha);arc(0,18,3,0,Math.PI*2,1.5,C,alpha);line([[0,21],[0,27]],2,C,alpha);ctx.restore()}
 function ring(x,y,r,m=1){ctx.save();ctx.fillStyle='rgba(11,18,32,.4)';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.shadowColor='rgba(103,232,249,.2)';ctx.shadowBlur=8*m;arc(x,y,r,0,Math.PI*2,mix(2,3.5,m));ctx.shadowBlur=0;arc(x,y,r+6,-2.4,-.8,1,C,.5);arc(x,y,r+6,.12,1.4,1,C,.5);for(let i=0;i<16;i++){let a=i*Math.PI/8;line([[x+Math.cos(a)*(r-8),y+Math.sin(a)*(r-8)],[x+Math.cos(a)*(r-4),y+Math.sin(a)*(r-4)]],.8,C,.35)}ctx.restore()}
-function draw(time){const box=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);if(canvas.width!==Math.round(box.width*dpr)||canvas.height!==Math.round(box.height*dpr)){canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr)}ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);const mobile=box.width<640;const W=mobile?540:960,H=540;const fit=Math.min(box.width/W,box.height/H);ctx.setTransform(fit*dpr,0,0,fit*dpr,(box.width-W*fit)/2*dpr,(box.height-H*fit)/2*dpr);
+function draw(time){const box=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);if(canvas.width!==Math.round(box.width*dpr)||canvas.height!==Math.round(box.height*dpr)){canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr)}ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);const mobile=box.width<640;const W=mobile?540:960,H=540;const fit=Math.min(box.width/W,box.height/H);ctx.setTransform(fit*dpr,0,0,fit*dpr,(box.width-W*fit)/2*dpr,(box.height-H*fit)/2*dpr);
 const morph=ease(p(time,6.05,.85));const initialX=mobile?340:595,initialY=mobile?200:248,finalX=mobile?270:315,finalY=mobile?160:255;const cx=mix(initialX,finalX,morph),cy=mix(initialY,finalY,morph),radius=mix(92,100,morph);const energy=p(time,0,.65)*(1-p(time,6.1,1))*.23;
 for(const y of [194,248,302])line([[mobile?30:110,y],[215,y],[245,y-18],[680,y-18],[710,y],[850,y]],.7,C,energy);
 for(const [px,py,r,ph]of particles){let gather=ease(p(time,.45,1.5)),baseX=mobile?160:300;let x=mix(mobile?px*.55:px,baseX+Math.cos(ph)*74,gather),y=mix(py,mobile?200+Math.sin(ph)*26:248+Math.sin(ph)*26,gather);dot(x,y,r,C,p(time,0,.7)*(1-p(time,1.85,.65))*(.25+.5*(.5+.5*Math.sin(time*3+ph))))}
