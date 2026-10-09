@@ -19,7 +19,6 @@
     let t = 0, origin = performance.now(), raf = 0, finished = false, resolved = false, ready = false, cancelled = false, failed = false, finalize = false;
     let audio = null;
     let endTimer = 0;
-    let rafStarted = false;
     let loadTimeout = 0;
     let onResolve, onReject, attemptCounter = 0;
     const completion = new Promise((resolve, reject) => { onResolve = resolve; onReject = reject; });
@@ -87,7 +86,6 @@ else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff'
     attempt();
     seedAudio();
     if (reduced) paintFinal();
-    rafStarted = true;
     raf = requestAnimationFrame(tick);
     return controller;
   }
