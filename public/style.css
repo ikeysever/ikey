@@ -2694,3 +2694,16 @@ button {
 .sidebar-nav .sidebar-group { margin-top: 5px; }
 .sidebar-nav .sidebar-group + .sidebar-group { border-top: 1px solid var(--panel-border); padding-top: 7px; }
 [data-ikey-placeholder] .ikey-project-detail { margin-top: 20px; padding: 22px; }
+
+/* Approved padlock welcome overlay: preserves the original iKey background. */
+@font-face{font-family:"iKey Welcome";src:url("/welcome-assets/welcome-text-subset.ttf") format("truetype");font-display:swap}
+.ikey-welcome-padlock{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 20% 0%,#1b3150 0%,#0b1220 42%,#070c16 100%);color:#f8fafc;display:grid;place-items:center;padding:16px}
+.ikey-welcome-stage{position:relative;width:min(100%,1440px);height:min(92vh,810px);min-height:320px;overflow:hidden}
+.ikey-welcome-stage canvas{display:block;width:100%;height:100%}
+.ikey-welcome-status{position:absolute;right:18px;top:12px;font-size:13px;color:#dce6f1;z-index:1}
+.ikey-welcome-status:not(.done):before{content:"";display:inline-block;width:10px;height:10px;border:1px solid currentColor;border-top-color:transparent;border-radius:50%;margin-right:8px;animation:ikey-welcome-spin 1s linear infinite}
+.ikey-welcome-status.done:before{content:"✓";color:#7de2b1;margin-right:8px}
+.ikey-welcome-retry{position:absolute;top:52%;left:50%;transform:translate(-50%,-50%);background:#142034;color:#f8fafc;border:1px solid #67e8f9;border-radius:8px;padding:12px 24px;cursor:pointer;z-index:2}
+@keyframes ikey-welcome-spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){.ikey-welcome-stage{height:85vh;min-height:420px}.ikey-welcome-status{font-size:11px;right:8px}}
+@media(prefers-reduced-motion:reduce){.ikey-welcome-status:before{animation:none}}
