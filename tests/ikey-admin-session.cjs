@@ -20,7 +20,7 @@ test("server-issued session verifies as ikey superadmin", () => {
   });
   assert.deepEqual(sessionFromRequest({
     headers: { cookie: "other=x; " + COOKIE_NAME + "=" + token },
-  }, secret), { userId: "ikey", globalRole: "superadmin" });
+  }, secret, now + 1000), { userId: "ikey", globalRole: "superadmin" });
 });
 
 test("rejects expired, altered and incorrectly signed tokens", () => {
