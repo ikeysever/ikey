@@ -131,3 +131,19 @@ test("primary navigation groups are consistent accessible collapsible buttons", 
   assert.match(html, /id="ikeyAdminNavGroup" hidden/);
   assert.match(html, /id="ikeySuperadminNavGroup" hidden/);
 });
+
+
+test("approved multi-scene welcome links exact subtitles and validates homepage readiness", () => {
+  const welcome = fs.readFileSync(path.join(root, "public/welcome-padlock.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
+  assert.match(html, /src="\.\/welcome-padlock\.js"/);
+  assert.match(app, /iKeyPadlockWelcome\.create\(\(\) => fetchDeviceStatus\(true\)\)/);
+  assert.match(welcome, /const copy=p\(time,7\.55,\.6\),sub=p\(time,8\.15,\.6\)/);
+  assert.match(welcome, /自動多場景智慧鎖/);
+  assert.doesNotMatch(welcome, /智慧鑰匙管理系統|智慧鑰匙倉儲管理系統/);
+  assert.match(welcome, /!ready \|\| !finished/);
+  assert.match(welcome, /重新載入/);
+  assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/welcome.wav")));
+  assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/project-title-subset.ttf")));
+  assert.match(css, /\/welcome-assets\/project-title-subset\.ttf/);
+});

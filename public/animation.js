@@ -3369,7 +3369,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async (event) => {
 
         event.preventDefault();
-        // No welcome audio is required.
+        // Audio playback is best-effort; visual welcome works without audio.
 
 
         const account =
@@ -3457,9 +3457,14 @@ document.addEventListener("DOMContentLoaded", () => {
           );
 
 
-          // Hide login immediately after successful authentication.
+          // Authenticated: play approved welcome while real dashboard data loads.
           if (loginPage) loginPage.hidden = true;
-          await enterDashboard();
+          if (window.iKeyPadlockWelcome) {
+            await window.iKeyPadlockWelcome.create(() => fetchDeviceStatus(true)).promise;
+            showDashboard();
+          } else {
+            await enterDashboard();
+          }
 
 
           // 切換頁面

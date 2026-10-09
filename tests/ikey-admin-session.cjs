@@ -20,6 +20,10 @@ test("server-issued session verifies as ikey superadmin", () => {
   });
   assert.deepEqual(sessionFromRequest({
     headers: { cookie: "other=x; " + COOKIE_NAME + "=" + token },
+  }, secret), null);
+  const liveToken = issueSession("ikey", secret);
+  assert.deepEqual(sessionFromRequest({
+    headers: { cookie: COOKIE_NAME + "=" + liveToken },
   }, secret), { userId: "ikey", globalRole: "superadmin" });
 });
 
