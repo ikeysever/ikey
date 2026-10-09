@@ -154,28 +154,36 @@
           <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁 · 連線監測</span></button>
           <button class="sidebar-item" type="button" data-page="my-account"><span class="sidebar-icon">♙</span><span>我的帳號</span></button>
           <div class="sidebar-group">
-            <div class="ikey-nav-heading">▣ 專案中心</div>
+            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-project-center" data-sidebar-toggle="project-center"><span class="sidebar-icon" aria-hidden="true">▣</span><span>專案中心</span><span class="ikey-nav-chevron" aria-hidden="true">⌄</span></button>
+            <div class="ikey-nav-children" id="ikey-nav-project-center" hidden>
             <button class="sidebar-item ikey-subnav" type="button" data-page="project-apply">專案申請</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="my-projects">我的專案</button>
+            </div>
           </div>
           <div class="sidebar-group" id="ikeyAdminNavGroup" hidden>
-            <div class="ikey-nav-heading">♜ 管理員控制台</div>
+            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-admin-console" data-sidebar-toggle="admin-console"><span class="sidebar-icon" aria-hidden="true">⚙</span><span>管理員控制台</span><span class="ikey-nav-chevron" aria-hidden="true">⌄</span></button>
+            <div class="ikey-nav-children" id="ikey-nav-admin-console" hidden>
             <button class="sidebar-item ikey-subnav" type="button" data-page="overview"><span class="sidebar-icon">▤</span>營運總覽</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="registration-review">帳號註冊與審核</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="projects">專案管理</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="device-management">設備管理</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="activity-records">操作與借還紀錄</button>
+            </div>
           </div>
           <div class="sidebar-group" id="ikeyTerminalNavGroup" hidden>
-            <div class="ikey-nav-heading">›_ 系統終端機</div>
+            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-terminal" data-sidebar-toggle="terminal"><span class="sidebar-icon" aria-hidden="true">›_</span><span>系統終端機</span><span class="ikey-nav-chevron" aria-hidden="true">⌄</span></button>
+            <div class="ikey-nav-children" id="ikey-nav-terminal" hidden>
             <button class="sidebar-item ikey-subnav" type="button" data-page="terminal">即時訊息監看／遠端指令</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="terminal-help">詳細說明</button>
+            </div>
           </div>
           <div class="sidebar-group" id="ikeySuperadminNavGroup" hidden>
-            <div class="ikey-nav-heading">♛ 超級管理員控制台</div>
+            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-superadmin" data-sidebar-toggle="superadmin"><span class="sidebar-icon" aria-hidden="true">♛</span><span>超級管理員控制台</span><span class="ikey-nav-chevron" aria-hidden="true">⌄</span></button>
+            <div class="ikey-nav-children" id="ikey-nav-superadmin" hidden>
             <button class="sidebar-item ikey-subnav" type="button" data-page="admin">全站帳號與權限</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="sidebar-order">側欄與頁面排序</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="system-settings">系統設定</button>
+            </div>
           </div>
         </nav>
 
