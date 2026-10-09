@@ -6,6 +6,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const menuButton = document.getElementById("sidebarMenuButton");
   const nav = document.querySelector(".sidebar-nav");
   if (!nav) return;
+  // Collapsible headings match the appearance of ordinary sidebar items.
+  nav.addEventListener("click", event => {
+    const toggle = event.target.closest("button[data-sidebar-toggle]");
+    if (!toggle || !nav.contains(toggle) || toggle.closest("[hidden]")) return;
+    const children = document.getElementById(toggle.getAttribute("aria-controls"));
+    if (!children) return;
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(open));
+    children.hidden = !open;
+  });
+  // Keep the active page visible when the existing page controller navigates.
+  nav.addEventListener("click", event => {
+    const item = event.target.closest("button[data-page]");
+    if (!item || !nav.contains(item) || item.closest("[hidden]")) return;
+    const children = item.closest(".ikey-nav-children");
+    if (!children) return;
+    children.hidden = false;
+    const toggle = nav.querySelector('[aria-controls="' + children.id + '"]');
+    if (toggle) toggle.setAttribute("aria-expanded", "true");
+  });
+
   nav.addEventListener("click", event => {
     const button = event.target.closest("button[data-page]");
     if (!button || !nav.contains(button)) return;

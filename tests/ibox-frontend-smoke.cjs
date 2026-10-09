@@ -116,3 +116,18 @@ test("chemical storage cabinet uses its own emerald theme and six status palette
   assert.match(css, /\.ikey-project-card\[data-project-theme="laboratory"\]/);
   assert.match(css, /\.ikey-project-detail\[data-project-theme="laboratory"\]/);
 });
+
+test("primary navigation groups are consistent accessible collapsible buttons", () => {
+  const script = fs.readFileSync(path.join(root, "public/sidebar-pages.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
+  for (const id of ["project-center", "admin-console", "terminal", "superadmin"]) {
+    assert.match(html, new RegExp('data-sidebar-toggle="' + id + '"'));
+    assert.match(html, new RegExp('aria-controls="ikey-nav-' + id + '"'));
+    assert.match(html, new RegExp('id="ikey-nav-' + id + '" hidden'));
+  }
+  assert.match(script, /setAttribute\("aria-expanded", String\(open\)\)/);
+  assert.match(script, /children\.hidden = !open/);
+  assert.match(css, /\.ikey-nav-children\[hidden\]/);
+  assert.match(html, /id="ikeyAdminNavGroup" hidden/);
+  assert.match(html, /id="ikeySuperadminNavGroup" hidden/);
+});
