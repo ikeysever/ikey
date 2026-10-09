@@ -66,6 +66,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const adminGroup = document.getElementById("ikeyAdminNavGroup");
     if (projectGroup) projectGroup.hidden = !allowed;
     if (adminGroup) adminGroup.hidden = !allowed;
+    const terminalGroup = document.getElementById("ikeyTerminalNavGroup");
+    const superadminGroup = document.getElementById("ikeySuperadminNavGroup");
+    if (terminalGroup) terminalGroup.hidden = !allowed;
+    if (superadminGroup) superadminGroup.hidden = !allowed;
     if (connections) connections.hidden = !allowed;
     if (!allowed && monitor) monitor.hidden = true;
     return allowed;

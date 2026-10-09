@@ -2687,3 +2687,10 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .sidebar { transition: none; }
 }
+
+/* iKey role-based hamburger navigation */
+.ikey-nav-heading { padding: 15px 14px 6px; color: var(--text); font-size: .91rem; font-weight: 700; letter-spacing: .02em; }
+.sidebar-nav .ikey-subnav { padding-left: 29px; min-height: 39px; font-size: .9rem; }
+.sidebar-nav .sidebar-group { margin-top: 5px; }
+.sidebar-nav .sidebar-group + .sidebar-group { border-top: 1px solid var(--panel-border); padding-top: 7px; }
+[data-ikey-placeholder] .ikey-project-detail { margin-top: 20px; padding: 22px; }
