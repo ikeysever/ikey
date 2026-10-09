@@ -3457,9 +3457,14 @@ document.addEventListener("DOMContentLoaded", () => {
           );
 
 
-          // Hide login immediately after successful authentication.
+          // Authenticated: display approved welcome while real dashboard data loads.
           if (loginPage) loginPage.hidden = true;
-          await enterDashboard();
+          if (window.iKeyPadlockWelcome) {
+            await window.iKeyPadlockWelcome.create(() => fetchDeviceStatus(true)).promise;
+            showDashboard();
+          } else {
+            await enterDashboard();
+          }
 
 
           // 切換頁面
