@@ -2719,3 +2719,8 @@ button {
 @keyframes ikey-welcome-spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){.ikey-welcome-stage{height:85vh;min-height:420px}.ikey-welcome-status{font-size:11px;right:8px}}
 @media(prefers-reduced-motion:reduce){.ikey-welcome-status:before{animation:none}}
+
+/* Filled triangle: collapsed ▶, expanded ▼, positioned before the group name. */
+.sidebar-nav .ikey-nav-toggle .ikey-nav-triangle { font-size:.8rem; text-align:center; }
+.sidebar-nav .ikey-nav-toggle[aria-expanded="true"] .ikey-nav-triangle { font-size:0; }
+.sidebar-nav .ikey-nav-toggle[aria-expanded="true"] .ikey-nav-triangle::before { content:"▼"; font-size:.8rem; }
