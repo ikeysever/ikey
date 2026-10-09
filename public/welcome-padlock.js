@@ -69,6 +69,7 @@ const divider=p(time,6.85,.55);const copy=p(time,7.2,.6),sub=p(time,7.65,.6);
 if(mobile){line([[190,300],[190+160*ease(divider),300]],1,'#ffffff',divider*.42);ctx.textAlign='center';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='32px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',270,365+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='22px Welcome,system-ui,sans-serif';ctx.fillText('智慧鑰匙管理系統',270,410+8*(1-sub))}
 else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff',divider*.42);ctx.textAlign='left';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='38px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',515,247+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='25px Welcome,system-ui,sans-serif';ctx.fillText('智慧鑰匙管理系統',515,293+8*(1-sub))}
 
+    }
     function tick(now) {
       if (cancelled) return;
       t = reduced ? duration : Math.min(duration, (now - origin)/1000);
