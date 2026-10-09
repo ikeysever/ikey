@@ -28,7 +28,7 @@
     const controller = { cancel() { if (cancelled) return; cancelled = true; cleanup(); if (!resolved) { resolved = true; onReject(new Error("歡迎動畫已取消")); } }, promise: completion };
     current = controller;
     const seedAudio = () => {
-      try { audio = new Audio(assetBase + "audio/welcome.wav"); audio.preload = "auto"; audio.volume = .7; audio.play().catch(() => {}); } catch (_) { /* audio is optional */ }
+      try { audio = new Audio(assetBase + "welcome.wav"); audio.preload = "auto"; audio.volume = .7; audio.play().catch(() => {}); } catch (_) { /* audio is optional */ }
     };
     const paintFinal = () => { t=duration; draw(t); };
     const finish = () => {
