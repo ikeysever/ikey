@@ -3369,7 +3369,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async (event) => {
 
         event.preventDefault();
-        // No welcome audio is required.
+        // Audio playback is best effort; visual welcome never depends on audio.
 
 
         const account =
