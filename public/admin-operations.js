@@ -1,7 +1,7 @@
 "use strict";
 document.addEventListener("DOMContentLoaded", () => {
   const terminal = document.querySelector('[data-page="terminal"]');
-  const connections = document.querySelector('[data-page="connections"]');
+  const connections = null; // Connection monitoring is now on the homepage.
   const monitor = document.getElementById("connectionMonitorPage");
   const output = document.getElementById("ikeyConnectionDevices");
   const notice = document.getElementById("ikeyConnectionNotice");
@@ -27,15 +27,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const time = new Date(entry.time).toLocaleTimeString("zh-TW", { hour12: false });
         const detail = entry.details?.deviceId ? " [" + entry.details.deviceId + "]" : "";
         row.textContent = "[" + time + "] " + entry.type.toUpperCase() + " · " + entry.message + detail;
-        terminalOutput.append(row);
+        terminalOutput.prepend(row);
       }
       eventCursor = Math.max(eventCursor, Number(data.latestId) || 0);
-      while (terminalOutput.children.length > 180) terminalOutput.firstElementChild.remove();
-      if ((data.events || []).length) terminalOutput.scrollTop = terminalOutput.scrollHeight;
+      while (terminalOutput.children.length > 180) terminalOutput.lastElementChild.remove();
+      if ((data.events || []).length) terminalOutput.scrollTop = 0;
     } catch {
       // Transient network failures must not fabricate terminal events.
     } finally { terminalBusy = false; }
   }
+  const monitorTab = document.getElementById("ikeyTerminalMonitorTab");
+  const commandTab = document.getElementById("ikeyTerminalCommandTab");
+  const monitorView = document.getElementById("ikeyTerminalMonitorView");
+  const commandView = document.getElementById("ikeyTerminalCommandView");
+  function switchTerminalTab(command) {
+    if (monitorView) monitorView.hidden = command;
+    if (commandView) commandView.hidden = !command;
+    monitorTab?.setAttribute("aria-pressed", String(!command));
+    commandTab?.setAttribute("aria-pressed", String(command));
+  }
+  monitorTab?.addEventListener("click", () => switchTerminalTab(false));
+  commandTab?.addEventListener("click", () => switchTerminalTab(true));
+  document.getElementById("ikeyTerminalCommandForm")?.addEventListener("submit", e => e.preventDefault());
   let allowed = false;
   let running = false;
   function textLine(message) {
@@ -49,6 +62,10 @@ document.addEventListener("DOMContentLoaded", () => {
       allowed = response.ok && (await response.json()).globalRole === "superadmin";
     } catch { allowed = false; }
     if (terminal) terminal.hidden = !allowed;
+    const projectGroup = document.getElementById("ikeyProjectAdminGroup");
+    const adminGroup = document.getElementById("ikeyAdminNavGroup");
+    if (projectGroup) projectGroup.hidden = !allowed;
+    if (adminGroup) adminGroup.hidden = !allowed;
     if (connections) connections.hidden = !allowed;
     if (!allowed && monitor) monitor.hidden = true;
     return allowed;

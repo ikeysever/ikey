@@ -150,47 +150,10 @@
              側欄選單
              ================================== -->
 
-        <nav class="sidebar-nav">
-
-
-          <button class="sidebar-item" type="button" data-page="projects">
-            <span class="sidebar-icon" aria-hidden="true">▦</span>
-            <span>專案中心</span>
-          </button>
-
-          <button class="sidebar-item" type="button" data-page="overview">
-            <span class="sidebar-icon" aria-hidden="true">▤</span>
-            <span>營運總覽</span>
-          </button>
-
-          <button class="sidebar-item" type="button" data-page="admin">
-            <span class="sidebar-icon" aria-hidden="true">⚙</span>
-            <span>管理員控制台</span>
-          </button>
-
-          <!-- 首頁 -->
-
-          <button
-            class="sidebar-item active"
-            type="button"
-            data-page="dashboard"
-          >
-
-            <span class="sidebar-icon">
-              ⌂
-            </span>
-
-            <span>
-              首頁
-            </span>
-
-          </button>
-
-
-          <!-- ==================================
-               課表
-               ================================== -->
-
+        <nav class="sidebar-nav" aria-label="主選單">
+          <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁 · 連線監測</span></button>
+          <div class="sidebar-group" id="ikeyProjectAdminGroup" hidden><button class="sidebar-item" type="button" data-page="projects"><span class="sidebar-icon">▦</span><span>專案管理</span></button></div>
+          <div class="sidebar-group" id="ikeyAdminNavGroup" hidden><button class="sidebar-item" type="button" data-page="admin"><span class="sidebar-icon">⚙</span><span>管理員控制台</span></button><button class="sidebar-item ikey-subnav" type="button" data-page="overview"><span class="sidebar-icon">▤</span><span>營運總覽</span></button></div>
           <div class="sidebar-group">
 
             <button
@@ -294,31 +257,8 @@
           </div>
 
 
-          <button class="sidebar-item" type="button" data-page="connections" hidden>
-            <span class="sidebar-icon" aria-hidden="true">⌁</span>
-            <span>連線監測</span>
-          </button>
 
-          <!-- ==================================
-               系統終端機
-               ================================== -->
-
-          <button
-            class="sidebar-item"
-            type="button"
-            data-page="terminal" hidden
-          >
-
-            <span class="sidebar-icon">
-              ›_
-            </span>
-
-            <span>
-              系統終端機
-            </span>
-
-          </button>
-
+          <button class="sidebar-item" type="button" data-page="terminal" hidden><span class="sidebar-icon">›_</span><span>系統終端機</span></button>
         </nav>
 
 
@@ -375,7 +315,7 @@
             ></span>
 
             <span id="connectionText">
-              系統正常
+              等待回報
             </span>
 
           </div>
@@ -426,267 +366,17 @@
           <div id="ikeyAdminPanel" class="ikey-project-detail"></div>
         </section>
 
-        <section
-          id="dashboardPage"
-          class="content-page"
-        >
-
-          <div class="dashboard-grid">
-
-
-            <!-- ================================
-                 裝置連線監測
-                 ================================ -->
-
-            <article class="dashboard-panel">
-
-              <div class="panel-header">
-
-                <div>
-
-                  <h2>
-                    裝置連線監測
-                  </h2>
-
-                  <p>
-                    即時監測 iKey 實體裝置連線狀態
-                  </p>
-
-                </div>
-
-
-                <span
-                  id="deviceStatusBadge"
-                  class="status-badge online"
-                >
-                  MONITOR
-                </span>
-
-              </div>
-
-
-              <div class="robot-status-list">
-
-
-                <!-- ESP Robot -->
-
-                <div class="robot-status-item">
-
-                  <span>
-                    ESP Robot
-                  </span>
-
-                  <span
-                    id="espRobotStatus"
-                    class="robot-offline"
-                  >
-                    ● 尚未連線
-                  </span>
-
-                </div>
-
-
-                <!-- LVGL Terminal -->
-
-                <div class="robot-status-item">
-
-                  <span>
-                    LVGL Terminal
-                  </span>
-
-                  <span
-                    id="lvglTerminalStatus"
-                    class="robot-offline"
-                  >
-                    ● 尚未連線
-                  </span>
-
-                </div>
-
-              </div>
-
-            </article>
-
-
-            <!-- ================================
-                 系統日誌
-                 ================================ -->
-
-            <article class="dashboard-panel">
-
-              <div class="panel-header">
-
-                <div>
-
-                  <h2>
-                    系統日誌
-                  </h2>
-
-                  <p>
-                    系統與裝置即時活動
-                  </p>
-
-                </div>
-
-              </div>
-
-
-              <div
-                id="systemLog"
-                class="system-log"
-              >
-
-                <div class="log-line">
-
-                  <span>
-                    [SYSTEM]
-                  </span>
-
-                  iKey 系統已啟動
-
-                </div>
-
-
-                <div class="log-line">
-
-                  <span>
-                    [DEVICE]
-                  </span>
-
-                  等待 ESP Robot 連線
-
-                </div>
-
-
-                <div class="log-line">
-
-                  <span>
-                    [DEVICE]
-                  </span>
-
-                  等待 LVGL Terminal 連線
-
-                </div>
-
-
-                <div class="log-line">
-
-                  <span>
-                    [SYSTEM]
-                  </span>
-
-                  系統目前正常運作
-
-                </div>
-
-              </div>
-
-            </article>
-
-
-            <!-- ================================
-                 系統摘要
-                 ================================ -->
-
-            <article
-              class="dashboard-panel dashboard-panel-wide"
-            >
-
-              <div class="panel-header">
-
-                <div>
-
-                  <h2>
-                    系統狀態
-                  </h2>
-
-                  <p>
-                    iKey 目前系統資訊
-                  </p>
-
-                </div>
-
-              </div>
-
-
-              <div class="system-summary">
-
-
-                <!-- 連線裝置 -->
-
-                <div class="summary-item">
-
-                  <span>
-                    連線裝置
-                  </span>
-
-                  <strong
-                    id="connectedDeviceCount"
-                  >
-                    0 / 2
-                  </strong>
-
-                </div>
-
-
-                <!-- 使用中格位 -->
-
-                <div class="summary-item">
-
-                  <span>
-                    使用中格位
-                  </span>
-
-                  <strong
-                    id="activeSlotCount"
-                  >
-                    0
-                  </strong>
-
-                </div>
-
-
-                <!-- 今日課表 -->
-
-                <div class="summary-item">
-
-                  <span>
-                    今日課表
-                  </span>
-
-                  <strong
-                    id="todayScheduleCount"
-                  >
-                    0
-                  </strong>
-
-                </div>
-
-
-                <!-- 系統狀態 -->
-
-                <div class="summary-item">
-
-                  <span>
-                    系統狀態
-                  </span>
-
-                  <strong
-                    class="summary-online"
-                  >
-                    正常
-                  </strong>
-
-                </div>
-
-              </div>
-
-            </article>
-
-          </div>
-
+        <section id="dashboardPage" class="content-page">
+          <div class="dashboard-grid"><article class="dashboard-panel dashboard-panel-wide">
+            <div class="panel-header"><div><h2>裝置連線監測</h2><p>僅顯示實際回報的連線狀態；尚未回報不代表正常。</p></div><span id="deviceStatusBadge" class="status-badge">MONITOR</span></div>
+            <div class="robot-status-list">
+              <div class="robot-status-item"><span>ESP Robot</span><span id="espRobotStatus" class="robot-offline">● 尚未連線</span></div>
+              <div class="robot-status-item"><span>LVGL Terminal</span><span id="lvglTerminalStatus" class="robot-offline">● 尚未連線</span></div>
+            </div>
+            <p>目前連線數：<strong id="connectedDeviceCount">0</strong></p>
+            <p>最新狀態：<span id="connectionText">等待回報</span></p>
+          </article></div>
         </section>
-
 
         <!-- ==================================
              教室課表頁
@@ -807,75 +497,19 @@
              系統終端機
              ================================== -->
 
-        <section
-          id="terminalPage"
-          class="content-page"
-          hidden
-        >
-
+        <section id="terminalPage" class="content-page" hidden>
           <div class="terminal-panel">
-
-
-            <!-- Terminal Header -->
-
-            <div class="terminal-header">
-
-              <div class="terminal-title">
-
-                <span
-                  class="terminal-dot"
-                ></span>
-
-                批次操作終端機
-
-              </div>
-
-              <span class="terminal-status">
-                SYSTEM
-              </span>
-
+            <div class="terminal-header"><div class="terminal-title">系統終端機</div><span class="terminal-status">SUPER ADMIN</span></div>
+            <div class="ikey-terminal-tabs" role="group" aria-label="終端機頁面">
+              <button type="button" id="ikeyTerminalMonitorTab" aria-pressed="true">即時訊息監看</button>
+              <button type="button" id="ikeyTerminalCommandTab" aria-pressed="false">指令控制</button>
             </div>
-
-
-            <!-- Terminal Output -->
-
-            <div
-              id="terminalOutput"
-              class="terminal-output"
-            >
-
-              <div>
-                iKey Admin Operations Terminal
-              </div>
-
-              <div>
-                --------------------------------
-              </div>
-
-              <div>
-                此工作區僅供 Super Admin 使用
-              </div>
-
-              <div>
-                批次寫入尚未開放，避免未授權變更
-              </div>
-
-              <div>
-                後續將加入預覽、確認、審計與回復機制
-              </div>
-
-              <div>
-                本頁目前僅顯示管理員診斷資訊
-              </div>
-
-              <div class="terminal-cursor">
-                &gt; _
-              </div>
-
+            <div id="ikeyTerminalMonitorView"><p>最新事件排列在最上方；目前僅顯示伺服器實際收集到的事件。</p><div id="terminalOutput" class="terminal-output" aria-live="polite"></div></div>
+            <div id="ikeyTerminalCommandView" hidden><p>指令功能尚未啟用。遠端重啟、設定修改及韌體更新需要另外驗證權限與設備回覆。</p>
+              <form id="ikeyTerminalCommandForm"><label for="ikeyTerminalCommandInput">輸入指令</label><input id="ikeyTerminalCommandInput" autocomplete="off" placeholder="指令尚未啟用" disabled><button type="submit" disabled>送出</button></form>
             </div>
-
+            <details><summary>詳細說明</summary><p>監看資料目前只保留於 Render 程序記憶體，重新部署會清空。LINE、TalkBack、登入登出等事件必須完成後端事件接入後才會顯示，不能將未收到的事件當成已記錄。</p></details>
           </div>
-
         </section>
 
       </section>
