@@ -147,3 +147,12 @@ test("approved multi-scene welcome links exact subtitles and validates homepage 
   assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/project-title-subset.ttf")));
   assert.match(css, /\/welcome-assets\/project-title-subset\.ttf/);
 });
+
+test("collapsible sidebar uses filled right/down triangles before group titles", () => {
+  const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
+  for (const label of ["專案中心", "管理員控制台", "系統終端機", "超級管理員控制台"]) {
+    assert.match(html, new RegExp('ikey-nav-triangle" aria-hidden="true">▶</span><span>' + label));
+  }
+  assert.match(css, /content:"▼"/);
+  assert.match(css, /aria-expanded="true"/);
+});
