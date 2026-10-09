@@ -116,3 +116,20 @@ test("chemical storage cabinet uses its own emerald theme and six status palette
   assert.match(css, /\.ikey-project-card\[data-project-theme="laboratory"\]/);
   assert.match(css, /\.ikey-project-detail\[data-project-theme="laboratory"\]/);
 });
+
+
+test("approved padlock welcome uses live-home readiness and revised title timings", () => {
+  const welcome = fs.readFileSync(path.join(root, "public/welcome-padlock.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
+  assert.match(html, /src="\.\/welcome-padlock\.js"/);
+  assert.match(app, /iKeyPadlockWelcome\.create\(\(\) => fetchDeviceStatus\(true\)\)/);
+  assert.match(welcome, /const copy=p\(time,7\.55,\.6\),sub=p\(time,8\.15,\.6\)/);
+  assert.match(welcome, /!ready \|\| !finished/);
+  assert.match(welcome, /重新載入/);
+  assert.match(welcome, /15000/);
+  assert.doesNotMatch(welcome, /time>=8\.8\?'載入成功/);
+  assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/welcome.wav")));
+  assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/welcome-text-subset.ttf")));
+  assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/OFL.txt")));
+  assert.match(css, /\/welcome-assets\/welcome-text-subset\.ttf/);
+});
