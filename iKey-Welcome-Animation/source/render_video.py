@@ -155,6 +155,7 @@ def frame(t):
  line([(465,255-height/2),(465,255+height/2)],c=WHITE,w=1,alpha=div*.42)
  for text,yy,f,start,color in [('歡迎使用 iKey',247,font,7.55,WHITE),('智慧鑰匙管理系統',293,subfont,8.15,(166,178,197))]:
   v=p(t,start,.6)
+  if v<=0:continue  # Invisible glyphs must not erase previously drawn outlines.
   dr.text((515*2,(yy+10*(1-v))*2),text,font=f,fill=col(color,v),anchor='ls')
  # Minimal bloom keeps lines sharp.
  glow=layer.filter(ImageFilter.GaussianBlur(7));glow.putalpha(glow.getchannel('A').point(lambda v:int(v*.28)))
