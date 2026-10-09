@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!children) return;
     const open = toggle.getAttribute("aria-expanded") !== "true";
     toggle.setAttribute("aria-expanded", String(open));
-    children.hidden = !open;
+    children.inert = !open;
   });
   // Keep the active page visible when the existing page controller navigates.
   nav.addEventListener("click", event => {
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!item || !nav.contains(item) || item.closest("[hidden]")) return;
     const children = item.closest(".ikey-nav-children");
     if (!children) return;
-    children.hidden = false;
+    children.inert = false;
     const toggle = nav.querySelector('[aria-controls="' + children.id + '"]');
     if (toggle) toggle.setAttribute("aria-expanded", "true");
   });
@@ -43,11 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const description = document.getElementById("pageDescription");
     if (title && heading) title.textContent = heading.textContent;
     if (description) description.textContent = "iKey · 介面規劃階段";
-    if (sidebar) sidebar.classList.remove("is-open");
-    if (backdrop) backdrop.hidden = true;
-    if (menuButton) {
-      menuButton.textContent = "☰";
-      menuButton.setAttribute("aria-expanded", "false");
+    // On phones, close the drawer after navigation; on desktop preserve
+    // the user's chosen expanded/collapsed sidebar state.
+    if (window.matchMedia("(max-width: 700px)").matches &&
+        sidebar?.classList.contains("is-open") && menuButton) {
+      menuButton.click();
     }
   });
   // Existing page controller handles other navigation. Placeholders are hidden
