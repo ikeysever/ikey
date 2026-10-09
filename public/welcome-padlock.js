@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   let current = null;
-  const assetBase = "/iKey-Welcome-Animation/";
+  const assetBase = "/welcome-assets/";
   function create(prepareHome) {
     if (current) current.cancel();
     const overlay = document.createElement("div");
