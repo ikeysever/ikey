@@ -2724,3 +2724,55 @@ button {
 .sidebar-nav .ikey-nav-toggle .ikey-nav-triangle { font-size:.8rem; text-align:center; }
 .sidebar-nav .ikey-nav-toggle[aria-expanded="true"] .ikey-nav-triangle { font-size:0; }
 .sidebar-nav .ikey-nav-toggle[aria-expanded="true"] .ikey-nav-triangle::before { content:"▼"; font-size:.8rem; }
+
+/* Animated group accordion: ▶ closed, ▼ open, no layout jumps. */
+.sidebar-nav .ikey-nav-children {
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: max-height .28s ease, opacity .2s ease, visibility 0s linear .28s, padding .28s ease;
+}
+.sidebar-nav .ikey-nav-toggle[aria-expanded="true"] + .ikey-nav-children {
+  max-height: 480px;
+  opacity: 1;
+  visibility: visible;
+  padding-top: 3px;
+  padding-bottom: 7px;
+  transition: max-height .32s ease, opacity .24s ease, visibility 0s;
+}
+/* Wide screens can now toggle the entire sidebar using the same hamburger. */
+@media (min-width: 701px) {
+  .app-layout .sidebar-menu-button {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    top: 18px;
+    left: calc(var(--sidebar-width) - 56px);
+    z-index: 1002;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--panel-border);
+    border-radius: 11px;
+    background: #142034;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    transition: left .25s ease, background .2s ease;
+  }
+  .app-layout .sidebar { transition: transform .25s ease; }
+  .app-layout .main-area { transition: margin-left .25s ease, width .25s ease; }
+  .app-layout.sidebar-collapsed .sidebar { transform: translateX(-105%); pointer-events: none; visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; }
+  .app-layout.sidebar-collapsed .main-area { margin-left: 0; width: 100%; }
+  .app-layout.sidebar-collapsed .main-header { padding-left: 72px; }
+  .app-layout.sidebar-collapsed .sidebar-menu-button { left: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav .ikey-nav-children,
+  .sidebar-nav .ikey-nav-toggle[aria-expanded="true"] + .ikey-nav-children,
+  .app-layout .sidebar,
+  .app-layout .main-area,
+  .app-layout .sidebar-menu-button { transition: none !important; }
+}

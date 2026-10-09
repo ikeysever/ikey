@@ -123,10 +123,10 @@ test("primary navigation groups are consistent accessible collapsible buttons", 
   for (const id of ["project-center", "admin-console", "terminal", "superadmin"]) {
     assert.match(html, new RegExp('data-sidebar-toggle="' + id + '"'));
     assert.match(html, new RegExp('aria-controls="ikey-nav-' + id + '"'));
-    assert.match(html, new RegExp('id="ikey-nav-' + id + '" hidden'));
+    assert.match(html, new RegExp('id="ikey-nav-' + id + '" inert'));
   }
   assert.match(script, /setAttribute\("aria-expanded", String\(open\)\)/);
-  assert.match(script, /children\.hidden = !open/);
+  assert.match(script, /children\.inert = !open/);
   assert.match(css, /\.ikey-nav-children\[hidden\]/);
   assert.match(html, /id="ikeyAdminNavGroup" hidden/);
   assert.match(html, /id="ikeySuperadminNavGroup" hidden/);
@@ -155,4 +155,19 @@ test("collapsible sidebar uses filled right/down triangles before group titles",
   }
   assert.match(css, /content:"▼"/);
   assert.match(css, /aria-expanded="true"/);
+});
+
+test("sidebar accordion animates and desktop hamburger can collapse the whole sidebar", () => {
+  const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
+  const script = fs.readFileSync(path.join(root, "public/sidebar-pages.js"), "utf8");
+  assert.match(css, /max-height: 0/);
+  assert.match(css, /max-height: 480px/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /sidebar-collapsed \.sidebar/);
+  assert.match(css, /sidebar-collapsed \.main-area/);
+  assert.match(css, /min-width: 701px/);
+  assert.match(app, /classList\.toggle\("sidebar-collapsed", !shouldOpen\)/);
+  assert.match(app, /setSidebarOpen\(!narrowSidebar\.matches\)/);
+  assert.match(script, /menuButton\.click\(\)/);
+  assert.match(html, /id="sidebarMenuButton"/);
 });
