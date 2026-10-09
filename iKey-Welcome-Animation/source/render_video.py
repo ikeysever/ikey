@@ -5,7 +5,7 @@ D=Path(__file__).resolve().parents[1]/'preview'
 FPS=60; DUR=9.8; SR=48000
 C=(103,232,249); WHITE=(248,250,252); GREEN=(125,226,177)
 fontpath=Path(__file__).resolve().parents[1]/'fonts'/'welcome-text-subset.ttf'
-font=ImageFont.truetype(str(fontpath),76); subfont=ImageFont.truetype(str(fontpath),50)
+font=ImageFont.truetype(str(fontpath),76); subfont=ImageFont.truetype(str(Path(__file__).resolve().parents[1]/'fonts'/'project-title-subset.ttf'),50)
 # Seeded particle paths; shared with Canvas preview.
 rng=np.random.default_rng(18)
 particles=[[float(rng.uniform(70,890)),float(rng.uniform(85,440)),float(rng.uniform(.6,1.8)),float(rng.uniform(0,6.28))] for _ in range(76)]
@@ -153,7 +153,7 @@ def frame(t):
  # Final desktop composition: logo, vertical divider, welcome text.
  div=p(t,6.85,.55);height=210*ease(div)
  line([(465,255-height/2),(465,255+height/2)],c=WHITE,w=1,alpha=div*.42)
- for text,yy,f,start,color in [('歡迎使用 iKey',247,font,7.55,WHITE)]:
+ for text,yy,f,start,color in [('歡迎使用 iKey',247,font,7.55,WHITE),('自動多場景智慧鎖',293,subfont,8.15,(166,178,197))]:
   v=p(t,start,.6)
   if v<=0:continue  # Invisible glyphs must not erase previously drawn outlines.
   dr.text((515*2,(yy+10*(1-v))*2),text,font=f,fill=col(color,v),anchor='ls')
