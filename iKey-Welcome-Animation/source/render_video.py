@@ -153,9 +153,9 @@ def frame(t):
  # Final desktop composition: logo, vertical divider, welcome text.
  div=p(t,6.85,.55);height=210*ease(div)
  line([(465,255-height/2),(465,255+height/2)],c=WHITE,w=1,alpha=div*.42)
- for text,yy,f,start in [('歡迎使用 iKey',247,font,7.2),('智慧鑰匙管理系統',293,subfont,7.65)]:
+ for text,yy,f,start,color in [('歡迎使用 iKey',247,font,7.55,WHITE),('智慧鑰匙管理系統',293,subfont,8.15,(166,178,197))]:
   v=p(t,start,.6)
-  dr.text((515*2,(yy+10*(1-v))*2),text,font=f,fill=col(WHITE if start==7.2 else (166,178,197),v),anchor='ls')
+  dr.text((515*2,(yy+10*(1-v))*2),text,font=f,fill=col(color,v),anchor='ls')
  # Minimal bloom keeps lines sharp.
  glow=layer.filter(ImageFilter.GaussianBlur(7));glow.putalpha(glow.getchannel('A').point(lambda v:int(v*.28)))
  im=background.copy().convert('RGBA');im.alpha_composite(glow);im.alpha_composite(layer);return im.convert('RGB')
