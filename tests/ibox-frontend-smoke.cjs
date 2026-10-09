@@ -86,9 +86,13 @@ test("placeholder slot navigation removed and admin operations are guarded", () 
   const operations = fs.readFileSync(path.join(root, "public/admin-operations.js"), "utf8");
   const auth = fs.readFileSync(path.join(root, "lib/ibox/admin-auth-routes.js"), "utf8");
   assert.doesNotMatch(html, /data-page="slot-status"/);
-  assert.match(html, /data-page="terminal" hidden/);
+  assert.match(html, /id="ikeyTerminalNavGroup" hidden/);
+  assert.match(html, /data-page="terminal"/);
   assert.doesNotMatch(html, /data-page="connections" hidden/);
-  assert.match(html, /id="ikeyProjectAdminGroup" hidden/);
+  assert.match(html, /id="ikeySuperadminNavGroup" hidden/);
+  assert.match(html, /data-page="project-apply"/);
+  assert.match(html, /data-page="my-projects"/);
+  assert.doesNotMatch(html, /id="scheduleToggle"/);
   assert.match(html, /id="ikeyAdminNavGroup" hidden/);
   assert.match(html, /id="ikeyTerminalMonitorTab"/);
   assert.match(html, /id="ikeyTerminalCommandTab"/);
