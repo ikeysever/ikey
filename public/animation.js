@@ -140,24 +140,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarMenuButton = document.getElementById("sidebarMenuButton");
   const sidebarBackdrop = document.getElementById("sidebarBackdrop");
   const narrowSidebar = window.matchMedia("(max-width: 700px)");
+  const appLayout = sidebar?.closest(".app-layout");
+  function isSidebarOpen() {
+    return narrowSidebar.matches
+      ? Boolean(sidebar?.classList.contains("is-open"))
+      : !Boolean(appLayout?.classList.contains("sidebar-collapsed"));
+  }
   function setSidebarOpen(open) {
-    const shouldOpen = Boolean(open && narrowSidebar.matches);
-    if (sidebar) sidebar.classList.toggle("is-open", shouldOpen);
-    if (sidebarBackdrop) sidebarBackdrop.hidden = !shouldOpen;
+    const shouldOpen = Boolean(open);
+    if (narrowSidebar.matches) {
+      if (sidebar) sidebar.classList.toggle("is-open", shouldOpen);
+      if (appLayout) appLayout.classList.remove("sidebar-collapsed");
+      if (sidebarBackdrop) sidebarBackdrop.hidden = !shouldOpen;
+    } else {
+      if (sidebar) sidebar.classList.remove("is-open");
+      if (appLayout) appLayout.classList.toggle("sidebar-collapsed", !shouldOpen);
+      if (sidebarBackdrop) sidebarBackdrop.hidden = true;
+    }
     if (sidebarMenuButton) {
       sidebarMenuButton.setAttribute("aria-expanded", String(shouldOpen));
       sidebarMenuButton.setAttribute("aria-label", shouldOpen ? "關閉頁面選單" : "開啟頁面選單");
       sidebarMenuButton.textContent = shouldOpen ? "×" : "☰";
     }
   }
+  // Wide screens start with the sidebar open; mobile starts closed.
+  setSidebarOpen(!narrowSidebar.matches);
   if (sidebarMenuButton) sidebarMenuButton.addEventListener("click", () => {
-    setSidebarOpen(!sidebar?.classList.contains("is-open"));
+    setSidebarOpen(!isSidebarOpen());
   });
   if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", () => setSidebarOpen(false));
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape") setSidebarOpen(false);
+    if (event.key === "Escape" && narrowSidebar.matches) setSidebarOpen(false);
   });
-  narrowSidebar.addEventListener("change", () => setSidebarOpen(false));
+  narrowSidebar.addEventListener("change", () => setSidebarOpen(!narrowSidebar.matches));
 
   const scheduleToggle =
     document.getElementById("scheduleToggle");
