@@ -66,8 +66,8 @@ for(const start of [5.25,5.46]){const q=p(time,start,.72);if(q>0&&q<1)arc(cx,cy,
 if(time>=5.25)dot(cx+radius*.61,cy-radius*.66,3.3,G,p(time,5.25,.25));
 if(morph>0)padlock(finalX+28,finalY-29,.85,0,morph);
 const divider=p(time,6.85,.55);const copy=p(time,7.2,.6),sub=p(time,7.65,.6);
-if(mobile){line([[190,300],[190+160*ease(divider),300]],1,'#ffffff',divider*.42);ctx.textAlign='center';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='32px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',270,365+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='22px Welcome,system-ui,sans-serif';ctx.fillText('智慧鑰匙管理系統',270,410+8*(1-sub))}
-else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff',divider*.42);ctx.textAlign='left';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='38px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',515,247+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='25px Welcome,system-ui,sans-serif';ctx.fillText('智慧鑰匙管理系統',515,293+8*(1-sub))}
+if(mobile){line([[190,300],[190+160*ease(divider),300]],1,'#ffffff',divider*.42);ctx.textAlign='center';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='32px "iKey Welcome",system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',270,365+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='22px "iKey Welcome",system-ui,sans-serif';ctx.fillText('智慧鑰匙管理系統',270,410+8*(1-sub))}
+else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff',divider*.42);ctx.textAlign='left';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='38px "iKey Welcome",system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',515,247+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='25px "iKey Welcome",system-ui,sans-serif';ctx.fillText('智慧鑰匙管理系統',515,293+8*(1-sub))}
 
     }
     function tick(now) {
