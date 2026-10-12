@@ -5,7 +5,6 @@ const express = require("express");
 const crypto = require("node:crypto");
 const {normalizeEmail,passwordHash,passwordVerify,safeUser,active,newSession,hashToken,SESSION_MS} = require("./core");
 const {sendToken,configured:mailReady}=require("./email");
-const google=require("./google");
 const COOKIE = "ikey_gen3_session";
 const MAX_NAME = 80;
 const rateKey=(kind,ip,identifier="")=>crypto.createHash("sha256").update(kind+":"+ip+":"+identifier).digest("hex");
@@ -41,7 +40,7 @@ function createRouter(store) {
       return res.status(403).json({success:false,message:"來源驗證失敗"});
     next();
   });
-  const ready=Boolean(store && ["registerAtomic","findByEmail","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic","throttleAtomic"].every(k=>typeof store[k]==="function"));
+  const ready=Boolean(store && ["registerAtomic","findByEmail","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","throttleAtomic"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
     try {
@@ -56,7 +55,7 @@ function createRouter(store) {
       const now=new Date().toISOString();
       const user={user_id:crypto.randomUUID(),email,username,password_hash,display_name,
         global_role:"user",account_status:"pending_verification",failed_login_attempts:0,
-        locked_until:"",created_at:now,updated_at:now,google_sub:"",google_linked_at:"",email_verified_at:""};
+        locked_until:"",created_at:now,updated_at:now,email_verified_at:""};
       // Adapter MUST atomically compare normalized email and insert or return duplicate.
       const inserted=await store.registerAtomic(user);
       if(!inserted) return res.status(409).json({success:false,message:"此電子郵件已註冊"});
@@ -121,9 +120,6 @@ function createRouter(store) {
       return res.json({success:true,message:"電子郵件驗證成功，請登入"});
     }catch{return res.status(503).json({success:false,message:"目前無法驗證電子郵件"})}
   });
-  router.get("/google/start",(req,res)=>google.begin(req,res,"login"));
-  router.get("/google/link",(req,res)=>google.begin(req,res,"link"));
-  router.get("/google/callback",(req,res)=>google.callback(req,res,store));
   router.post("/login",async(req,res)=>{
     try {
       const identifier=String(req.body?.identifier||req.body?.email||"").trim().toLowerCase();
