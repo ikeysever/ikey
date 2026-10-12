@@ -205,3 +205,29 @@ function doPost(e) {
   return respond({ok:true,result:execute(data.action,data.payload||{})});
  } catch(err){return respond({ok:false,error:String(err.message||"INTERNAL_ERROR")})}
 }
+
+// Run this once from the Apps Script editor after setting Script Properties.
+// Read-only: checks schema, MailApp permission and quota; never prints secrets.
+function inspectGen3Setup() {
+ const properties=PropertiesService.getScriptProperties();
+ const report={
+  spreadsheetIdConfigured:Boolean(properties.getProperty("GEN3_SPREADSHEET_ID")),
+  apiKeyConfigured:String(properties.getProperty("GEN3_API_KEY")||"").length>=32,
+  sheets:{},
+  mailAuthorized:false,
+  mailQuotaAvailable:false
+ };
+ for(const name of Object.values(TABS)){
+  try{sheet(name);report.sheets[name]="ok"}
+  catch(err){report.sheets[name]=String(err.message||"ERROR").startsWith("SCHEMA_MISMATCH")?"schema_mismatch":"not_accessible"}
+ }
+ try{
+  const quota=MailApp.getRemainingDailyQuota();
+  report.mailAuthorized=true;
+  report.mailQuotaAvailable=Number.isFinite(quota)&&quota>0;
+ }catch(_){report.mailAuthorized=false}
+ report.ready=report.spreadsheetIdConfigured&&report.apiKeyConfigured&&
+  Object.values(report.sheets).every(v=>v==="ok")&&report.mailAuthorized&&report.mailQuotaAvailable;
+ Logger.log(JSON.stringify(report));
+ return report;
+}
