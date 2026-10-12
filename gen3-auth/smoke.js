@@ -9,7 +9,10 @@ async function main() {
   const email="ikey-gen3-smoke-"+Date.now()+"@example.invalid";
   const user=await store.findByEmail(email);
   if(user!==null) throw Error("UNEXPECTED_TEST_USER");
-  process.stdout.write("PASS: Render/Node -> Apps Script -> Gen3_Users (read only)\n");
+  const health=await store.health();
+  if(health?.version!=="gen3-mailapp-v2"||health.storage!==true||health.mail_ready!==true)
+    throw Error("GEN3_MAILAPP_NOT_READY");
+  process.stdout.write("PASS: Apps Script Gen3 schema, MailApp authorization and quota (read only)\\n");
 }
 main().catch(err=>{
   const category=err.message==="GEN3_STORAGE_NOT_CONFIGURED"

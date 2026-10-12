@@ -19,7 +19,7 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <label for="password">密碼（至少 8 字元）</label><input id="password" name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <label for="confirm">確認密碼</label><input id="confirm" name="confirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <button id="submit" type="submit">建立帳號</button></form>
-<a class="secondary" style="display:block;text-align:center;padding:13px;text-decoration:none;border-radius:10px" href="/api/auth/google/start">使用 Google 繼續</a>
+<a id="googleEntry" class="secondary" style="display:block;text-align:center;padding:13px;text-decoration:none;border-radius:10px" href="/api/auth/google/start">使用 Google 繼續</a>
 <p id="message" role="status" aria-live="polite"></p><button class="secondary" id="resend" type="button">重新寄送驗證信</button></main>
 <script>
 const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
@@ -30,19 +30,29 @@ if(password!==form.elements.namedItem('confirm').value){msg.textContent='兩次�
 btn.disabled=true;
 try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.elements.namedItem('username').value,display_name:form.elements.namedItem('display_name').value,email:form.elements.namedItem('email').value,password})});
 const body=await res.json();if(!res.ok){msg.textContent=body.message||'目前無法建立帳號';return}
-msg.textContent='註冊資料已建立，請至信箱收取驗證連結，驗證後即可登入。';form.reset();}
+msg.textContent=body.message||'註冊資料已建立，請至信箱收取驗證連結。';form.elements.namedItem('password').value='';form.elements.namedItem('confirm').value='';}
 catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
 });
 document.getElementById("resend").addEventListener("click",async()=>{const email=form.elements.namedItem("email").value;if(!email){msg.textContent="請先輸入電子郵件";return}const btn=document.getElementById("resend");btn.disabled=true;try{const r=await fetch("/api/auth/resend-verification",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});const d=await r.json();msg.textContent=d.message||"寄送失敗"}catch{msg.textContent="網路連線失敗"}finally{btn.disabled=false}});
 
 fetch("/api/auth/status",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(d=>{
- if(d?.enabled===true)return;
- const submit=document.querySelector('form button[type="submit"]');
- if(submit)submit.disabled=true;
- const message=document.getElementById("message");
- if(message)message.textContent="第三代帳號服務尚未啟用，目前可以預覽頁面，但尚無法送出。";
+ const mailReady=d?.mail===true;
+ const submit=document.getElementById("submit");
+ const resend=document.getElementById("resend");
+ submit.disabled=!mailReady;
+ resend.disabled=!mailReady;
+ const google=document.getElementById("googleEntry");
+ if(d?.google!==true){
+   google.setAttribute("aria-disabled","true");
+   google.addEventListener("click",e=>{e.preventDefault();msg.textContent="Google 登入尚未完成設定。"});
+   google.style.opacity=".55";
+ }
+ if(!mailReady)msg.textContent=d?.enabled===true
+   ?"目前寄信功能尚未完成授權，註冊與驗證信暫時無法送出。"
+   :"第三代帳號服務尚未完成後端連線驗證，暫時無法註冊。";
 }).catch(()=>{
- const message=document.getElementById("message");
- if(message)message.textContent="目前無法確認帳號服務狀態，請稍後再試。";
+ document.getElementById("submit").disabled=true;
+ document.getElementById("resend").disabled=true;
+ msg.textContent="無法確認帳號服務狀態，請稍後再試。";
 });
 </script></body></html>

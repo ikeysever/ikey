@@ -19,6 +19,7 @@ function createSheetsStore() {
    }finally{clearTimeout(timer)}
  }
  return {
+   health:async()=>call("health"),
    registerAtomic:async user=>call("registerAtomic",{user}),
    registerGoogleAtomic:async user=>call("registerGoogleAtomic",{user}),
    findByGoogleSub:async sub=>call("findByGoogleSub",{sub}),

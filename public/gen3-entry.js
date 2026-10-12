@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded",async()=>{
     if(!response.ok)throw Error("AUTH_STATUS_UNAVAILABLE");
     const data=await response.json();
     googleReady=data.enabled===true&&data.google===true;
-    if(!data.enabled)message="第三代帳號服務尚未啟用；可先查看註冊與重設密碼頁面，暫時無法提交。";
-    else if(!googleReady)message="註冊與密碼重設服務已開啟；Google 登入尚待完成 OAuth 設定。";
+    if(!data.enabled)message="第三代帳號後端尚未完成連線驗證；可預覽註冊與忘記密碼頁面。";
+    else if(!data.mail)message="帳號後端已連線，但 MailApp 寄信功能尚未完成授權。";
+    else if(!googleReady)message="註冊與忘記密碼已可使用；Google 登入仍待完成 OAuth 設定。";
     else message="第三代註冊、密碼重設與 Google 登入入口已開放。";
   }catch{
     message="暫時無法確認第三代帳號服務狀態，請稍後再試。";

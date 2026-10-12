@@ -86,13 +86,33 @@ function execute(action,p) {
    if(n>=limit)return false;
    r.value.user_id=String(n+1);overwrite(TABS.tokens,r.index,r.value);return true;
   });
-  case "sendMail":return (()=>{
-   const to=String(p.to||"").trim().toLowerCase(),subject=String(p.subject||""),body=String(p.body||"");
-   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||to.length>254||!/^iKey (電子郵件驗證|密碼重設)$/.test(subject)||body.length>3000||!body.includes("https://ikey.onrender.com/gen3/"))throw Error("INVALID_MAIL");
+  case "health":return (()=>{
+   // Read-only release gate: require the dedicated schema and authorized MailApp.
+   Object.values(TABS).forEach(name=>sheet(name));
+   const quota=MailApp.getRemainingDailyQuota();
+   return {version:"gen3-mailapp-v2",storage:true,mail_ready:Number.isFinite(quota)&&quota>0};
+  })();
+  case "sendMail":return locked(()=>{
+   const to=String(p.to||"").trim().toLowerCase();
+   const subject=String(p.subject||""),body=String(p.body||"");
+   const match=body.match(/^請在 (15|30) 分鐘內開啟連結(重設密碼|驗證電子郵件)：\nhttps:\/\/ikey\.onrender\.com\/gen3\/(reset-password|verify-email)\.html\?token=([A-Za-z0-9_-]{40,128})$/);
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||to.length>254||body.length>3000||!match)throw Error("INVALID_MAIL");
+   const purpose=match[2]==="重設密碼"?"reset_password":"verify_email";
+   if(match[1]!== (purpose==="reset_password"?"15":"30") ||
+      match[3]!== (purpose==="reset_password"?"reset-password":"verify-email") ||
+      subject!==(purpose==="reset_password"?"iKey 密碼重設":"iKey 電子郵件驗證"))throw Error("INVALID_MAIL");
+   const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,match[4],Utilities.Charset.UTF_8);
+   const hash=bytes.map(b=>("0"+(b&255).toString(16)).slice(-2)).join("");
+   const token=rows(TABS.tokens).find(x=>x.value.token_hash===hash&&x.value.purpose===purpose&&!x.value.used_at&&
+     x.value.target_email===to&&Date.parse(x.value.expires_at)>Date.now());
+   if(!token)throw Error("INVALID_MAIL_TOKEN");
+   const user=rows(TABS.users).find(x=>x.value.user_id===token.value.user_id)?.value;
+   if(!user||user.email!==to||
+      (purpose==="verify_email"?user.account_status!=="pending_verification":user.account_status!=="active"))throw Error("INVALID_MAIL_RECIPIENT");
    if(MailApp.getRemainingDailyQuota()<1)throw Error("MAIL_QUOTA_EXCEEDED");
    MailApp.sendEmail({to,subject,body,name:"iKey 智慧鑰匙管理系統"});
    return true;
-  })();
+  });
   case "createToken":return locked(()=>{
    const t=p.token||{};
    if(!t.token_hash||!t.user_id||!["verify_email","reset_password"].includes(t.purpose)||Date.parse(t.expires_at)<=Date.now())throw Error("INVALID_TOKEN");

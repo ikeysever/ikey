@@ -61,9 +61,16 @@ function createRouter(store) {
       const inserted=await store.registerAtomic(user);
       if(!inserted) return res.status(409).json({success:false,message:"此電子郵件已註冊"});
       await store.audit({user_id:user.user_id,event_type:"register",result:"success",auth_method:"password"});
-      await sendToken(store,user,"verify_email");
+      try {
+        await sendToken(store,user,"verify_email");
+      } catch(mailError) {
+        // Account already exists: never falsely report that registration failed.
+        console.error("Gen3 verification mail unavailable",mailError.code||mailError.message);
+        return res.status(202).json({success:true,email_sent:false,
+          message:"帳號已建立，但驗證信暫時無法寄出。請稍後使用「重新寄送驗證信」。"});
+      }
       // Explicit login after registration avoids partial-success cookie issues.
-      return res.status(201).json({success:true,user:safeUser(user),message:"註冊成功，請至電子郵件收取驗證連結"});
+      return res.status(201).json({success:true,email_sent:true,user:safeUser(user),message:"註冊成功，請至電子郵件收取驗證連結"});
     } catch(err) {
       if(["INVALID_EMAIL","INVALID_PASSWORD"].includes(err.message)) return res.status(400).json({success:false,message:"電子郵件或密碼格式不符合規定"});
       console.error("Gen3 registration error",err.code||err.message);

@@ -53,5 +53,9 @@ test("registration, verification, login and single-use password reset",async()=>
   r=await post("/api/auth/reset-password",{token:token2,password:"newPassword123"});assert.equal(r.status,200);
   assert.equal(passwordVerify("newPassword123",store.users[0].password_hash),true);
   r=await post("/api/auth/reset-password",{token:token2,password:"newPassword456"});assert.equal(r.status,400);
+  store.sendMail=async()=>{throw Error("MAIL_PROVIDER_UNAVAILABLE")};
+  r=await post("/api/auth/register",{username:"student_2",display_name:"測試新用戶",email:"newstudent@example.com",password:"safePassword123"});
+  assert.equal(r.status,202);assert.equal(r.body.email_sent,false);
+  assert.equal(store.users.find(u=>u.email==="newstudent@example.com").account_status,"pending_verification");
  }finally{await new Promise(resolve=>server.close(resolve));Object.assign(process.env,old)}
 });

@@ -1,11 +1,11 @@
 # iKey Gen3 authentication deployment gate
 
-Status: **implementation on feature branch; production activation blocked until all external integrations and end-to-end tests are verified.**
+Status: **MailApp-only account flows prepared; the Render API is fail-closed until the dedicated Apps Script Web App passes a read-only version/authorization check.**
 
 ## Existing system isolation
 - Existing `/api/login`, legacy user sheets, dashboard, device routes, and animations are untouched.
-- New API: `/api/auth/*`; new UI: `/gen3/login.html`, `register.html`, `forgot-password.html`, `verify-email.html`, `reset-password.html`.
-- Server mounts Gen3 **only** if `GEN3_AUTH_ENABLED=true` and every required environment variable is present. Do not flip the switch until Apps Script deployment and Google/Resend validation succeed.
+- New API: `/api/auth/*`; new UI: `/gen3/login.html`, `register.html`, `forgot-password.html`, `verify-email.html`, `reset-password.html`, `account.html`.
+- Server mounts Gen3 **only** if `GEN3_AUTH_ENABLED=true` and every required environment variable is present. Do not flip the switch until Apps Script deployment and Google/MailApp validation succeed.
 - Render auto-deploys changes to `main`. Merge only after CI and real E2E staging verification.
 
 ## Spreadsheet
@@ -19,15 +19,14 @@ Other Gen3 tabs: `Auth_Tokens`, `Auth_Sessions`, `Auth_Audit_Logs`.
 ## Deploy Apps Script FIRST
 The source is `gen3-auth/apps-script/Code.gs`. Update the standalone iKey Gen3 Auth API script and deploy a new Web App version. Existing deployed Apps Script is **not** updated by a GitHub commit.
 Retain its existing script properties `GEN3_SPREADSHEET_ID`, `GEN3_API_KEY` (do not expose the secret).
-Verify new operations: `registerAtomic`, `findByLogin`, `createToken`, `consumeTokenAtomic`, `registerGoogleAtomic`, `findByGoogleSub`, `linkGoogleAtomic`, `throttleAtomic`.
+Verify operations: `health`, `sendMail`, `registerAtomic`, `findByLogin`, `createToken`, `consumeTokenAtomic`, `registerGoogleAtomic`, `findByGoogleSub`, `linkGoogleAtomic`, `throttleAtomic`.
 Verify 14-column Gen3_Users header; no legacy tab writes.
 
 ## Render environment (set in dashboard, never in GitHub)
 - `GEN3_AUTH_ENABLED=true` **only after** all checks below pass.
 - `GEN3_APPS_SCRIPT_URL` existing deployed Gen3 Web App URL
 - `GEN3_APPS_SCRIPT_KEY` existing shared key
-- `RESEND_API_KEY` Resend API key for verified sender domain
-- `GEN3_MAIL_FROM` verified sender, e.g. `iKey <noreply@yourdomain.tld>`
+- **No Resend configuration is needed.** The MailApp sender is the Google account authorized to run the dedicated Apps Script Web App.
 - `GOOGLE_OAUTH_CLIENT_ID` Google Cloud OAuth Web client ID
 - `GOOGLE_OAUTH_CLIENT_SECRET` corresponding secret
 
@@ -40,7 +39,7 @@ Consent screen must be configured/published appropriately; verify user eligibili
 ## Functional acceptance tests
 1. Register a new username/email, verify row status is pending and email contains a 30-minute one-time link.
 2. Login must fail before verification. Verify email and login with username **and** email.
-3. Duplicate username/email must fail atomically. Resend verification works with rate limits.
+3. Duplicate username/email must fail atomically. MailApp verification works with rate limits.
 4. Forgot password returns generic response for unknown emails, reset link expires after 15 minutes and cannot be used twice.
 5. Password reset revokes old sessions. Re-login succeeds only with new password.
 6. Google login creates a verified account, validates Google-issued ID token audience/issuer/nonce/expiry; existing email accounts are **not** silently linked.
@@ -51,7 +50,20 @@ Consent screen must be configured/published appropriately; verify user eligibili
 
 ## Known limitations / release blockers
 - No connected Apps Script editing/deployment action; manual script version deployment or a configured CI Apps Script API service account is required.
-- Google OAuth Web client credentials and verified transactional sender must be provisioned externally.
+- Google OAuth Web client credentials and Apps Script MailApp permission must be provisioned externally.
 - Browser E2E with real Google identity and delivered email has not been run.
 - Gen3 sessions do **not** authenticate the legacy dashboard automatically; migration requires explicit design and security testing. Do not remove legacy login until complete.
 - Google account linking requires authenticated Gen3 session; this is intentionally not automatic.
+
+## Activation and live test checklist (MailApp-only)
+
+1. In [Google Apps Script](https://script.google.com/home/projects), open the **dedicated** `iKey_Gen3_Auth_API` project (never the legacy database script). Replace its `Code.gs` with the reviewed file in this repository; save.
+2. Ensure Script Properties `GEN3_SPREADSHEET_ID` and `GEN3_API_KEY` still exist. **Do not paste their values into GitHub or ChatGPT.**
+3. Deploy > Manage deployments > Edit the dedicated Web App > **New version** > Deploy. Authorize Google Sheets and MailApp permissions for the executing Google account. Do not overwrite any legacy deployment.
+4. The deployed `health` action must return `version: "gen3-mailapp-v2"`, `storage: true`, and `mail_ready: true` (the latter requires MailApp authorization and available daily quota). `/api/auth/status` shows only booleans and never secrets.
+5. Set/retain `GEN3_APPS_SCRIPT_URL` and `GEN3_APPS_SCRIPT_KEY` in Render service `ikey`, then set `GEN3_AUTH_ENABLED=true`. The Node.js server verifies the Apps Script health response before allowing account writes. If the Web App is outdated or unreachable, the account API responds 503 and does not write registration data.
+6. Confirm `https://ikey.onrender.com/api/auth/status` reports `enabled:true,mail:true`. Register a **test account**, receive and verify the email, log in at `/gen3/login.html`, view `/gen3/account.html`, log out, request password reset, and verify the link works once only.
+7. Google OAuth is independent: add `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` in Render and authorize redirect `https://ikey.onrender.com/api/auth/google/callback`. Google remains unavailable until configured.
+8. Legacy `/api/login` and the main dashboard remain separate from `ikey_gen3_session`; Gen3 login never grants admin rights automatically.
+
+**Rollback:** set `GEN3_AUTH_ENABLED=false` in Render to disable Gen3 writes immediately; existing legacy login, LINE, ESP32, and Sheets remain unchanged. The Google Apps Script source committed to GitHub is **not** automatically deployed by Render.
