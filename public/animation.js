@@ -191,11 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 裝置狀態
   // =========================================
 
-  const connectionDot =
-    document.getElementById("connectionDot");
 
-  const connectionText =
-    document.getElementById("connectionText");
 
   const systemLog =
     document.getElementById("systemLog");
@@ -204,10 +200,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("terminalOutput");
 
 
-  let previousEspRobotOnline = null;
-  let previousLvglTerminalOnline = null;
-
-  let pollingStarted = false;
 
   let systemLogSequence = 0;
 
@@ -341,7 +333,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function enterDashboard() {
     showDashboard();
-    await fetchDeviceStatus(true);
   }
 
 
@@ -3096,204 +3087,6 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
 
-  // =========================================
-  // 取得 Device Status
-  // =========================================
-
-  async function fetchDeviceStatus(required = false) {
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/device/status",
-          {
-            cache: "no-store",
-            signal: AbortSignal.timeout(15000)
-          }
-        );
-
-      if (!response.ok) {
-
-        throw new Error(
-          `HTTP ${response.status}`
-        );
-
-      }
-
-      const data =
-        await response.json();
-
-      if (!data.success || !data.devices) {
-
-        throw new Error(
-          "裝置狀態資料格式錯誤"
-        );
-
-      }
-
-
-      const espRobot =
-        data.devices["esp-robot"];
-
-      const lvglTerminal =
-        data.devices["lvgl-terminal"];
-
-
-      const espOnline =
-        Boolean(
-          espRobot &&
-          espRobot.online
-        );
-
-      const lvglOnline =
-        Boolean(
-          lvglTerminal &&
-          lvglTerminal.online
-        );
-
-
-      // Render / API 正常
-      if (connectionText) {
-
-        connectionText.textContent =
-          "系統正常";
-
-      }
-
-      if (connectionDot) {
-
-        connectionDot.classList.add(
-          "online"
-        );
-
-      }
-
-
-      // ESP Robot 狀態變化
-      if (
-        previousEspRobotOnline !== null &&
-        previousEspRobotOnline !== espOnline
-      ) {
-
-        if (espOnline) {
-
-          addSystemLog(
-            "ESP Robot 已連線"
-          );
-
-        } else {
-
-          const lastSeenText =
-            espRobot &&
-            espRobot.lastSeen
-              ? new Date(
-                  espRobot.lastSeen
-                ).toLocaleString(
-                  "zh-TW",
-                  {
-                    hour12: false
-                  }
-                )
-              : "無可用時間";
-
-          const disconnectLogId =
-            addSystemLog(
-              `ESP Robot 已離線｜上次 heartbeat：${lastSeenText}`
-            );
-
-
-          if (window.iKeyNotices) {
-
-            window.iKeyNotices.show({
-              type:
-                "warning",
-              title:
-                "ESP32 連線中斷",
-              detail:
-                `上次 heartbeat：${lastSeenText} · 點擊查看詳細資料`,
-              logId:
-                disconnectLogId
-            });
-
-          }
-
-        }
-
-      }
-
-
-      // LVGL Terminal 狀態變化
-      if (
-        previousLvglTerminalOnline !== null &&
-        previousLvglTerminalOnline !== lvglOnline
-      ) {
-
-        addSystemLog(
-          lvglOnline
-            ? "LVGL Terminal 已連線"
-            : "LVGL Terminal 已離線"
-        );
-
-      }
-
-
-      previousEspRobotOnline =
-        espOnline;
-
-      previousLvglTerminalOnline =
-        lvglOnline;
-
-    } catch (error) {
-
-      console.error(
-        "Device Status Error:",
-        error
-      );
-
-      if (connectionText) {
-
-        connectionText.textContent =
-          "伺服器連線異常";
-
-      }
-
-      if (connectionDot) {
-
-        connectionDot.classList.remove(
-          "online"
-        );
-
-      }
-
-      if (required) throw error;
-    }
-
-  }
-
-
-  // =========================================
-  // 每 5 秒監測一次
-  // =========================================
-
-  function startDevicePolling() {
-
-    if (pollingStarted) {
-      return;
-    }
-
-    pollingStarted = true;
-
-    fetchDeviceStatus();
-
-    setInterval(
-      fetchDeviceStatus,
-      5000
-    );
-
-  }
-
-
   // Gen3 and legacy administrator sessions are independent and verified by
   // their respective servers. Never infer privileges from the UI or cookies.
   let loginAttempted = false;
@@ -3315,14 +3108,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if(loginPage)loginPage.hidden=true;
     try{
       if(playWelcome&&window.iKeyPadlockWelcome){
-        await window.iKeyPadlockWelcome.create(()=>fetchDeviceStatus(true)).promise;
+        await window.iKeyPadlockWelcome.create(()=>Promise.resolve()).promise;
       }else if(playWelcome){
-        await fetchDeviceStatus(true);
       }
       if(homePage)homePage.hidden=false;
       showDashboard();
       if(window.iKeyHomeDashboard)void window.iKeyHomeDashboard.load(kind);
-      startDevicePolling();
     }catch(error){
       if(loginPage)loginPage.hidden=false;
       if(homePage)homePage.hidden=true;
@@ -3460,7 +3251,7 @@ document.addEventListener("DOMContentLoaded", () => {
           activeLoginKind = "legacy";
           if (loginPage) loginPage.hidden = true;
           if (window.iKeyPadlockWelcome) {
-            await window.iKeyPadlockWelcome.create(() => fetchDeviceStatus(true)).promise;
+            await window.iKeyPadlockWelcome.create(() => Promise.resolve()).promise;
             showDashboard();
           } else {
             await enterDashboard();
@@ -3485,7 +3276,6 @@ document.addEventListener("DOMContentLoaded", () => {
           if(window.iKeyHomeDashboard)void window.iKeyHomeDashboard.load("legacy");
 
           // 開始監測裝置
-          startDevicePolling();
 
 
         } catch (error) {
