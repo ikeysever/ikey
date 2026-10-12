@@ -87,8 +87,8 @@ app.use(
 // Third-generation authentication is isolated and fail-closed.
 const gen3Ready=Boolean(
   process.env.GEN3_AUTH_ENABLED==="true" &&
-  process.env.GEN3_APPS_SCRIPT_URL &&
-  process.env.GEN3_APPS_SCRIPT_KEY
+  /^https:\/\/script\.google\.com\//.test(process.env.GEN3_APPS_SCRIPT_URL||"") &&
+  (process.env.GEN3_APPS_SCRIPT_KEY||"").length>=32
 );
 // Expose only the Gen3 HTML entry pages. Never serve server-side auth source,
  // Apps Script code, tests, or deployment notes as static files.
