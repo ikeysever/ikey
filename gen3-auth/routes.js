@@ -4,6 +4,8 @@
 const express = require("express");
 const crypto = require("node:crypto");
 const {normalizeEmail,passwordHash,passwordVerify,safeUser,active,newSession,hashToken,SESSION_MS} = require("./core");
+const {sendToken,configured:mailReady}=require("./email");
+const google=require("./google");
 const COOKIE = "ikey_gen3_session";
 const MAX_NAME = 80;
 const RATE = new Map(); // per-process preliminary throttle; production requires shared storage
@@ -38,31 +40,69 @@ function createRouter(store) {
       return res.status(403).json({success:false,message:"來源驗證失敗"});
     next();
   });
-  const ready=Boolean(store && ["registerAtomic","findByEmail","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit"].every(k=>typeof store[k]==="function"));
+  const ready=Boolean(store && ["registerAtomic","findByEmail","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
     try {
       if(!throttle("register:"+req.ip,5)) return res.status(429).json({success:false,message:"請稍後再試"});
+      if(!mailReady())return res.status(503).json({success:false,message:"電子郵件驗證服務尚未設定"});
       const email=normalizeEmail(req.body?.email);
       const display_name=String(req.body?.display_name||"").trim();
       if(!display_name || display_name.length>MAX_NAME) return res.status(400).json({success:false,message:"顯示名稱不符合規定"});
       const password_hash=passwordHash(req.body?.password);
       const now=new Date().toISOString();
       const user={user_id:crypto.randomUUID(),email,password_hash,display_name,
-        global_role:"user",account_status:"active",failed_login_attempts:0,
-        locked_until:"",created_at:now,updated_at:now,google_sub:"",google_linked_at:""};
+        global_role:"user",account_status:"pending_verification",failed_login_attempts:0,
+        locked_until:"",created_at:now,updated_at:now,google_sub:"",google_linked_at:"",email_verified_at:""};
       // Adapter MUST atomically compare normalized email and insert or return duplicate.
       const inserted=await store.registerAtomic(user);
       if(!inserted) return res.status(409).json({success:false,message:"此電子郵件已註冊"});
       await store.audit({user_id:user.user_id,event_type:"register",result:"success",auth_method:"password"});
+      await sendToken(store,user,"verify_email");
       // Explicit login after registration avoids partial-success cookie issues.
-      return res.status(201).json({success:true,user:safeUser(user),message:"註冊成功，請登入"});
+      return res.status(201).json({success:true,user:safeUser(user),message:"註冊成功，請至電子郵件收取驗證連結"});
     } catch(err) {
       if(["INVALID_EMAIL","INVALID_PASSWORD"].includes(err.message)) return res.status(400).json({success:false,message:"電子郵件或密碼格式不符合規定"});
       console.error("Gen3 registration error",err.code||err.message);
       return res.status(503).json({success:false,message:"暫時無法註冊，請稍後再試"});
     }
   });
+  router.post("/forgot-password",async(req,res)=>{
+    const generic={success:true,message:"如果此信箱已註冊，將收到密碼重設郵件"};
+    try{
+      if(!mailReady())return res.status(503).json({success:false,message:"郵件服務尚未設定"});
+      if(!throttle("forgot:"+req.ip,5))return res.status(429).json({success:false,message:"請稍後再試"});
+      let email;try{email=normalizeEmail(req.body?.email)}catch{return res.json(generic)}
+      const user=await store.findByEmail(email);
+      if(user && user.account_status==="active")await sendToken(store,user,"reset_password");
+      return res.json(generic);
+    }catch(err){console.error("Gen3 recovery",err.message);return res.status(503).json({success:false,message:"暫時無法寄送郵件"})}
+  });
+  router.post("/reset-password",async(req,res)=>{
+    try{
+      if(!throttle("reset:"+req.ip,8))return res.status(429).json({success:false,message:"請稍後再試"});
+      const raw=req.body?.token;
+      if(typeof raw!=="string"||raw.length<30||raw.length>128)return res.status(400).json({success:false,message:"連結無效或已過期"});
+      const hashed=passwordHash(req.body?.password);
+      const done=await store.consumeTokenAtomic(hashToken(raw),"reset_password",hashed);
+      if(!done)return res.status(400).json({success:false,message:"連結無效或已過期"});
+      await store.audit({user_id:done.user_id,event_type:"password_reset",result:"success",auth_method:"email"});
+      return res.json({success:true,message:"密碼已重設，請重新登入"});
+    }catch(err){if(err.message==="INVALID_PASSWORD")return res.status(400).json({success:false,message:"密碼須為 8 至 128 字元"});return res.status(503).json({success:false,message:"暫時無法重設密碼"})}
+  });
+  router.post("/verify-email",async(req,res)=>{
+    try{
+      const raw=req.body?.token;
+      if(typeof raw!=="string"||raw.length<30||raw.length>128)return res.status(400).json({success:false,message:"驗證連結無效"});
+      const done=await store.consumeTokenAtomic(hashToken(raw),"verify_email","");
+      if(!done)return res.status(400).json({success:false,message:"驗證連結已失效"});
+      await store.audit({user_id:done.user_id,event_type:"email_verified",result:"success",auth_method:"email"});
+      return res.json({success:true,message:"電子郵件驗證成功，請登入"});
+    }catch{return res.status(503).json({success:false,message:"目前無法驗證電子郵件"})}
+  });
+  router.get("/google/start",(req,res)=>google.begin(req,res,"login"));
+  router.get("/google/link",(req,res)=>google.begin(req,res,"link"));
+  router.get("/google/callback",(req,res)=>google.callback(req,res,store));
   router.post("/login",async(req,res)=>{
     try {
       const email=normalizeEmail(req.body?.email);
