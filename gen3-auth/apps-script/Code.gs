@@ -57,6 +57,7 @@ function execute(action,p) {
    if(p.user.global_role!=="user" || p.user.account_status!=="active" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
    append(TABS.users,p.user);return {user_id:p.user.user_id};
   });
+  case "findByLogin":return rows(TABS.users).find(r=>r.value.email===String(p.identifier||"").trim().toLowerCase())?.value||null;
   case "findByEmail":return rows(TABS.users).find(r=>r.value.email===String(p.email||"").toLowerCase())?.value||null;
   case "findById":return rows(TABS.users).find(r=>r.value.user_id===p.user_id)?.value||null;
   case "recordLoginFailureAtomic":return locked(()=>{
