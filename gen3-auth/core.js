@@ -33,8 +33,7 @@ function passwordVerify(password, stored) {
 }
 function safeUser(user) {
   return { user_id:user.user_id,email:user.email,username:user.username||"",display_name:user.display_name,
-    global_role:user.global_role,account_status:user.account_status,
-    google_linked: Boolean(user.google_sub) };
+    global_role:user.global_role,account_status:user.account_status };
 }
 function active(user, at = Date.now()) {
   if (!user || user.account_status === "disabled" || user.account_status === "pending_deletion") return false;
