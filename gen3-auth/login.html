@@ -16,17 +16,17 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <form id="login" novalidate><label for="email">帳號或電子郵件</label><input id="email" name="email" type="text" maxlength="254" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
 <label for="password">密碼</label><input id="password" name="password" type="password" autocomplete="current-password" required>
 <button id="submit" type="submit">登入系統</button></form>
-<button type="button" class="secondary" disabled title="Google OAuth 尚未完成設定">使用 Google 登入（準備中）</button>
+<a class="action secondary" href="/api/auth/google/start">使用 Google 登入</a>
 <div class="links"><a href="./register.html">建立帳號</a><a href="./forgot-password.html">忘記密碼？</a></div>
 <p id="message" role="status" aria-live="polite"></p>
-<a class="action secondary" href="../public/index.html">返回現有 iKey 網站</a>
-<p class="notice">開發分支預覽：Google 登入及帳號恢復尚未啟用。完成驗證前不會替換現有正式登入。</p>
+<a class="action secondary" href="/">返回現有 iKey 網站</a>
+<p class="notice">帳號安全：既有電子郵件帳號不會自動與 Google 合併，請先登入再綁定。</p>
 </main><script>
 const form=document.getElementById('login'),msg=document.getElementById('message'),btn=document.getElementById('submit');
 
 form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='';
 if(!form.reportValidity())return;
-btn.disabled=true;try{const response=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:form.elements.namedItem('email').value,password:form.elements.namedItem('password').value})});
+btn.disabled=true;try{const response=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:form.elements.namedItem('email').value,password:form.elements.namedItem('password').value})});
 const data=await response.json();if(!response.ok){msg.textContent=data.message||'登入失敗';return}
 msg.textContent='登入成功。第三代首頁整合中。';form.reset();
 }catch{msg.textContent='登入服務尚未啟用或連線失敗'}finally{btn.disabled=false}});
