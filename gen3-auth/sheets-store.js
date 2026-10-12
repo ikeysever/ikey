@@ -20,6 +20,11 @@ function createSheetsStore() {
  }
  return {
    registerAtomic:async user=>call("registerAtomic",{user}),
+   registerGoogleAtomic:async user=>call("registerGoogleAtomic",{user}),
+   findByGoogleSub:async sub=>call("findByGoogleSub",{sub}),
+   linkGoogleAtomic:async(user_id,sub)=>call("linkGoogleAtomic",{user_id,sub}),
+   createToken:async token=>call("createToken",{token}),
+   consumeTokenAtomic:async(token_hash,purpose,password_hash)=>call("consumeTokenAtomic",{token_hash,purpose,password_hash}),
    findByEmail:async email=>call("findByEmail",{email}),
    findById:async user_id=>call("findById",{user_id}),
    recordLoginFailureAtomic:async user_id=>call("recordLoginFailureAtomic",{user_id}),
