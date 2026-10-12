@@ -25,12 +25,12 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
 form.addEventListener('submit',async e=>{
 e.preventDefault();msg.textContent='';
-const password=form.password.value;
-if(password!==form.confirm.value){msg.textContent='兩次密碼不一致';return}
+const password=form.elements.namedItem('password').value;
+if(password!==form.elements.namedItem('confirm').value){msg.textContent='兩次密碼不一致';return}
 btn.disabled=true;
-try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:form.display_name.value,email:form.email.value,password})});
+try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:form.elements.namedItem('display_name').value,email:form.elements.namedItem('email').value,password})});
 const body=await res.json();if(!res.ok){msg.textContent=body.message||'目前無法建立帳號';return}
-msg.textContent='註冊成功';window.location.assign('/');}
+msg.textContent='註冊成功，請使用帳號登入。';form.reset();}
 catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
 });
 </script></body></html>
