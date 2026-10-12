@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
-<title>iKey 第三代｜我的帳號</title>
+<title>iKey｜我的帳號</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,"Noto Sans TC",sans-serif}*{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);color:#f4f7fb}
@@ -13,7 +13,7 @@ dl{margin:0}dt{color:#a9b7cb;font-size:13px;margin-top:14px}dt:first-child{margi
 .primary{background:#68a9ff;color:#071222;border-color:#68a9ff}[hidden]{display:none!important}#message{min-height:20px;color:#ffdbad}
 </style></head><body><main>
 <img class="logo" src="/assets/brand/ikey-nextgen.svg" alt="iKey">
-<h1>我的 iKey 帳號</h1><p class="muted" style="text-align:center">第三代帳號安全中心</p>
+<h1>我的 iKey 帳號</h1><p class="muted" style="text-align:center">帳號安全中心</p>
 <p id="message" role="status" aria-live="polite">正在確認登入狀態…</p>
 <section id="profile" hidden><div class="data"><dl>
 <dt>顯示名稱</dt><dd id="name"></dd>
@@ -22,11 +22,11 @@ dl{margin:0}dt{color:#a9b7cb;font-size:13px;margin-top:14px}dt:first-child{margi
 <dt>Google 綁定</dt><dd id="linked"></dd>
 </dl></div>
 <a id="linkGoogle" class="action" href="/api/auth/google/link" hidden>綁定 Google 帳號</a>
-<button id="logout" class="primary" type="button">登出第三代帳號</button>
+<button id="logout" class="primary" type="button">登出帳號</button>
 </section>
-<a id="login" class="action" href="./login.html" hidden>前往第三代登入</a>
+<a id="login" class="action" href="/" hidden>前往登入頁</a>
 <a class="action" href="/">返回 iKey 網站</a>
-<p class="muted" style="font-size:12px">第三代帳號目前與既有管理員權限分開；登入成功不會自動取得管理員權限。</p>
+<p class="muted" style="font-size:12px">一般帳號與管理員權限分開；登入成功不會自動取得管理員權限。</p>
 </main><script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -45,7 +45,7 @@ async function load(){
   const status=await fetch("/api/auth/status",{credentials:"same-origin",cache:"no-store"}).then(r=>r.json()).catch(()=>null);
   $("linkGoogle").hidden=Boolean(data.user.google_linked)||status?.google!==true;
  }catch{
-  $("message").textContent="目前尚未登入第三代帳號，請先登入。";
+  $("message").textContent="目前尚未登入，請先登入。";
   $("login").hidden=false;
  }
 }
@@ -54,7 +54,7 @@ $("logout").addEventListener("click",async()=>{
  try{
   const response=await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin"});
   if(!response.ok)throw Error("LOGOUT_FAILED");
-  location.replace("./login.html");
+  location.replace("/");
  }catch{
   $("message").textContent="登出失敗，請稍後再試。";
   $("logout").disabled=false;
