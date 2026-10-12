@@ -25,7 +25,7 @@ jobs:
         run: |
           find . -path './node_modules' -prune -o \( -name '*.js' -o -name '*.cjs' \) -type f -print0 | xargs -0 -r -n 1 node --check
       - name: Third-generation auth and Apps Script safety tests
-        run: node --test gen3-auth/core.test.js gen3-auth/apps-script.test.js
+        run: node --test gen3-auth/core.test.js gen3-auth/apps-script.test.js gen3-auth/routes.test.js
       - name: Superadmin session security tests
         run: node --test tests/ikey-admin-session.cjs tests/ikey-admin-http.cjs
       - name: Frontend static integrity tests
