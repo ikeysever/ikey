@@ -25,32 +25,47 @@
        ======================================== -->
 
   <main id="loginPage" class="page">
-    <section class="login-box" aria-labelledby="loginHeading">
+    <!-- Gen3 is the only default login screen. The legacy administrator
+         fallback remains available separately until Gen3 is fully activated. -->
+    <section class="login-box gen3-login-box" id="gen3LoginPanel" aria-labelledby="gen3LoginHeading">
       <div class="logo-area">
         <img src="./assets/brand/ikey-nextgen.svg" alt="iKey" class="logo">
       </div>
-      <h1 id="loginHeading">歡迎回到 iKey</h1>
-      <p>自動多場景智慧鎖</p>
-      <form id="loginForm">
+      <h1 id="gen3LoginHeading">歡迎回到 iKey</h1>
+      <p>自動多場景智慧鎖 · 第三代</p>
+      <form id="gen3LoginForm" novalidate>
         <div class="form-group">
-          <label for="account">帳號或電子郵件</label>
-          <input id="account" name="account" type="text" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
+          <label for="gen3Account">帳號或電子郵件</label>
+          <input id="gen3Account" name="identifier" type="text" maxlength="254" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
         </div>
         <div class="form-group">
-          <label for="password">密碼</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="請輸入密碼" required>
+          <label for="gen3Password">密碼</label>
+          <input id="gen3Password" name="password" type="password" autocomplete="current-password" placeholder="請輸入密碼" required>
         </div>
         <div class="login-help"><a href="/gen3/forgot-password.html">忘記密碼？</a></div>
-        <button type="submit">登入系統</button>
-        <p id="loginMessage" role="status" aria-live="polite"></p>
+        <button type="submit" id="gen3LoginSubmit" class="gen3-login-submit">登入系統</button>
+        <p id="gen3LoginMessage" role="status" aria-live="polite"></p>
       </form>
       <a class="login-google" id="googleLoginLink" href="/api/auth/google/start">使用 Google 登入</a>
       <p class="login-register-note">還沒有帳號？<a href="/gen3/register.html">建立帳號</a></p>
-      <p class="login-register-note">已有第三代帳號？<a href="/gen3/login.html">使用第三代帳號登入</a></p>
       <p id="gen3AuthStatus" class="gen3-auth-status" role="status" aria-live="polite"></p>
+      <p class="gen3-legacy-link"><a href="/?legacy=1">管理員專用入口</a></p>
+    </section>
+    <section class="login-box" id="legacyLoginPanel" aria-labelledby="loginHeading" hidden>
+      <div class="logo-area"><img src="./assets/brand/ikey-nextgen.svg" alt="iKey" class="logo"></div>
+      <h1 id="loginHeading">管理員登入</h1>
+      <p>既有管理員帳號 · 過渡期間保留</p>
+      <form id="loginForm">
+        <div class="form-group"><label for="account">管理員帳號</label>
+          <input id="account" name="account" type="text" autocomplete="username" required></div>
+        <div class="form-group"><label for="password">密碼</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required></div>
+        <button type="submit">管理員登入</button>
+        <p id="loginMessage" role="status" aria-live="polite"></p>
+      </form>
+      <p class="gen3-legacy-link"><a href="/">返回第三代登入</a></p>
     </section>
   </main>
-
 
   <!-- ========================================
        iKey 主系統
