@@ -245,3 +245,27 @@ test("Gen3 primary login uses server verified sessions, existing welcome, and ma
   assert.match(gen3Login,/location\.assign\("\/\?welcome=1"\)/);
   assert.doesNotMatch(entry,/fetch\("\/api\/login"/);
 });
+
+test("primary login matches the approved standalone design and recovery returns home",()=>{
+  const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
+  const status=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
+  const pages=["login.html","forgot-password.html","register.html","account.html","verify-email.html","reset-password.html"];
+  assert.match(html,/id="gen3LoginPanel"/);
+  assert.match(html,/class="ikey-login-subtitle">自動多場景智慧鎖<\/p>/);
+  assert.match(html,/class="ikey-login-links"/);
+  assert.match(html,/class="ikey-admin-entry" href="\/\?legacy=1"/);
+  assert.match(html,/id="legacyLoginPanel"[^>]*hidden/);
+  assert.match(css,/#loginPage #gen3LoginPanel \.form-group input/);
+  assert.match(css,/background: #68a9ff/);
+  assert.match(css,/background: #0b1220/);
+  assert.match(status,/fetch\("\/api\/auth\/status"/);
+  assert.doesNotMatch(html,/第三代/);
+  assert.doesNotMatch(status,/第三代/);
+  for(const page of pages){
+    const content=fs.readFileSync(path.join(root,"gen3-auth",page),"utf8");
+    assert.doesNotMatch(content,/第三代/,page);
+    if(page!=="login.html")assert.match(content,/href="\/"/,page);
+  }
+  const recovery=fs.readFileSync(path.join(root,"gen3-auth/forgot-password.html"),"utf8");
+  assert.match(recovery,/href="\/">← 返回登入頁/);
+});

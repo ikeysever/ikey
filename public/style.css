@@ -2799,3 +2799,118 @@ button {
 .gen3-legacy-link{text-align:center;margin:18px 0 0!important;font-size:12px!important;color:#9cabc2!important}
 .gen3-legacy-link a{color:#9cabc2;text-decoration:underline;text-underline-offset:3px}
 .gen3-legacy-link a:hover{color:#e8f1ff}
+
+/* The main website login matches the original /gen3/login.html design.
+   Scope these rules to the primary login to avoid altering the dashboard or
+   the separate legacy administrator sign-in. */
+#loginPage #gen3LoginPanel {
+  width: min(440px, 100%);
+  max-width: 440px;
+  padding: 32px;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  background: rgba(20, 31, 52, .86);
+  box-shadow: 0 20px 80px #0006;
+  color: #f4f7fb;
+}
+#loginPage #gen3LoginPanel .logo-area { margin-bottom: 18px; }
+#loginPage #gen3LoginPanel .logo { width: 88px; height: 88px; max-height: none; }
+#loginPage #gen3LoginPanel h1 {
+  font-size: 27px;
+  text-align: center;
+  margin: 0 0 8px;
+  letter-spacing: normal;
+}
+#loginPage #gen3LoginPanel .ikey-login-subtitle {
+  margin: 0 0 28px;
+  text-align: center;
+  color: #a9b7cb;
+  font-size: 16px;
+}
+#loginPage #gen3LoginPanel .form-group { margin: 0; }
+#loginPage #gen3LoginPanel .form-group label {
+  display: block;
+  margin: 16px 0 6px;
+  font-size: 16px;
+  color: #f4f7fb;
+}
+#loginPage #gen3LoginPanel .form-group input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #506078;
+  border-radius: 10px;
+  background: #0b1220;
+  color: white;
+  box-shadow: none;
+}
+#loginPage #gen3LoginPanel .form-group input:focus {
+  outline: 2px solid #65a7ff;
+  outline-offset: 1px;
+  border-color: #506078;
+  box-shadow: none;
+}
+#loginPage #gen3LoginPanel #gen3LoginForm .gen3-login-submit {
+  display: block;
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  border: 0;
+  border-radius: 10px;
+  background: #68a9ff;
+  color: #071222;
+  font-weight: 700;
+  text-align: center;
+  transition: none;
+}
+#loginPage #gen3LoginPanel #gen3LoginForm .gen3-login-submit:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: none;
+}
+#loginPage #gen3LoginPanel .login-google,
+#loginPage #gen3LoginPanel .ikey-admin-entry {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #52637b;
+  border-radius: 10px;
+  background: transparent;
+  color: #d9e5f6;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+#loginPage #gen3LoginPanel .login-google { margin-top: 10px; }
+#loginPage #gen3LoginPanel .ikey-login-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  font-size: 14px;
+}
+#loginPage #gen3LoginPanel .ikey-login-links a { color: #9ac9ff; }
+#loginPage #gen3LoginPanel #gen3LoginMessage {
+  min-height: 24px;
+  margin: 14px 0 0;
+  color: #ffd4a6;
+  font-size: 14px;
+  text-align: left;
+}
+#loginPage #gen3LoginPanel #gen3AuthStatus {
+  margin: 0 !important;
+  color: #a9b7cb !important;
+  font-size: 12px !important;
+  line-height: 1.6;
+  text-align: left;
+}
+#loginPage #gen3LoginPanel .ikey-admin-entry { margin-top: 24px; }
+#loginPage #gen3LoginPanel .ikey-login-notice {
+  margin: 22px 0 0;
+  color: #a9b7cb;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: left;
+}
+@media (max-width: 480px) {
+  #loginPage #gen3LoginPanel { padding: 32px; }
+}
