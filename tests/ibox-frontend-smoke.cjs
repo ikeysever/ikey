@@ -212,12 +212,11 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
   assert.match(html, /id="gen3LoginForm"/);
   assert.match(html, /href="\/\?legacy=1"/);
   assert.match(server, /gen3Store\.health\(\)/);
-  assert.match(html, /id="googleLoginLink" href="\/api\/auth\/google\/start"/);
   assert.match(html, /gen3-entry\.js/);
-  assert.doesNotMatch(html, /忘記密碼？（準備中）|使用 Google 登入（準備中）|建立帳號（準備中）/);
+  assert.doesNotMatch(html, /忘記密碼？（準備中）|建立帳號（準備中）/);
   assert.match(css, /\.login-help a/);
   assert.match(statusScript, /\/api\/auth\/status/);
-  assert.match(statusScript, /aria-disabled/);
+  assert.doesNotMatch(statusScript, /googleLoginLink|googleReady/);
   assert.match(server, /gen3Pages=new Set/);
   assert.match(server, /app\.get\("\/api\/auth\/status"/);
   assert.doesNotMatch(server, /express\.static\(path\.join\(__dirname,"gen3-auth"/);
@@ -228,7 +227,6 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
 
 test("Gen3 primary login uses server verified sessions, existing welcome, and main homepage",()=>{
   const entry=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
-  const oauth=fs.readFileSync(path.join(root,"gen3-auth/google.js"),"utf8");
   const gen3Login=fs.readFileSync(path.join(root,"gen3-auth/login.html"),"utf8");
   assert.match(html,/id="gen3LoginPanel"/);
   assert.match(html,/id="legacyLoginPanel"[^>]*hidden/);
@@ -241,7 +239,6 @@ test("Gen3 primary login uses server verified sessions, existing welcome, and ma
   assert.match(app,/showDashboard\(\)/);
   assert.match(app,/iKeyPadlockWelcome\.create/);
   assert.match(app,/activeLoginKind==="gen3"\?"\/api\/auth\/logout":"\/api\/login\/logout"/);
-  assert.match(oauth,/res\.redirect\("\/\?welcome=1"\)/);
   assert.match(gen3Login,/location\.assign\("\/\?welcome=1"\)/);
   assert.doesNotMatch(entry,/fetch\("\/api\/login"/);
 });
@@ -275,7 +272,6 @@ test("Gen3 readiness reports safe diagnostic categories without leaking credenti
  const register=fs.readFileSync(path.join(root,"gen3-auth/register.html"),"utf8");
  assert.match(server,/appsScriptUrlConfigured:gen3UrlValid/);
  assert.match(server,/appsScriptKeyConfigured:gen3KeyValid/);
- assert.match(server,/googleOAuthConfigured:googleReady/);
  assert.match(server,/reason:r.reason/);
  assert.match(server,/APPS_SCRIPT_VERSION_MISMATCH/);
  assert.match(server,/APPS_SCRIPT_AUTH_FAILED/);
@@ -308,4 +304,19 @@ test("Gen3 health errors safely distinguish permission, spreadsheet and MailApp 
  assert.equal(categorize(new Error("GEN3_STORAGE_Exception: Unexpected internal error")),"APPS_SCRIPT_EXECUTION_ERROR");
  assert.equal(categorize(new Error("GEN3_STORAGE_UNKNOWN_ACTION")),"APPS_SCRIPT_OUTDATED_ACTION");
  assert.equal(categorize(new Error("GEN3_STORAGE_UNAUTHORIZED")),"APPS_SCRIPT_AUTH_FAILED");
+});
+
+test("Google OAuth code, routes, UI and public status are absent",()=>{
+ const files=["server.js","gen3-auth/routes.js","gen3-auth/sheets-store.js","gen3-auth/core.js",
+  "gen3-auth/apps-script/Code.gs","gen3-auth/login.html","gen3-auth/register.html",
+  "gen3-auth/account.html","public/index.html","public/gen3-entry.js"];
+ assert.equal(fs.existsSync(path.join(root,"gen3-auth/google.js")),false);
+ for(const name of files){
+  const content=fs.readFileSync(path.join(root,name),"utf8");
+  assert.doesNotMatch(content,/GOOGLE_OAUTH_CLIENT_|\/api\/auth\/google|\/google\/(?:start|link|callback)|registerGoogleAtomic|findByGoogleSub|linkGoogleAtomic|googleLoginLink|google_linked/i,name);
+ }
+ const routes=fs.readFileSync(path.join(root,"gen3-auth/routes.js"),"utf8");
+ assert.match(routes,/router\.post\("\/register"/);
+ assert.match(routes,/router\.post\("\/login"/);
+ assert.match(routes,/router\.post\("\/forgot-password"/);
 });
