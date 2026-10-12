@@ -19,7 +19,6 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <label for="password">密碼（至少 8 字元）</label><input id="password" name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <label for="confirm">確認密碼</label><input id="confirm" name="confirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <button id="submit" type="submit">建立帳號</button></form>
-<a id="googleEntry" class="secondary" style="display:block;text-align:center;padding:13px;text-decoration:none;border-radius:10px" href="/api/auth/google/start">使用 Google 繼續</a>
 <p id="message" role="status" aria-live="polite"></p><button class="secondary" id="resend" type="button">重新寄送驗證信</button></main>
 <script>
 const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
@@ -41,12 +40,6 @@ fetch("/api/auth/status",{cache:"no-store",credentials:"same-origin"}).then(r=>r
  const resend=document.getElementById("resend");
  submit.disabled=!mailReady;
  resend.disabled=!mailReady;
- const google=document.getElementById("googleEntry");
- if(d?.google!==true){
-   google.setAttribute("aria-disabled","true");
-   google.addEventListener("click",e=>{e.preventDefault();msg.textContent="Google 登入尚未完成設定。"});
-   google.style.opacity=".55";
- }
  if(!mailReady){
    const reason=d?.reason||"STATUS_UNKNOWN";
    const help={
