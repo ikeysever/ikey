@@ -370,7 +370,10 @@ test("retired global heartbeat API is not mounted and its registry is deleted",(
   const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
   const admin=fs.readFileSync(path.join(root,"lib/ibox/admin-auth-routes.js"),"utf8");
   const operations=fs.readFileSync(path.join(root,"public/admin-operations.js"),"utf8");
+  const line=fs.readFileSync(path.join(root,"routes/line.js"),"utf8");
   assert.equal(fs.existsSync(path.join(root,"routes/device.js")),false);
+  assert.doesNotMatch(line,/require\("\.\/device"\)|esp-robot|lvgl-terminal|getStatusSnapshot/);
+  assert.match(line,/createSystemStatusFlex\(databaseHealth\)/);
   assert.doesNotMatch(server,/deviceRoutes|["']\/api\/device["']/);
   assert.doesNotMatch(admin,/getStatusSnapshot|\/admin\/connections/);
   assert.doesNotMatch(operations,/\/admin\/connections|updateConnections|connectionMonitorPage/);
