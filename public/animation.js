@@ -2542,7 +2542,8 @@ document.addEventListener("DOMContentLoaded", () => {
       () => {
 
         const page = item.dataset.page;
-        setSidebarOpen(false);
+        // Only mobile navigation closes the drawer; desktop stays as the user left it.
+        if (narrowSidebar.matches) setSidebarOpen(false);
 
         if (page === "admin") {
           showAdminConsole();
