@@ -20,7 +20,7 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <label for="confirm">確認密碼</label><input id="confirm" name="confirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <button id="submit" type="submit">建立帳號</button></form>
 <a class="secondary" style="display:block;text-align:center;padding:13px;text-decoration:none;border-radius:10px" href="/api/auth/google/start">使用 Google 繼續</a>
-<p id="message" role="status" aria-live="polite"></p></main>
+<p id="message" role="status" aria-live="polite"></p><button class="secondary" id="resend" type="button">重新寄送驗證信</button></main>
 <script>
 const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
 form.addEventListener('submit',async e=>{
@@ -33,4 +33,5 @@ const body=await res.json();if(!res.ok){msg.textContent=body.message||'目前無
 msg.textContent='註冊資料已建立，請至信箱收取驗證連結，驗證後即可登入。';form.reset();}
 catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
 });
+document.getElementById("resend").addEventListener("click",async()=>{const email=form.elements.namedItem("email").value;if(!email){msg.textContent="請先輸入電子郵件";return}const btn=document.getElementById("resend");btn.disabled=true;try{const r=await fetch("/api/auth/resend-verification",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});const d=await r.json();msg.textContent=d.message||"寄送失敗"}catch{msg.textContent="網路連線失敗"}finally{btn.disabled=false}});
 </script></body></html>
