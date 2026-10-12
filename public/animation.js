@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // =========================================
-  // 裝置狀態
+  // 系統終端機事件
   // =========================================
 
 
@@ -3275,7 +3275,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Legacy administrator sessions do not expose Gen3 profile data.
           if(window.iKeyHomeDashboard)void window.iKeyHomeDashboard.load("legacy");
 
-          // 開始監測裝置
+          // 舊版全域裝置監測已移除，未來依專案載入設備。
 
 
         } catch (error) {
