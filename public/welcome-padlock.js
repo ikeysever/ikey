@@ -1,30 +1,28 @@
 // iKey approved padlock welcome: adapted directly from handoff HTML Canvas renderer.
-// Keep preview geometry/timing; production readiness is driven by the real data promise.
+// Keep approved preview geometry and timing; no global device readiness checks.
 (function () {
   "use strict";
   let current = null;
   const assetBase = "/welcome-assets/";
-  function create(prepareHome) {
+  function create() {
     if (current) current.cancel();
     const overlay = document.createElement("div");
     overlay.className = "ikey-welcome-padlock";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-label", "登入成功歡迎動畫");
-    overlay.innerHTML = '<div class="ikey-welcome-stage"><canvas aria-label="iKey 掛鎖與鑰匙動畫"></canvas><div class="ikey-welcome-status" role="status">登入成功　載入中…</div><button type="button" class="ikey-welcome-retry" hidden>重新載入</button></div>';
+    overlay.innerHTML = '<div class="ikey-welcome-stage"><canvas aria-label="iKey 掛鎖與鑰匙動畫"></canvas><div class="ikey-welcome-status" role="status">登入成功　載入中…</div></div>';
     document.body.append(overlay);
     const canvas = overlay.querySelector("canvas"), ctx = canvas.getContext("2d");
     const status = overlay.querySelector(".ikey-welcome-status");
-    const retry = overlay.querySelector(".ikey-welcome-retry");
     const duration = 9.8, C = "#67e8f9", G = "#7de2b1";
-    let t = 0, origin = performance.now(), raf = 0, finished = false, resolved = false, ready = false, cancelled = false, failed = false, finalize = false;
+    let t = 0, origin = performance.now(), raf = 0, finished = false, resolved = false, cancelled = false, finalize = false;
     let audio = null;
     let endTimer = 0;
-    let loadTimeout = 0;
-    let onResolve, onReject, attemptCounter = 0;
+    let onResolve, onReject;
     const completion = new Promise((resolve, reject) => { onResolve = resolve; onReject = reject; });
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const onResize = () => { if (!cancelled) draw(t); };
-    const cleanup = () => { clearTimeout(loadTimeout); clearTimeout(endTimer); cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (audio) {audio.pause(); audio.src="";} overlay.remove(); if (current === controller) current = null; };
+    const cleanup = () => { clearTimeout(endTimer); cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (audio) {audio.pause(); audio.src="";} overlay.remove(); if (current === controller) current = null; };
     const controller = { cancel() { if (cancelled) return; cancelled = true; cleanup(); if (!resolved) { resolved = true; onReject(new Error("歡迎動畫已取消")); } }, promise: completion };
     current = controller;
     const seedAudio = () => {
@@ -32,19 +30,9 @@
     };
     const paintFinal = () => { t=duration; draw(t); };
     const finish = () => {
-      if (cancelled || resolved || !ready || !finished) return;
+      if (cancelled || resolved || !finished) return;
       if (!finalize) { finalize = true; status.textContent = "載入成功　歡迎使用"; status.classList.add("done"); endTimer = window.setTimeout(() => { if (cancelled) return; resolved = true; cleanup(); onResolve(); }, reduced ? 0 : 500); }
     };
-    const attempt = () => {
-      if (cancelled) return;
-      failed = false; ready = false; finalize = false; retry.hidden = true;
-      clearTimeout(loadTimeout);
-      const thisAttempt = ++attemptCounter;
-      status.textContent = "登入成功　載入中…"; status.classList.remove("done");
-      loadTimeout = setTimeout(() => { if (cancelled || thisAttempt !== attemptCounter) return; failed = true; ready = false; status.textContent = "首頁載入逾時，請重新載入"; retry.hidden = false; }, 15000);
-      Promise.resolve().then(prepareHome).then(() => { if (cancelled || thisAttempt !== attemptCounter || failed) return; clearTimeout(loadTimeout); ready = true; finish(); }, err => { if (cancelled || thisAttempt !== attemptCounter) return; clearTimeout(loadTimeout); failed = true; status.textContent = "首頁載入失敗：" + (err && err.message ? err.message : "請重試"); retry.hidden = false; });
-    };
-    retry.addEventListener("click", attempt);
     const clamp=x=>Math.max(0,Math.min(1,x)),p=(t,s,d)=>clamp((t-s)/d),ease=x=>1-(1-x)**3,mix=(a,b,v)=>a+(b-a)*v;
     let seed=18;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
     const particles=Array.from({length:76},()=>[70+random()*820,85+random()*355,.6+random()*1.2,random()*Math.PI*2]);
@@ -83,7 +71,6 @@ else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff'
       raf = requestAnimationFrame(tick);
     }
     window.addEventListener("resize",onResize);
-    attempt();
     seedAudio();
     if (reduced) paintFinal();
     raf = requestAnimationFrame(tick);
