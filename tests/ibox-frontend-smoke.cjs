@@ -334,8 +334,10 @@ test("homepage merges account details without a separate account sidebar page",(
     "ikeyHomeRole","ikeyHomeAccountProfile","ikeyHomeAccountRefresh","ikeyHomeAccountLegacy"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
-  assert.match(html,/Google 帳號綁定/);
-  assert.match(html,/已停用（第三版不提供）/);
+  assert.doesNotMatch(html,/Google 帳號綁定|已停用（第三版不提供）/);
+  assert.match(html,/id="ikeyHomeLegacyUsername"/);
+  assert.match(html,/id="ikeyHomeLegacyRole"/);
+  assert.match(profile,/fetch\("\/api\/login\/session"/);
   assert.match(html,/id="dashboardPage"/);
   assert.doesNotMatch(html,/data-page="my-account"|id="ikeyPage-my-account"/);
   assert.match(html,/src="\.\/home-account\.js"/);
