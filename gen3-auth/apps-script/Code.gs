@@ -9,7 +9,7 @@ const TABS = Object.freeze({
  users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens"
 });
 const HEADERS = Object.freeze({
- Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at"],
+ Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at"],
  Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
  Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
@@ -55,13 +55,13 @@ function execute(action,p) {
   case "registerAtomic":return locked(()=>{
    const email=String(p.user?.email||"").trim().toLowerCase();
    if(!email || !p.user?.user_id || !p.user?.password_hash || !/^scrypt:v1:/.test(p.user.password_hash) || rows(TABS.users).some(r=>r.value.email.toLowerCase()===email))return null;
-   if(p.user.global_role!=="user" || p.user.account_status!=="active" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
+   if(p.user.global_role!=="user" || p.user.account_status!=="pending_verification" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
    append(TABS.users,p.user);return {user_id:p.user.user_id};
   });
   case "findByGoogleSub":return rows(TABS.users).find(r=>r.value.google_sub===String(p.sub||"") && !!r.value.google_sub)?.value||null;
   case "registerGoogleAtomic":return locked(()=>{
    const u=p.user||{};
-   if(!u.google_sub||!u.user_id||!u.email||!u.email.includes("@")||u.global_role!=="user"||u.account_status!=="active")throw Error("INVALID_GOOGLE_ACCOUNT");
+   if(!u.google_sub||!u.user_id||!u.email||!u.email.includes("@")||u.global_role!=="user"||u.account_status!=="active"||!u.email_verified_at)throw Error("INVALID_GOOGLE_ACCOUNT");
    const all=rows(TABS.users);
    if(all.some(r=>r.value.google_sub===u.google_sub||r.value.email.toLowerCase()===u.email.toLowerCase()))return null;
    append(TABS.users,u);return u;
@@ -77,7 +77,7 @@ function execute(action,p) {
    const t=p.token||{};
    if(!t.token_hash||!t.user_id||!["verify_email","reset_password"].includes(t.purpose)||Date.parse(t.expires_at)<=Date.now())throw Error("INVALID_TOKEN");
    const u=rows(TABS.users).find(x=>x.value.user_id===t.user_id)?.value;
-   if(!u||u.email!==t.target_email)return false;
+   if(!u||u.email!==t.target_email||u.account_status==="disabled")return false;
    append(TABS.tokens,t);return true;
   });
   case "consumeTokenAtomic":return locked(()=>{
@@ -93,8 +93,9 @@ function execute(action,p) {
      x.value.revoked_at=new Date().toISOString();x.value.revoked_reason="password_reset";overwrite(TABS.sessions,x.index,x.value);
     });
    }else if(p.purpose==="verify_email"){
-    // Current Gen3_Users schema has no verified_email_at column. Do not silently assert verified state.
-    throw Error("EMAIL_VERIFICATION_SCHEMA_REQUIRED");
+    u.value.email_verified_at=new Date().toISOString();
+    if(u.value.account_status==="pending_verification")u.value.account_status="active";
+    u.value.updated_at=new Date().toISOString();overwrite(TABS.users,u.index,u.value);
    }
    r.value.used_at=new Date().toISOString();overwrite(TABS.tokens,r.index,r.value);
    return {user_id:u.value.user_id};
