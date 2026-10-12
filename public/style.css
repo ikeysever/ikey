@@ -2789,3 +2789,13 @@ button {
 #loginPage .logo{width:92px;max-height:92px}
 #loginPage .logo-area{margin-bottom:20px}
 @media(max-width:480px){#loginPage{padding:16px}#loginPage .login-box{padding:28px 22px}}
+
+/* Gen3 is the main iKey login; legacy administrator sign-in is a separate fallback. */
+.gen3-login-box{max-width:440px}
+#gen3LoginForm .gen3-login-submit{width:100%;padding:14px 18px;margin-top:8px;border:0;border-radius:12px;background:linear-gradient(135deg,#96f0ed,var(--accent-strong));color:#061119;font:inherit;font-weight:750;cursor:pointer;transition:transform 180ms ease,filter 180ms ease}
+#gen3LoginForm .gen3-login-submit:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08)}
+#gen3LoginForm .gen3-login-submit:disabled{opacity:.55;cursor:not-allowed;transform:none}
+#gen3LoginMessage{min-height:24px;margin:14px 0 0;text-align:center;color:#ffccab;font-size:14px;line-height:1.6}
+.gen3-legacy-link{text-align:center;margin:18px 0 0!important;font-size:12px!important;color:#9cabc2!important}
+.gen3-legacy-link a{color:#9cabc2;text-decoration:underline;text-underline-offset:3px}
+.gen3-legacy-link a:hover{color:#e8f1ff}
