@@ -32,7 +32,7 @@ const data=await response.json();if(!response.ok){msg.textContent=data.message||
 location.assign("/?welcome=1");
 }catch{msg.textContent='登入服務尚未啟用或連線失敗'}finally{btn.disabled=false}});
 fetch("/api/auth/me",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
- if(d?.authenticated)location.replace("./account.html");
+ if(d?.authenticated)location.replace("/");
 }).catch(()=>{});
 fetch("/api/auth/status",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
  if(d?.enabled!==true){btn.disabled=true;msg.textContent="第三代帳號服務尚未完成後端連線驗證，請稍後再試。";}
