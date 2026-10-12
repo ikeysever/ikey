@@ -186,3 +186,19 @@ test("hamburger sidebar auto-collapses on page selection on both screen sizes", 
   assert.match(script, /sidebar\?\.classList\.contains\("is-open"\)/);
   assert.match(script, /if \(open\) menuButton\.click\(\)/);
 });
+
+test("refresh restores only server-verified login session and does not save passwords", () => {
+  assert.match(app, /fetch\("\/api\/login\/session"/);
+  assert.match(app, /credentials: "same-origin"/);
+  assert.match(app, /cache: "no-store"/);
+  assert.match(app, /if \(!session\.authenticated \|\| loginAttempted\) return/);
+  assert.match(app, /restoreLoginSession\(\)/);
+  assert.doesNotMatch(app, /localStorage\.setItem\([^\n]*password/);
+});
+test("logo reference contains horizontal key, padlock and circular technology ring", () => {
+  const svg = fs.readFileSync(path.join(root, "public/assets/brand/ikey-nextgen.svg"), "utf8");
+  assert.match(svg, /viewBox="0 0 400 400"/);
+  assert.match(svg, /<circle cx="200" cy="199" r="157"/);
+  assert.match(svg, /<rect x="196" y="145"/);
+  assert.match(svg, /<circle cx="120" cy="279"/);
+});
