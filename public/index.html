@@ -121,7 +121,6 @@
 
         <nav class="sidebar-nav" aria-label="主選單">
           <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁 · 連線監測</span></button>
-          <button class="sidebar-item" type="button" data-page="my-account"><span class="sidebar-icon">♙</span><span>我的帳號</span></button>
           <div class="sidebar-group">
             <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-project-center" data-sidebar-toggle="project-center"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>專案中心</span></button>
             <div class="ikey-nav-children" id="ikey-nav-project-center" inert>
@@ -222,11 +221,6 @@
              首頁 Dashboard
              ================================== -->
 
-        <section id="ikeyPage-my-account" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>我的帳號</h2><p>檢視個人資料及帳號狀態</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
-
         <section id="ikeyPage-project-apply" class="content-page" hidden data-ikey-placeholder>
           <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>專案申請</h2><p>提交新專案申請</p></div>
           <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
@@ -307,6 +301,28 @@
         </section>
 
         <section id="dashboardPage" class="content-page">
+          <section id="ikeyHomeAccount" class="ikey-home-account" aria-labelledby="ikeyHomeAccountTitle" hidden>
+            <div class="ikey-account-heading">
+              <div>
+                <p class="ikey-account-kicker">iKey · ACCOUNT OVERVIEW</p>
+                <h2 id="ikeyHomeAccountTitle">我的帳號</h2>
+                <p id="ikeyHomeGreeting" class="ikey-account-greeting">正在載入帳號資料…</p>
+              </div>
+              <button id="ikeyHomeAccountRefresh" type="button" class="ikey-account-refresh">重新整理</button>
+            </div>
+            <p id="ikeyHomeAccountMessage" class="ikey-account-message" role="status" aria-live="polite"></p>
+            <div id="ikeyHomeAccountProfile" class="ikey-account-grid" hidden>
+              <div class="ikey-account-field"><span>帳號名稱</span><strong id="ikeyHomeUsername">—</strong></div>
+              <div class="ikey-account-field"><span>顯示名稱</span><strong id="ikeyHomeDisplayName">—</strong></div>
+              <div class="ikey-account-field"><span>電子郵件</span><strong id="ikeyHomeEmail">—</strong></div>
+              <div class="ikey-account-field"><span>帳號狀態</span><strong id="ikeyHomeStatus">—</strong></div>
+              <div class="ikey-account-field"><span>身分權限</span><strong id="ikeyHomeRole">—</strong></div>
+              <div class="ikey-account-field"><span>登入方式</span><strong>帳號／電子郵件＋密碼</strong></div>
+              <div class="ikey-account-field"><span>Google 帳號綁定</span><strong>已停用（第三版不提供）</strong></div>
+            </div>
+            <div id="ikeyHomeAccountLegacy" class="ikey-account-legacy" hidden>目前使用舊版管理員登入，與第三版一般帳號分開管理，因此不會顯示第三版帳號資料。</div>
+            <p id="ikeyHomeAccountHelp" class="ikey-account-help">需要重設密碼？<a href="/gen3/forgot-password.html">聯繫 iKey 管理團隊</a></p>
+          </section>
           <div class="dashboard-grid"><article class="dashboard-panel dashboard-panel-wide">
             <div class="panel-header"><div><h2>裝置連線監測</h2><p>僅顯示實際回報的連線狀態；尚未回報不代表正常。</p></div><span id="deviceStatusBadge" class="status-badge">MONITOR</span></div>
             <div class="robot-status-list">
@@ -781,6 +797,7 @@
   <script src="./status-notifications.js"></script>
   <script src="./welcome-padlock.js"></script>
   <script src="./gen3-entry.js" defer></script>
+  <script src="./home-account.js"></script>
   <script src="./animation.js"></script>
   <script src="./sidebar-pages.js"></script>
 

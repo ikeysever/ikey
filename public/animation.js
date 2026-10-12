@@ -2542,10 +2542,6 @@ document.addEventListener("DOMContentLoaded", () => {
       () => {
 
         const page = item.dataset.page;
-        if (page === "my-account" && activeLoginKind === "gen3") {
-          location.assign("/gen3/account.html");
-          return;
-        }
         // Only mobile navigation closes the drawer; desktop stays as the user left it.
         if (narrowSidebar.matches) setSidebarOpen(false);
 
@@ -3405,6 +3401,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if(homePage)homePage.hidden=false;
       showDashboard();
+      if(window.iKeyHomeAccount)void window.iKeyHomeAccount.load(kind);
       startDevicePolling();
     }catch(error){
       if(loginPage)loginPage.hidden=false;
@@ -3564,6 +3561,9 @@ document.addEventListener("DOMContentLoaded", () => {
           showDashboard();
 
 
+          // Legacy administrator sessions do not expose Gen3 profile data.
+          if(window.iKeyHomeAccount)void window.iKeyHomeAccount.load("legacy");
+
           // 開始監測裝置
           startDevicePolling();
 
@@ -3610,6 +3610,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const response=await fetch(endpoint,{method:"POST",credentials:"same-origin"});
         if(!response.ok)throw Error("登出失敗，請稍後再試。");
         activeLoginKind=null;
+        if(window.iKeyHomeAccount)window.iKeyHomeAccount.clear();
         if(window.iKeyPadlockWelcome)window.iKeyPadlockWelcome.stop();
         if(homePage)homePage.hidden=true;
         if(loginPage)loginPage.hidden=false;
