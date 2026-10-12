@@ -191,15 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // 裝置狀態
   // =========================================
 
-  const espRobotStatus =
-    document.getElementById("espRobotStatus");
-
-  const lvglTerminalStatus =
-    document.getElementById("lvglTerminalStatus");
-
-  const connectedDeviceCount =
-    document.getElementById("connectedDeviceCount");
-
   const connectionDot =
     document.getElementById("connectionDot");
 
@@ -3106,47 +3097,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // =========================================
-  // 更新裝置顯示
-  // =========================================
-
-  function updateDeviceStatus(
-    element,
-    online
-  ) {
-
-    if (!element) {
-      return;
-    }
-
-    element.classList.remove(
-      "robot-online",
-      "robot-offline"
-    );
-
-    if (online) {
-
-      element.textContent =
-        "● 已連線";
-
-      element.classList.add(
-        "robot-online"
-      );
-
-    } else {
-
-      element.textContent =
-        "● 尚未連線";
-
-      element.classList.add(
-        "robot-offline"
-      );
-
-    }
-
-  }
-
-
-  // =========================================
   // 取得 Device Status
   // =========================================
 
@@ -3201,36 +3151,6 @@ document.addEventListener("DOMContentLoaded", () => {
           lvglTerminal &&
           lvglTerminal.online
         );
-
-
-      updateDeviceStatus(
-        espRobotStatus,
-        espOnline
-      );
-
-      updateDeviceStatus(
-        lvglTerminalStatus,
-        lvglOnline
-      );
-
-
-      let connected = 0;
-
-      if (espOnline) {
-        connected++;
-      }
-
-      if (lvglOnline) {
-        connected++;
-      }
-
-
-      if (connectedDeviceCount) {
-
-        connectedDeviceCount.textContent =
-          `${connected} / 2`;
-
-      }
 
 
       // Render / API 正常
