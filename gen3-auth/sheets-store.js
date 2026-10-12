@@ -26,6 +26,7 @@ function createSheetsStore() {
    createToken:async token=>call("createToken",{token}),
    consumeTokenAtomic:async(token_hash,purpose,password_hash)=>call("consumeTokenAtomic",{token_hash,purpose,password_hash}),
    findByEmail:async email=>call("findByEmail",{email}),
+   findByLogin:async identifier=>call("findByLogin",{identifier}),
    findById:async user_id=>call("findById",{user_id}),
    recordLoginFailureAtomic:async user_id=>call("recordLoginFailureAtomic",{user_id}),
    recordLoginSuccessAtomic:async user_id=>call("recordLoginSuccessAtomic",{user_id}),
