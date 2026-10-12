@@ -97,10 +97,10 @@ test("placeholder slot navigation removed and admin operations are guarded", () 
   assert.match(html, /id="ikeyTerminalMonitorTab"/);
   assert.match(html, /id="ikeyTerminalCommandTab"/);
   assert.match(html, /id="ikeyTerminalCommandInput"[^>]*disabled/);
-  assert.match(html, /id="connectionMonitorPage"/);
+  assert.doesNotMatch(html, /id="connectionMonitorPage"|ikeyConnectionDevices|connectionText|connectionDot/);
   assert.match(operations, /\/api\/login\/admin\/summary/);
-  assert.match(operations, /\/api\/login\/admin\/connections/);
-  assert.match(auth, /router\.get\("\/admin\/connections", requireSuperadmin/);
+  assert.doesNotMatch(operations, /\/api\/login\/admin\/connections|updateConnections/);
+  assert.doesNotMatch(auth, /router\.get\("\/admin\/connections"/);
 });
 
 test("chemical storage cabinet uses its own emerald theme and six status palettes exist", () => {
@@ -133,16 +133,18 @@ test("primary navigation groups are consistent accessible collapsible buttons", 
 });
 
 
-test("approved multi-scene welcome links exact subtitles and validates homepage readiness", () => {
+test("approved multi-scene welcome is independent of device monitoring", () => {
   const welcome = fs.readFileSync(path.join(root, "public/welcome-padlock.js"), "utf8");
   const css = fs.readFileSync(path.join(root, "public/style.css"), "utf8");
   assert.match(html, /src="\.\/welcome-padlock\.js"/);
-  assert.match(app, /iKeyPadlockWelcome\.create\(\(\) => fetchDeviceStatus\(true\)\)/);
+  assert.match(app, /iKeyPadlockWelcome\.create\(\)/);
+  assert.doesNotMatch(app, /fetchDeviceStatus|startDevicePolling|\/api\/device\/status/);
+  assert.doesNotMatch(welcome, /prepareHome|loadTimeout|retry\.addEventListener/);
   assert.match(welcome, /const copy=p\(time,7\.55,\.6\),sub=p\(time,8\.15,\.6\)/);
   assert.match(welcome, /自動多場景智慧鎖/);
   assert.doesNotMatch(welcome, /智慧鑰匙管理系統|智慧鑰匙倉儲管理系統/);
-  assert.match(welcome, /!ready \|\| !finished/);
-  assert.match(welcome, /重新載入/);
+  assert.match(welcome, /!finished/);
+  assert.doesNotMatch(welcome, /首頁載入逾時|首頁載入失敗|重新載入/);
   assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/welcome.wav")));
   assert.ok(fs.existsSync(path.join(root, "public/welcome-assets/project-title-subset.ttf")));
   assert.match(css, /\/welcome-assets\/project-title-subset\.ttf/);
@@ -343,8 +345,7 @@ test("Gen3 homepage is fully rebuilt and keeps other app sections intact",()=>{
   assert.doesNotMatch(html,/ikeyV3Devices|裝置連線監測|查看裝置狀態|id="espRobotStatus"|id="lvglTerminalStatus"|id="connectedDeviceCount"/);
   assert.doesNotMatch(styles,/ikey-v3-device-list|ikey-v3-device-item|ikey-v3-devices-note|ikeyV3Devices/);
   assert.doesNotMatch(app,/updateDeviceStatus\(|getElementById\("espRobotStatus"\)/);
-  assert.match(app,/fetchDeviceStatus\(true\)/);
-  assert.match(app,/\/api\/device\/status/);
+  assert.doesNotMatch(app,/fetchDeviceStatus|startDevicePolling|\/api\/device\/status/);
   assert.match(html,/src="\.\/home-dashboard\.js"/);
   assert.doesNotMatch(html,/home-account\.js|ikeyHomeAccount|Google 帳號綁定|已停用（第三版不提供）/);
   assert.match(html,/id="projectCenterPage"/);
@@ -360,6 +361,20 @@ test("Gen3 homepage is fully rebuilt and keeps other app sections intact",()=>{
   assert.match(app,/iKeyHomeDashboard\.clear\(\)/);
   assert.match(styles,/#dashboardPage\.ikey-v3-home/);
   assert.doesNotMatch(styles,/\.ikey-home-account/);
-  // Duplicate ids previously caused the dashboard to shadow the global header.
-  assert.equal((html.match(/id="connectionText"/g)||[]).length,1);
+  // The old global connection indicator is gone; monitoring will be per project.
+  assert.doesNotMatch(html,/connection-status|connectionDot|connectionText/);
+  assert.doesNotMatch(styles,/\.connection-status|\.connection-dot/);
+});
+
+test("retired global heartbeat API is not mounted and its registry is deleted",()=>{
+  const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
+  const admin=fs.readFileSync(path.join(root,"lib/ibox/admin-auth-routes.js"),"utf8");
+  const operations=fs.readFileSync(path.join(root,"public/admin-operations.js"),"utf8");
+  assert.equal(fs.existsSync(path.join(root,"routes/device.js")),false);
+  assert.doesNotMatch(server,/deviceRoutes|["']\/api\/device["']/);
+  assert.doesNotMatch(admin,/getStatusSnapshot|\/admin\/connections/);
+  assert.doesNotMatch(operations,/\/admin\/connections|updateConnections|connectionMonitorPage/);
+  assert.match(server,/\/api\/health/);
+  assert.match(server,/\/api\/database/);
+  assert.match(server,/\/api\/line/);
 });
