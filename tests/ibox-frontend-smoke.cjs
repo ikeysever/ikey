@@ -336,10 +336,15 @@ test("Gen3 homepage is fully rebuilt and keeps other app sections intact",()=>{
   }
   for(const id of ["ikeyV3Greeting","ikeyV3Account","ikeyV3AccountRefresh",
     "ikeyV3Gen3Fields","ikeyV3AdminFields","ikeyV3Username","ikeyV3Email",
-    "ikeyV3AdminUsername","ikeyV3Devices","espRobotStatus","lvglTerminalStatus",
-    "connectedDeviceCount"]){
+    "ikeyV3AdminUsername"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
+  // Device monitor belongs to a future project-specific view, not the homepage.
+  assert.doesNotMatch(html,/ikeyV3Devices|裝置連線監測|查看裝置狀態|id="espRobotStatus"|id="lvglTerminalStatus"|id="connectedDeviceCount"/);
+  assert.doesNotMatch(styles,/ikey-v3-device-list|ikey-v3-device-item|ikey-v3-devices-note|ikeyV3Devices/);
+  assert.doesNotMatch(app,/updateDeviceStatus\(|getElementById\("espRobotStatus"\)/);
+  assert.match(app,/fetchDeviceStatus\(true\)/);
+  assert.match(app,/\/api\/device\/status/);
   assert.match(html,/src="\.\/home-dashboard\.js"/);
   assert.doesNotMatch(html,/home-account\.js|ikeyHomeAccount|Google 帳號綁定|已停用（第三版不提供）/);
   assert.match(html,/id="projectCenterPage"/);
