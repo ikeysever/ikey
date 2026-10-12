@@ -16,7 +16,7 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <form id="login" novalidate><label for="email">帳號或電子郵件</label><input id="email" name="email" type="text" maxlength="254" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
 <label for="password">密碼</label><input id="password" name="password" type="password" autocomplete="current-password" required>
 <button id="submit" type="submit">登入系統</button></form>
-<a class="action secondary" href="/api/auth/google/start">使用 Google 登入</a>
+<a id="googleEntry" class="action secondary" href="/api/auth/google/start">使用 Google 登入</a>
 <div class="links"><a href="./register.html">建立帳號</a><a href="./forgot-password.html">忘記密碼？</a></div>
 <p id="message" role="status" aria-live="polite"></p>
 <a id="googleLink" class="action secondary" href="/api/auth/google/link" hidden>綁定 Google 帳號</a>
@@ -29,7 +29,18 @@ form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='';
 if(!form.reportValidity())return;
 btn.disabled=true;try{const response=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:form.elements.namedItem('email').value,password:form.elements.namedItem('password').value})});
 const data=await response.json();if(!response.ok){msg.textContent=data.message||'登入失敗';return}
-msg.textContent='登入成功。第三代首頁整合中。';document.getElementById("googleLink").hidden=false;form.reset();
+location.assign("./account.html");
 }catch{msg.textContent='登入服務尚未啟用或連線失敗'}finally{btn.disabled=false}});
-const googleResult=new URLSearchParams(location.search).get("google");if(googleResult==="success"){msg.textContent="Google 驗證成功";history.replaceState(null,"",location.pathname)}fetch("/api/auth/me",{credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.authenticated){document.getElementById("googleLink").hidden=false;msg.textContent="已登入："+d.user.display_name}}).catch(()=>{});
+fetch("/api/auth/me",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+ if(d?.authenticated)location.replace("./account.html");
+}).catch(()=>{});
+fetch("/api/auth/status",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+ if(d?.enabled!==true){btn.disabled=true;msg.textContent="第三代帳號服務尚未完成後端連線驗證，請稍後再試。";}
+ const google=document.getElementById("googleEntry");
+ if(d?.google!==true){
+   google.setAttribute("aria-disabled","true");
+   google.style.opacity=".55";
+   google.addEventListener("click",e=>{e.preventDefault();msg.textContent="Google 登入尚未完成 OAuth 設定。"});
+ }
+}).catch(()=>{btn.disabled=true;msg.textContent="目前無法確認帳號服務狀態。";});
 </script></body></html>
