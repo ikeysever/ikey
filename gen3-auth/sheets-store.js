@@ -21,9 +21,6 @@ function createSheetsStore() {
  return {
    health:async()=>call("health"),
    registerAtomic:async user=>call("registerAtomic",{user}),
-   registerGoogleAtomic:async user=>call("registerGoogleAtomic",{user}),
-   findByGoogleSub:async sub=>call("findByGoogleSub",{sub}),
-   linkGoogleAtomic:async(user_id,sub)=>call("linkGoogleAtomic",{user_id,sub}),
    createToken:async token=>call("createToken",{token}),
    sendMail:async(to,subject,body)=>call("sendMail",{to,subject,body}),
    throttleAtomic:async(key,limit,window_ms)=>call("throttleAtomic",{key,limit,window_ms}),
