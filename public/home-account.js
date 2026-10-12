@@ -22,6 +22,8 @@
     if (get("ikeyHomeAccountLegacy")) get("ikeyHomeAccountLegacy").hidden = true;
     if (get("ikeyHomeAccountMessage")) get("ikeyHomeAccountMessage").textContent = "";
     if (get("ikeyHomeGreeting")) get("ikeyHomeGreeting").textContent = "";
+    if (get("ikeyHomeLegacyUsername")) get("ikeyHomeLegacyUsername").textContent = "—";
+    if (get("ikeyHomeLegacyRole")) get("ikeyHomeLegacyRole").textContent = "—";
   }
 
   async function load(kind) {
@@ -39,21 +41,32 @@
     panel.hidden = false;
     profile.hidden = true;
     legacy.hidden = true;
-    refresh.hidden = kind === "legacy";
-    refresh.disabled = kind === "gen3";
+    refresh.hidden = false;
+    refresh.disabled = true;
     if (help) help.hidden = kind === "legacy";
     resetFields();
-
-    if (kind === "legacy") {
-      greeting.textContent = "管理員工作階段";
-      message.textContent = "舊版管理員入口";
-      legacy.hidden = false;
-      return;
-    }
+    if (get("ikeyHomeLegacyUsername")) get("ikeyHomeLegacyUsername").textContent = "—";
+    if (get("ikeyHomeLegacyRole")) get("ikeyHomeLegacyRole").textContent = "—";
 
     greeting.textContent = "正在取得帳號資料…";
     message.textContent = "";
     try {
+      if (kind === "legacy") {
+        // Legacy session is independently verified; do not infer it from Gen3.
+        const response = await fetch("/api/login/session", {credentials:"same-origin",cache:"no-store"});
+        if (!response.ok) throw Error(response.status === 401 ? "SESSION_EXPIRED" : "PROFILE_UNAVAILABLE");
+        const data = await response.json();
+        if (!data || data.authenticated !== true || !data.account) throw Error("SESSION_EXPIRED");
+        if (generation !== requestId) return;
+        const account = String(data.account);
+        const roles = {superadmin:"超級管理員",admin:"管理員"};
+        get("ikeyHomeLegacyUsername").textContent = account;
+        get("ikeyHomeLegacyRole").textContent = roles[data.globalRole] || "權限未確認";
+        greeting.textContent = "歡迎回來，" + account;
+        message.textContent = "帳號資料已更新";
+        legacy.hidden = false;
+        return;
+      }
       const response = await fetch("/api/auth/me", {credentials:"same-origin",cache:"no-store"});
       if (!response.ok) throw Error(response.status === 401 ? "SESSION_EXPIRED" : "PROFILE_UNAVAILABLE");
       const data = await response.json();
@@ -88,7 +101,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const refresh = get("ikeyHomeAccountRefresh");
     if (refresh) refresh.addEventListener("click", () => {
-      if (currentKind === "gen3") void load("gen3");
+      if (currentKind === "gen3" || currentKind === "legacy") void load(currentKind);
     });
   });
 
