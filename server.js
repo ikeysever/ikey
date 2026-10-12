@@ -88,11 +88,7 @@ app.use(
 const gen3Ready=Boolean(
   process.env.GEN3_AUTH_ENABLED==="true" &&
   process.env.GEN3_APPS_SCRIPT_URL &&
-  process.env.GEN3_APPS_SCRIPT_KEY &&
-  process.env.RESEND_API_KEY &&
-  process.env.GEN3_MAIL_FROM &&
-  process.env.GOOGLE_OAUTH_CLIENT_ID &&
-  process.env.GOOGLE_OAUTH_CLIENT_SECRET
+  process.env.GEN3_APPS_SCRIPT_KEY
 );
 if(gen3Ready){
   const {createSheetsStore}=require("./gen3-auth/sheets-store");
