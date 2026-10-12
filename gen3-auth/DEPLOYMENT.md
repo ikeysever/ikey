@@ -78,3 +78,22 @@ Consent screen must be configured/published appropriately; verify user eligibili
 - Logout revokes the appropriate Gen3 or legacy session. The Gen3 account sidebar links to `/gen3/account.html`.
 - **Activation remains blocked if** `/api/auth/status` shows `enabled:false`. This is a real upstream Apps Script deployment/configuration issue; the UI must not pretend that login, MailApp or Google OAuth works until independently verified.
 - Rollback the homepage login change by reverting the relevant GitHub commit; no legacy login data or Google Sheet records are deleted by this UI migration.
+
+## Diagnosing a blocked signup
+
+The status endpoint returns `enabled`, `mail`, `google` and a safe `reason` category (no API keys, spreadsheet IDs or OAuth secrets). The Render startup log prints only whether each required setting is configured.
+
+| reason | What to check |
+|---|---|
+| CONFIG_MISSING | Render service ikey needs GEN3_AUTH_ENABLED=true, a dedicated Apps Script Web App GEN3_APPS_SCRIPT_URL, and matching GEN3_APPS_SCRIPT_KEY (32+ chars). |
+| APPS_SCRIPT_AUTH_FAILED | Apps Script Script Property GEN3_API_KEY must exactly match Render GEN3_APPS_SCRIPT_KEY. Never paste either value into a chat, repository, or screenshot. |
+| APPS_SCRIPT_SHEET_NOT_SET | Apps Script Script Property GEN3_SPREADSHEET_ID must point to the existing iKey_Database. |
+| APPS_SCRIPT_SCHEMA_MISMATCH | The executing Apps Script account needs edit access to the spreadsheet, and the four Gen3 tab headers must match HEADERS exactly. |
+| APPS_SCRIPT_VERSION_MISMATCH | Save the current gen3-auth/apps-script/Code.gs and deploy a **new Web App version** of the dedicated script. A GitHub or Render deploy does not update Apps Script. |
+| APPS_SCRIPT_NON_JSON_RESPONSE | Confirm the dedicated Web App deployment URL ends with /exec and the Web App access settings allow the Render server to call it without a Google login HTML page. The API key still authenticates each POST. |
+| APPS_SCRIPT_HTTP_ERROR, APPS_SCRIPT_TIMEOUT, APPS_SCRIPT_CONNECTION_FAILED | Inspect the Apps Script deployment and Render connectivity; never change the legacy script to resolve this. |
+| MAILAPP_NOT_READY | In the Apps Script editor run inspectGen3Setup to authorize Sheets and MailApp, then check remaining MailApp daily quota. |
+
+In the dedicated Apps Script editor, run the read-only `inspectGen3Setup` function. It returns only property presence, sheet header checks, MailApp authorization and quota availability, and a `ready` boolean; it does not create, update or delete any spreadsheet rows.
+
+Google sign-in is separately enabled by the Google Cloud OAuth consent configuration, an OAuth **Web application** client, and the two Render variables `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`. Its authorized redirect URI is `https://ikey.onrender.com/api/auth/google/callback`. Do not silently merge existing email accounts with Google accounts.
