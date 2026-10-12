@@ -1,46 +1,26 @@
-# iKey Gen3 account system — development branch
+# iKey Gen3 帳號系統（一般帳號 / 電子郵件）
 
-**Status:** NOT DEPLOYABLE. This directory is deliberately not mounted by `server.js`.
-Existing /api/login, superadmin session and legacy database routes are untouched.
+正式網站的 Gen3 帳號功能使用帳號（或 Email）＋密碼登入，並透過專用 Apps Script + Google Sheets 儲存帳號資料、MailApp 寄送驗證與密碼重設郵件。**不提供第三方 Google OAuth 登入或綁定。**
 
-## Existing spreadsheet
-The original spreadsheet has four new tabs:
-- Gen3_Users (12 columns)
-- Auth_Tokens (8 columns)
-- Auth_Sessions (8 columns)
-- Auth_Audit_Logs (9 columns)
+## 系統分工
 
-All 11 legacy tabs remain intact; do not delete or rename them before migration approval.
+- `server.js`：啟用 `/api/auth/*`、帳號狀態檢查與 Gen3 網頁。
+- `routes.js`：註冊、登入、登出、驗證信、密碼重設及 Session。
+- `core.js`：scrypt 密碼雜湊、帳號狀態、Session。
+- `sheets-store.js`：伺服器對專用 Apps Script 的安全 API 呼叫。
+- `apps-script/Code.gs`：使用 Script Properties 驗證伺服器請求、LockService 與資料表存取。
+- `email.js`：MailApp 驗證郵件與密碼重設流程。
 
-## Implemented in this branch
-- `register.html`: isolated responsive registration UI with basic client-side checks.
-- `core.js`: Node scrypt salted password hashing/verification, account-status guard,
-  7-day session token generation with SHA-256 hashes.
-- `routes.js`: **unmounted** Express route factory for registration, password login,
-  session lookup/renewal, logout, preliminary rate limiting and audit calls.
-- `core.test.js`: Node built-in test runner unit tests; execute `node --test gen3-auth/core.test.js`.
+## 資料表相容性
 
-## Important integration contract
-`routes.js` requires a trusted server-side `store` adapter providing:
-`registerAtomic`, `findByEmail`, `recordLoginFailureAtomic`,
-`recordLoginSuccessAtomic`, `createSession`, `findSessionByHash`,
-`findById`, `touchSession`, `revokeSession`, `audit`.
+保留現有 `Gen3_Users` 的 14 欄，以及 `Auth_Tokens`、`Auth_Sessions`、`Auth_Audit_Logs`。
+`Gen3_Users` 中舊有 `google_sub` 與 `google_linked_at` 欄位目前**不再讀寫**，暫時保留以避免破壞已部署的 Apps Script 和資料表欄位位置。要真正刪除欄位，必須另行規劃資料遷移並同步更新線上 Apps Script；不能只改 GitHub。
 
-The adapter MUST implement atomic normalized-email uniqueness and status transitions.
-**Google Sheets itself does not enforce uniqueness or transactions.** Use an
-authenticated writer with locking, or a transactional database.
-Never expose Sheet write credentials or password hashes to the browser.
+## 安全
 
-## Remaining before deployment
-1. Authenticated, atomic data adapter, storage credentials and audit durability.
-2. Cross-instance rate limiting; safe session renewal under concurrency; CSRF protection.
-3. Google OIDC with verified email, stable sub, state/nonce and secure linking.
-4. Email delivery and single-use 15-minute token workflows.
-5. Password change, unlink, account deletion and other DB-001..023 requirements.
-6. Integration and security tests, configuration validation and Render staging.
-7. Only after tests and approval, mount routes and expose frontend from public/.
+- 不得將 `GEN3_APPS_SCRIPT_KEY`、`GEN3_API_KEY`、密碼、Token 或任何服務憑證提交到 GitHub。
+- 伺服器端程式可接受程式碼審查；程式公開不代表金鑰公開。
+- `GEN3_AUTH_ENABLED`、`GEN3_APPS_SCRIPT_URL`、`GEN3_APPS_SCRIPT_KEY` 僅存 Render Environment。
+- 原有管理員登入、LINE、ESP32、借還鑰匙與動畫不受本次移除第三方登入影響。
 
-## Contract clarification
-Successful registration responds HTTP 201 with a user record, and the user
-then signs in explicitly. Login sets a 7-day sliding HttpOnly cookie.
-No production service or secret has been changed by this branch.
+部署與測試步驟見 `DEPLOYMENT.md`。
