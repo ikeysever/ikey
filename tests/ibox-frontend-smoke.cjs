@@ -168,7 +168,7 @@ test("sidebar accordion animates and desktop hamburger can collapse the whole si
   assert.match(css, /min-width: 701px/);
   assert.match(app, /classList\.toggle\("sidebar-collapsed", !shouldOpen\)/);
   assert.match(app, /setSidebarOpen\(!narrowSidebar\.matches\)/);
-  assert.match(script, /menuButton\.click\(\)/);
+  assert.doesNotMatch(script, /menuButton\.click\(\)/);
   assert.match(html, /id="sidebarMenuButton"/);
 });
 
