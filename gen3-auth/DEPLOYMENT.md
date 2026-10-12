@@ -67,3 +67,14 @@ Consent screen must be configured/published appropriately; verify user eligibili
 8. Legacy `/api/login` and the main dashboard remain separate from `ikey_gen3_session`; Gen3 login never grants admin rights automatically.
 
 **Rollback:** set `GEN3_AUTH_ENABLED=false` in Render to disable Gen3 writes immediately; existing legacy login, LINE, ESP32, and Sheets remain unchanged. The Google Apps Script source committed to GitHub is **not** automatically deployed by Render.
+
+## Main website login, approved welcome, and homepage (October 2026)
+
+- `/` now shows the Gen3 username/email + password form by default. Its POST target is `/api/auth/login` and success is verified with `/api/auth/me`; only then does the approved `public/welcome-padlock.js` animation play and reveal the existing `#homePage`.
+- Google OAuth callback and the standalone `/gen3/login.html` also return to `/?welcome=1`. The homepage controller checks the Gen3 session before playing welcome; a forged query string cannot authenticate a visitor.
+- Refreshing the website restores only a verified Gen3 or existing legacy administrator session. No password or session secret is stored in browser storage.
+- The original administrator UI is **not** the default login screen. It is accessible only through the small `/?legacy=1` administrator entry. Existing `/api/login` and signed admin sessions remain unchanged until a separate, reviewed migration.
+- Gen3 users have `global_role:user` and **do not inherit legacy superadmin rights**. Protected admin endpoints continue to validate the separate administrator session on the server.
+- Logout revokes the appropriate Gen3 or legacy session. The Gen3 account sidebar links to `/gen3/account.html`.
+- **Activation remains blocked if** `/api/auth/status` shows `enabled:false`. This is a real upstream Apps Script deployment/configuration issue; the UI must not pretend that login, MailApp or Google OAuth works until independently verified.
+- Rollback the homepage login change by reverting the relevant GitHub commit; no legacy login data or Google Sheet records are deleted by this UI migration.
