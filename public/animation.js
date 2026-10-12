@@ -3374,24 +3374,64 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  // Restore only a server-verified session after refresh. Never store credentials.
-  // A failed/expired session stays on the login screen.
+  // Gen3 and legacy administrator sessions are independent and verified by
+  // their respective servers. Never infer privileges from the UI or cookies.
   let loginAttempted = false;
-  async function restoreLoginSession() {
-    try {
-      const response = await fetch("/api/login/session", {
-        credentials: "same-origin",
-        cache: "no-store"
-      });
-      if (!response.ok) return;
-      const session = await response.json();
-      if (!session.authenticated || loginAttempted) return;
-      if (loginPage) loginPage.hidden = true;
-      if (homePage) homePage.hidden = false;
+  let activeLoginKind = null;
+  async function verifiedGen3(){
+    const response=await fetch("/api/auth/me",{credentials:"same-origin",cache:"no-store"});
+    if(!response.ok)return false;
+    const data=await response.json();
+    return data.authenticated===true&&Boolean(data.user);
+  }
+  async function verifiedLegacy(){
+    const response=await fetch("/api/login/session",{credentials:"same-origin",cache:"no-store"});
+    if(!response.ok)return false;
+    const data=await response.json();
+    return data.authenticated===true;
+  }
+  async function showAuthenticatedHome(kind,playWelcome){
+    activeLoginKind=kind;
+    if(loginPage)loginPage.hidden=true;
+    try{
+      if(playWelcome&&window.iKeyPadlockWelcome){
+        await window.iKeyPadlockWelcome.create(()=>fetchDeviceStatus(true)).promise;
+      }else if(playWelcome){
+        await fetchDeviceStatus(true);
+      }
+      if(homePage)homePage.hidden=false;
       showDashboard();
       startDevicePolling();
-    } catch (_) {
-      // Offline or unreachable backend: keep the login screen.
+    }catch(error){
+      if(loginPage)loginPage.hidden=false;
+      if(homePage)homePage.hidden=true;
+      throw error;
+    }
+  }
+  window.iKeyGen3Enter=async()=>{
+    loginAttempted=true;
+    if(!(await verifiedGen3()))throw Error("第三代登入狀態無法驗證，請重新登入。");
+    await showAuthenticatedHome("gen3",true);
+  };
+  async function restoreLoginSession(){
+    try{
+      const params=new URLSearchParams(location.search);
+      const welcome=params.get("welcome")==="1";
+      const legacyFirst=params.get("legacy")==="1";
+      const attempts=legacyFirst?[["legacy",verifiedLegacy],["gen3",verifiedGen3]]
+        :[["gen3",verifiedGen3],["legacy",verifiedLegacy]];
+      for(const [kind,verify] of attempts){
+        let authenticated=false;
+        try{authenticated=await verify()}catch(_){continue}
+        if(!authenticated||loginAttempted)continue;
+        if(welcome)history.replaceState(null,"",location.pathname);
+        await showAuthenticatedHome(kind,welcome&&kind==="gen3");
+        return;
+      }
+    }catch(_){
+      // Failed/expired session never bypasses the login page.
+      if(homePage)homePage.hidden=true;
+      if(loginPage)loginPage.hidden=false;
     }
   }
   restoreLoginSession();
@@ -3399,7 +3439,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
   // 登入
   // =========================================
-
   if (loginForm) {
 
     loginForm.addEventListener(
@@ -3496,7 +3535,8 @@ document.addEventListener("DOMContentLoaded", () => {
           );
 
 
-          // Authenticated: play approved welcome while real dashboard data loads.
+          // Authenticated legacy administrator: retain its existing welcome flow.
+          activeLoginKind = "legacy";
           if (loginPage) loginPage.hidden = true;
           if (window.iKeyPadlockWelcome) {
             await window.iKeyPadlockWelcome.create(() => fetchDeviceStatus(true)).promise;
@@ -3557,32 +3597,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================
 
   if (logoutButton) {
-
-    logoutButton.addEventListener(
-      "click",
-      () => {
-        loginAttempted = true;
-        fetch("/api/login/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
-
-        if (homePage) {
-          homePage.hidden = true;
-        }
-
-        if (loginPage) {
-          loginPage.hidden = false;
-        }
-
-        if (passwordInput) {
-          passwordInput.value = "";
-        }
-
-        if (loginMessage) {
-          loginMessage.textContent = "";
-        }
-
+    logoutButton.addEventListener("click",async()=>{
+      if(!activeLoginKind)return;
+      logoutButton.disabled=true;
+      loginAttempted=true;
+      try{
+        const endpoint=activeLoginKind==="gen3"?"/api/auth/logout":"/api/login/logout";
+        const response=await fetch(endpoint,{method:"POST",credentials:"same-origin"});
+        if(!response.ok)throw Error("登出失敗，請稍後再試。");
+        activeLoginKind=null;
+        if(window.iKeyPadlockWelcome)window.iKeyPadlockWelcome.stop();
+        if(homePage)homePage.hidden=true;
+        if(loginPage)loginPage.hidden=false;
+        if(passwordInput)passwordInput.value="";
+        const gen3Password=document.getElementById("gen3Password");
+        if(gen3Password)gen3Password.value="";
+        if(loginMessage)loginMessage.textContent="";
+        const gen3Message=document.getElementById("gen3LoginMessage");
+        if(gen3Message)gen3Message.textContent="";
+      }catch(error){
+        const gen3Message=document.getElementById("gen3LoginMessage");
+        if(gen3Message)gen3Message.textContent=error.message;
+      }finally{
+        logoutButton.disabled=false;
       }
-    );
-
+    });
   }
 
 });
