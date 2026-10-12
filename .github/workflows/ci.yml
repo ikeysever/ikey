@@ -29,7 +29,7 @@ jobs:
       - name: Superadmin session security tests
         run: node --test tests/ikey-admin-session.cjs tests/ikey-admin-http.cjs
       - name: Frontend static integrity tests
-        run: node --test tests/ibox-frontend-smoke.cjs tests/home-account.test.cjs
+        run: node --test tests/ibox-frontend-smoke.cjs tests/home-dashboard.test.cjs
       - name: iBox permission regression tests
         run: node --test tests/ibox-project-access.cjs tests/ibox-project-workflow.cjs
       - name: Start server and verify HTTP health
