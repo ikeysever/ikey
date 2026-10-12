@@ -208,6 +208,8 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
   const statusScript=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
   assert.match(html, /href="\/gen3\/forgot-password\.html"/);
   assert.match(html, /href="\/gen3\/register\.html"/);
+  assert.match(html, /href="\/gen3\/login\.html"/);
+  assert.match(server, /gen3Store\.health\(\)/);
   assert.match(html, /id="googleLoginLink" href="\/api\/auth\/google\/start"/);
   assert.match(html, /gen3-entry\.js/);
   assert.doesNotMatch(html, /忘記密碼？（準備中）|使用 Google 登入（準備中）|建立帳號（準備中）/);
@@ -217,7 +219,7 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
   assert.match(server, /gen3Pages=new Set/);
   assert.match(server, /app\.get\("\/api\/auth\/status"/);
   assert.doesNotMatch(server, /express\.static\(path\.join\(__dirname,"gen3-auth"/);
-  for(const page of ["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html"]){
+  for(const page of ["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html","account.html"]){
     assert.ok(fs.existsSync(path.join(root,"gen3-auth",page)),page);
   }
 });
