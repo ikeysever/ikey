@@ -34,4 +34,15 @@ msg.textContent='註冊資料已建立，請至信箱收取驗證連結，驗證
 catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
 });
 document.getElementById("resend").addEventListener("click",async()=>{const email=form.elements.namedItem("email").value;if(!email){msg.textContent="請先輸入電子郵件";return}const btn=document.getElementById("resend");btn.disabled=true;try{const r=await fetch("/api/auth/resend-verification",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});const d=await r.json();msg.textContent=d.message||"寄送失敗"}catch{msg.textContent="網路連線失敗"}finally{btn.disabled=false}});
+
+fetch("/api/auth/status",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(d=>{
+ if(d?.enabled===true)return;
+ const submit=document.querySelector('form button[type="submit"]');
+ if(submit)submit.disabled=true;
+ const message=document.getElementById("message");
+ if(message)message.textContent="第三代帳號服務尚未啟用，目前可以預覽頁面，但尚無法送出。";
+}).catch(()=>{
+ const message=document.getElementById("message");
+ if(message)message.textContent="目前無法確認帳號服務狀態，請稍後再試。";
+});
 </script></body></html>
