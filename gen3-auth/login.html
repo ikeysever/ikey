@@ -19,6 +19,7 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <a class="action secondary" href="/api/auth/google/start">使用 Google 登入</a>
 <div class="links"><a href="./register.html">建立帳號</a><a href="./forgot-password.html">忘記密碼？</a></div>
 <p id="message" role="status" aria-live="polite"></p>
+<a id="googleLink" class="action secondary" href="/api/auth/google/link" hidden>綁定 Google 帳號</a>
 <a class="action secondary" href="/">返回現有 iKey 網站</a>
 <p class="notice">帳號安全：既有電子郵件帳號不會自動與 Google 合併，請先登入再綁定。</p>
 </main><script>
@@ -28,6 +29,7 @@ form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='';
 if(!form.reportValidity())return;
 btn.disabled=true;try{const response=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:form.elements.namedItem('email').value,password:form.elements.namedItem('password').value})});
 const data=await response.json();if(!response.ok){msg.textContent=data.message||'登入失敗';return}
-msg.textContent='登入成功。第三代首頁整合中。';form.reset();
+msg.textContent='登入成功。第三代首頁整合中。';document.getElementById("googleLink").hidden=false;form.reset();
 }catch{msg.textContent='登入服務尚未啟用或連線失敗'}finally{btn.disabled=false}});
+const googleResult=new URLSearchParams(location.search).get("google");if(googleResult==="success"){msg.textContent="Google 驗證成功";history.replaceState(null,"",location.pathname)}fetch("/api/auth/me",{credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.authenticated){document.getElementById("googleLink").hidden=false;msg.textContent="已登入："+d.user.display_name}}).catch(()=>{});
 </script></body></html>
