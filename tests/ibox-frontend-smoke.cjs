@@ -188,8 +188,8 @@ test("mobile sidebar closes on navigation; desktop keeps its previous state", ()
 
 test("refresh restores only server-verified login session and does not save passwords", () => {
   assert.match(app, /fetch\("\/api\/login\/session"/);
-  assert.match(app, /credentials: "same-origin"/);
-  assert.match(app, /cache: "no-store"/);
+  assert.match(app, /credentials:\s*"same-origin"/);
+  assert.match(app, /cache:\s*"no-store"/);
   assert.match(app, /if\(!authenticated\|\|loginAttempted\)continue/);
   assert.match(app, /fetch\("\/api\/auth\/me"/);
   assert.match(app, /restoreLoginSession\(\)/);
