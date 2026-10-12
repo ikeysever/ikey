@@ -25,11 +25,14 @@
 
 部署與測試步驟見 `DEPLOYMENT.md`。
 
-## 第三版首頁帳號整合
+## 第三版首頁（重新建置）
 
-- 使用者登入或恢復已驗證的 Session 後，`/` 的首頁會讀取 `GET /api/auth/me` 並顯示帳號名稱、顯示名稱、電子郵件、帳號狀態及角色。
-- Google 登入與綁定功能已取消；首頁不顯示 Google 綁定狀態或停用提示。
-- 舊版管理員 Session 與第三版 Session 完全分開；首頁透過獨立的 `/api/login/session` 取得已驗證的管理員帳號名稱與權限，不推測第三版電子郵件等個資。
-- 登出時清除已顯示的個人資料，未完成的帳號查詢也不能在登出後重新填入。
-- 原側欄「我的帳號」佔位頁已合併到首頁。舊網址 `/gen3/account.html` 暫時保留轉址相容，不再是獨立帳號管理畫面。
-- 此次不更動 Sheets、Apps Script、權限規則或 ESP32、LINE、Welcome 功能。舊檔案全面清理需另行核對跨組引用及歷史資料。
+- 首頁位於 `public/index.html` 的 `#dashboardPage`，2026-10-12 以新的第三版版型取代原本的帳號卡片＋連線監測首頁。
+- 新的 `public/home-dashboard.js` 控制個人帳號資訊；舊的 `public/home-account.js` 已刪除。
+- 登入後首頁有：iKey 歡迎區、我的帳號、Web／LINE／iBox 系統組成介紹、實際裝置回報監測。
+- 第三版帳號透過 `GET /api/auth/me` 取得已驗證的帳號名稱、顯示名稱、電子郵件、權限與狀態。
+- 管理員登入透過獨立的 `GET /api/login/session` 取得帳號名稱與權限，不混用第三版個資。
+- 不顯示已取消的 Google OAuth 或綁定狀態。
+- 裝置狀態沿用原本 `/api/device/status` 的資料流，並保留原有 ESP Robot、LVGL Terminal 狀態節點。未收到回報不應標成正常。
+- 不更動登入、歡迎動畫、側欄、管理員控制台、LINE、ESP32、Sheets 或既有 API schema；本次僅替換首頁畫面、首頁控制器與對應測試。
+- 原網址 `/gen3/account.html` 保留回首頁轉址相容。其他歷史程式的移除需另行逐一查核跨組引用。

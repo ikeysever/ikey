@@ -325,30 +325,36 @@ test("Google OAuth code, routes, UI and public status are absent",()=>{
  assert.match(routes,/router\.post\("\/forgot-password"/);
 });
 
-test("homepage merges account details without a separate account sidebar page",()=>{
-  const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
-  const profile=fs.readFileSync(path.join(root,"public/home-account.js"),"utf8");
-  const legacyAccount=fs.readFileSync(path.join(root,"gen3-auth/account.html"),"utf8");
-  assert.match(html,/id="ikeyHomeAccount"/);
-  for(const id of ["ikeyHomeUsername","ikeyHomeDisplayName","ikeyHomeEmail","ikeyHomeStatus",
-    "ikeyHomeRole","ikeyHomeAccountProfile","ikeyHomeAccountRefresh","ikeyHomeAccountLegacy"]){
+test("Gen3 homepage is fully rebuilt and keeps other app sections intact",()=>{
+  const home=fs.readFileSync(path.join(root,"public/home-dashboard.js"),"utf8");
+  const styles=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
+  assert.match(html,/id="dashboardPage" class="content-page ikey-v3-home"/);
+  assert.match(html,/id="ikeyV3HeroTitle"/);
+  assert.match(html,/自動多場景智慧鎖/);
+  for(const name of ["iKey Web","LINE","iBox · ESP32"]){
+    assert.ok(html.includes(name),name);
+  }
+  for(const id of ["ikeyV3Greeting","ikeyV3Account","ikeyV3AccountRefresh",
+    "ikeyV3Gen3Fields","ikeyV3AdminFields","ikeyV3Username","ikeyV3Email",
+    "ikeyV3AdminUsername","ikeyV3Devices","espRobotStatus","lvglTerminalStatus",
+    "connectedDeviceCount"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
-  assert.doesNotMatch(html,/Google 帳號綁定|已停用（第三版不提供）/);
-  assert.match(html,/id="ikeyHomeLegacyUsername"/);
-  assert.match(html,/id="ikeyHomeLegacyRole"/);
-  assert.match(profile,/fetch\("\/api\/login\/session"/);
-  assert.match(html,/id="dashboardPage"/);
-  assert.doesNotMatch(html,/data-page="my-account"|id="ikeyPage-my-account"/);
-  assert.match(html,/src="\.\/home-account\.js"/);
-  assert.match(profile,/fetch\("\/api\/auth\/me"/);
-  assert.match(profile,/credentials:"same-origin",cache:"no-store"/);
-  assert.match(profile,/\.textContent =/);
-  assert.doesNotMatch(profile,/innerHTML|localStorage|sessionStorage/);
-  assert.match(app,/iKeyHomeAccount\.load\(kind\)/);
-  assert.match(app,/iKeyHomeAccount\.load\("legacy"\)/);
-  assert.match(app,/iKeyHomeAccount\.clear\(\)/);
-  assert.doesNotMatch(app,/location\.assign\("\/gen3\/account\.html"\)/);
-  assert.match(legacyAccount,/location\.replace\("\/"\)/);
-  assert.match(css,/\.ikey-account-grid/);
+  assert.match(html,/src="\.\/home-dashboard\.js"/);
+  assert.doesNotMatch(html,/home-account\.js|ikeyHomeAccount|Google 帳號綁定|已停用（第三版不提供）/);
+  assert.match(html,/id="projectCenterPage"/);
+  assert.match(html,/id="ikeyAdminPage"/);
+  assert.match(html,/id="terminalPage"/);
+  assert.match(html,/id="loginPage"/);
+  assert.match(home,/fetch\(endpoint, \{credentials:"same-origin",cache:"no-store"\}\)/);
+  assert.match(home,/\/api\/auth\/me/);
+  assert.match(home,/\/api\/login\/session/);
+  assert.doesNotMatch(home,/innerHTML|localStorage|sessionStorage/);
+  assert.match(app,/iKeyHomeDashboard\.load\(kind\)/);
+  assert.match(app,/iKeyHomeDashboard\.load\("legacy"\)/);
+  assert.match(app,/iKeyHomeDashboard\.clear\(\)/);
+  assert.match(styles,/#dashboardPage\.ikey-v3-home/);
+  assert.doesNotMatch(styles,/\.ikey-home-account/);
+  // Duplicate ids previously caused the dashboard to shadow the global header.
+  assert.equal((html.match(/id="connectionText"/g)||[]).length,1);
 });
