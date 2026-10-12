@@ -20,9 +20,9 @@ function cookieOptions(req) {
   return {httpOnly:true,secure: Boolean(req.secure || req.get("x-forwarded-proto")==="https"),
     sameSite:"lax",path:"/",maxAge:SESSION_MS};
 }
-function createRouter(store) {
+function sameOrigin(req) {\n  const origin=req.get("origin");\n  if(!origin)return true;\n  try {\n    const u=new URL(origin);\n    const host=req.get("host");\n    const scheme=req.secure||req.get("x-forwarded-proto")==="https"?"https:":"http:";\n    return u.protocol===scheme && u.host===host;\n  } catch {return false;}\n}\nfunction createRouter(store) {
   const router=express.Router();
-  router.use((req,res,next)=>{res.set("Cache-Control","no-store");next()});
+  router.use((req,res,next)=>{\n    res.set("Cache-Control","no-store");\n    if(["POST","PUT","PATCH","DELETE"].includes(req.method) && !sameOrigin(req))\n      return res.status(403).json({success:false,message:"來源驗證失敗"});\n    next();\n  });
   const ready=Boolean(store && ["registerAtomic","findByEmail","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
