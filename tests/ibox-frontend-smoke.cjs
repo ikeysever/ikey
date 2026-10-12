@@ -326,6 +326,7 @@ test("Google OAuth code, routes, UI and public status are absent",()=>{
 });
 
 test("homepage merges account details without a separate account sidebar page",()=>{
+  const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
   const profile=fs.readFileSync(path.join(root,"public/home-account.js"),"utf8");
   const legacyAccount=fs.readFileSync(path.join(root,"gen3-auth/account.html"),"utf8");
   assert.match(html,/id="ikeyHomeAccount"/);
