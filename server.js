@@ -89,12 +89,10 @@ const gen3Enabled=process.env.GEN3_AUTH_ENABLED==="true";
 const gen3UrlValid=/^https:\/\/script\.google\.com\//.test(process.env.GEN3_APPS_SCRIPT_URL||"");
 const gen3KeyValid=(process.env.GEN3_APPS_SCRIPT_KEY||"").length>=32;
 const gen3Ready=gen3Enabled&&gen3UrlValid&&gen3KeyValid;
-const googleReady=Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID&&process.env.GOOGLE_OAUTH_CLIENT_SECRET);
 console.info("Gen3 startup configuration",JSON.stringify({
   enabled:gen3Enabled,
   appsScriptUrlConfigured:gen3UrlValid,
-  appsScriptKeyConfigured:gen3KeyValid,
-  googleOAuthConfigured:googleReady
+  appsScriptKeyConfigured:gen3KeyValid
 }));
 // Expose only Gen3 HTML entry pages; never serve server-side auth source.
 const gen3Pages=new Set(["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html","account.html"]);
@@ -163,7 +161,7 @@ async function checkGen3(){
 app.get("/api/auth/status",async(req,res)=>{
   res.set("Cache-Control","no-store");
   const r=await checkGen3();
-  res.json({enabled:r.storage,mail:r.mail,google:r.storage&&googleReady,reason:r.reason});
+  res.json({enabled:r.storage,mail:r.mail,reason:r.reason});
 });
 if(gen3Store){
   const {createRouter}=require("./gen3-auth/routes");
