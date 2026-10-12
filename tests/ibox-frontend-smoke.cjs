@@ -294,3 +294,18 @@ test("Gen3 error categorization distinguishes stale Apps Script deployment and n
  assert.match(server,/APPS_SCRIPT_DNS_FAILURE/);
  assert.match(server,/GEN3_STORAGE_\[A-Z0-9_\]/);
 });
+
+test("Gen3 health errors safely distinguish permission, spreadsheet and MailApp failures",()=>{
+ const vm=require("node:vm");
+ const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
+ const from=server.indexOf("function gen3FailureCategory(err){");
+ const to=server.indexOf("async function checkGen3()",from);
+ assert.ok(from>=0&&to>from);
+ const categorize=vm.runInNewContext("("+server.slice(from,to).trim()+")");
+ assert.equal(categorize(new Error("GEN3_STORAGE_Exception: You do not have permission to call SpreadsheetApp.openById on private-id")),"APPS_SCRIPT_PERMISSION_DENIED");
+ assert.equal(categorize(new Error("GEN3_STORAGE_Exception: Service Spreadsheets failed while accessing document with id private-id")),"APPS_SCRIPT_SPREADSHEET_ACCESS_FAILED");
+ assert.equal(categorize(new Error("GEN3_STORAGE_Exception: MailApp.getRemainingDailyQuota is not authorized")),"APPS_SCRIPT_MAILAPP_ACCESS_FAILED");
+ assert.equal(categorize(new Error("GEN3_STORAGE_Exception: Unexpected internal error")),"APPS_SCRIPT_EXECUTION_ERROR");
+ assert.equal(categorize(new Error("GEN3_STORAGE_UNKNOWN_ACTION")),"APPS_SCRIPT_OUTDATED_ACTION");
+ assert.equal(categorize(new Error("GEN3_STORAGE_UNAUTHORIZED")),"APPS_SCRIPT_AUTH_FAILED");
+});
