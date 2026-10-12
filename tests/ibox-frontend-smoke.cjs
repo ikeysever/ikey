@@ -178,3 +178,11 @@ test("next generation iKey branding uses the lock and key logo", () => {
   assert.match(html, /iKey 自動多場景智慧鎖/);
   assert.doesNotMatch(html, /智慧鑰匙管理系統|智慧校園管理系統/);
 });
+
+test("hamburger sidebar auto-collapses on page selection on both screen sizes", () => {
+  const script = fs.readFileSync(path.join(root, "public/sidebar-pages.js"), "utf8");
+  assert.match(script, /event\.target\.closest\("button\[data-page\]"\)/);
+  assert.match(script, /sidebar-collapsed/);
+  assert.match(script, /sidebar\?\.classList\.contains\("is-open"\)/);
+  assert.match(script, /if \(open\) menuButton\.click\(\)/);
+});
