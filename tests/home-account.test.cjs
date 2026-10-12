@@ -10,7 +10,7 @@ function makePage(fetchImpl) {
   const ids=["ikeyHomeAccount","ikeyHomeAccountProfile","ikeyHomeAccountLegacy",
     "ikeyHomeGreeting","ikeyHomeAccountMessage","ikeyHomeAccountRefresh",
     "ikeyHomeAccountHelp","ikeyHomeUsername","ikeyHomeDisplayName","ikeyHomeEmail",
-    "ikeyHomeStatus","ikeyHomeRole"];
+    "ikeyHomeStatus","ikeyHomeRole","ikeyHomeLegacyUsername","ikeyHomeLegacyRole"];
   const elements=Object.fromEntries(ids.map(id=>[id,{textContent:"",hidden:true,disabled:false,listeners:{},
     addEventListener(type,fn){this.listeners[type]=fn}}]));
   const events={};
@@ -48,14 +48,26 @@ test("Gen3 homepage shows only server-verified profile data",async()=>{
   assert.equal(elements.ikeyHomeAccountRefresh.disabled,false);
 });
 
-test("Legacy administrator never requests or exposes Gen3 account profile",async()=>{
-  const {elements,controller}=makePage(()=>{throw Error("must not fetch Gen3 profile")});
+test("Legacy administrator displays account name and role from its own verified session",async()=>{
+  let calls=0;
+  const {elements,controller}=makePage(async(url,opts)=>{
+    calls++;
+    assert.equal(url,"/api/login/session");
+    assert.equal(opts.credentials,"same-origin");
+    assert.equal(opts.cache,"no-store");
+    return {ok:true,json:async()=>({authenticated:true,account:"ikey",globalRole:"superadmin"})};
+  });
   await controller.load("legacy");
+  assert.equal(calls,1);
   assert.equal(elements.ikeyHomeAccount.hidden,false);
   assert.equal(elements.ikeyHomeAccountProfile.hidden,true);
   assert.equal(elements.ikeyHomeAccountLegacy.hidden,false);
-  assert.equal(elements.ikeyHomeAccountRefresh.hidden,true);
+  assert.equal(elements.ikeyHomeLegacyUsername.textContent,"ikey");
+  assert.equal(elements.ikeyHomeLegacyRole.textContent,"超級管理員");
+  assert.equal(elements.ikeyHomeGreeting.textContent,"歡迎回來，ikey");
+  assert.equal(elements.ikeyHomeAccountRefresh.hidden,false);
   assert.equal(elements.ikeyHomeAccountHelp.hidden,true);
+  assert.equal(elements.ikeyHomeEmail.textContent,"—");
 });
 
 test("Failed profile lookup never exposes a previous user's data",async()=>{
@@ -93,4 +105,24 @@ test("Refresh button reloads the current verified profile",async()=>{
   elements.ikeyHomeAccountRefresh.listeners.click();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(calls,2);
+});
+
+test("Legacy admin session failure never displays guessed account details",async()=>{
+  const {elements,controller}=makePage(async()=>({ok:false,status:401}));
+  await controller.load("legacy");
+  assert.equal(elements.ikeyHomeAccountLegacy.hidden,true);
+  assert.equal(elements.ikeyHomeLegacyUsername.textContent,"—");
+  assert.match(elements.ikeyHomeAccountMessage.textContent,/登入狀態已失效/);
+});
+
+test("Legacy session lookup cannot restore details after logout",async()=>{
+  let finish;
+  const {elements,controller}=makePage(()=>new Promise(resolve=>{finish=resolve}));
+  const loading=controller.load("legacy");
+  controller.clear();
+  finish({ok:true,json:async()=>({authenticated:true,account:"ikey",globalRole:"superadmin"})});
+  await loading;
+  assert.equal(elements.ikeyHomeAccount.hidden,true);
+  assert.equal(elements.ikeyHomeAccountLegacy.hidden,true);
+  assert.equal(elements.ikeyHomeLegacyUsername.textContent,"—");
 });
