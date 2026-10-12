@@ -32,7 +32,11 @@ function rows(name) {
  const headers=HEADERS[name],data=tab.getRange(2,1,n-1,headers.length).getValues();
  return data.map((r,i)=>({index:i+2,value:Object.fromEntries(headers.map((h,j)=>[h,String(r[j]??"")]))}));
 }
-function cellText(value) {\n const s=String(value??"");\n return /^[\\s]*[=+\\-@]/.test(s) ? "\\u0027"+s : s;\n}\nfunction append(name,value) {
+function cellText(value) {
+ const s=String(value??"");
+ return /^\s*[=+\-@]/.test(s) ? "'"+s : s;
+}
+function append(name,value) {
  const tab=sheet(name);
  tab.appendRow(HEADERS[name].map(h=>cellText(value[h])));
 }
