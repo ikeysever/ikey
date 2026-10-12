@@ -285,3 +285,12 @@ test("Gen3 readiness reports safe diagnostic categories without leaking credenti
  assert.match(register,/APPS_SCRIPT_NON_JSON_RESPONSE/);
  assert.doesNotMatch(server,/console\.log\(process\.env\)/);
 });
+
+test("Gen3 error categorization distinguishes stale Apps Script deployment and network failures",()=>{
+ const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
+ assert.match(server,/GEN3_STORAGE_UNKNOWN_ACTION/);
+ assert.match(server,/APPS_SCRIPT_OUTDATED_ACTION/);
+ assert.match(server,/APPS_SCRIPT_FETCH_FAILED/);
+ assert.match(server,/APPS_SCRIPT_DNS_FAILURE/);
+ assert.match(server,/GEN3_STORAGE_\[A-Z0-9_\]/);
+});
