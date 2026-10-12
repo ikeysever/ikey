@@ -580,44 +580,6 @@ button {
 }
 
 
-/* 系統連線狀態 */
-
-.connection-status {
-  display: flex;
-
-  align-items: center;
-
-  gap: 9px;
-
-  padding: 8px 13px;
-
-  border:
-    1px solid rgba(125, 226, 177, 0.2);
-
-  border-radius: 999px;
-
-  background:
-    rgba(125, 226, 177, 0.055);
-
-  color: var(--success);
-
-  font-size: 13px;
-}
-
-.connection-dot {
-  width: 8px;
-
-  height: 8px;
-
-  border-radius: 50%;
-
-  background: var(--success);
-
-  box-shadow:
-    0 0 10px rgba(125, 226, 177, 0.65);
-}
-
-
 /* ========================================
    內容頁
    ======================================== */
