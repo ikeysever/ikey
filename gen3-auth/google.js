@@ -6,6 +6,7 @@ const BASE="https://ikey.onrender.com";
 const REDIRECT=BASE+"/api/auth/google/callback";
 function enabled(){return Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID&&process.env.GOOGLE_OAUTH_CLIENT_SECRET);}
 const random=()=>crypto.randomBytes(32).toString("base64url");
+function cookie(req,name){return String(req.headers.cookie||"").split(";").map(x=>x.trim()).find(x=>x.startsWith(name+"="))?.slice(name.length+1)||"";}
 function secureCookie(res,name,value,maxAge){res.cookie(name,value,{httpOnly:true,secure:true,sameSite:"lax",path:"/api/auth/google",maxAge});}
 function clear(res){for(const n of ["ikey_gstate","ikey_gnonce","ikey_gmode"])res.clearCookie(n,{httpOnly:true,secure:true,sameSite:"lax",path:"/api/auth/google"});}
 function begin(req,res,mode="login"){
@@ -17,7 +18,7 @@ function begin(req,res,mode="login"){
 }
 async function callback(req,res,store){
  const state=req.query.state,code=req.query.code;
- const expected=req.cookies?.ikey_gstate,nonce=req.cookies?.ikey_gnonce,mode=req.cookies?.ikey_gmode;
+ const expected=cookie(req,"ikey_gstate"),nonce=cookie(req,"ikey_gnonce"),mode=cookie(req,"ikey_gmode");
  clear(res);
  if(!enabled()||typeof state!=="string"||!expected||state.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(state),Buffer.from(expected))||!nonce||!["login","link"].includes(mode)||typeof code!=="string")return res.status(403).send("Google 驗證已失效，請重新登入");
  try{
@@ -30,7 +31,7 @@ async function callback(req,res,store){
   if(!["accounts.google.com","https://accounts.google.com"].includes(profile.iss)||profile.aud!==process.env.GOOGLE_OAUTH_CLIENT_ID||profile.nonce!==nonce||profile.email_verified!== "true"||Date.now()>=Number(profile.exp)*1000||!profile.sub||!profile.email)throw Error("GOOGLE_IDENTITY_INVALID");
   let user=await store.findByGoogleSub(profile.sub);
   if(mode==="link"){
-   const raw=req.cookies?.[COOKIE];
+   const raw=cookie(req,COOKIE);
    if(!raw)return res.status(401).send("請先登入 iKey 帳號再進行 Google 綁定");
    const session=await store.findSessionByHash(hashToken(raw));
    if(!session||session.revoked_at||Date.parse(session.expires_at)<=Date.now())return res.status(401).send("登入已失效");
