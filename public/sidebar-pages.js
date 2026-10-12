@@ -43,12 +43,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const description = document.getElementById("pageDescription");
     if (title && heading) title.textContent = heading.textContent;
     if (description) description.textContent = "iKey · 介面規劃階段";
-    // On phones, close the drawer after navigation; on desktop preserve
-    // the user's chosen expanded/collapsed sidebar state.
-    if (window.matchMedia("(max-width: 700px)").matches &&
-        sidebar?.classList.contains("is-open") && menuButton) {
-      menuButton.click();
-    }
+
+  });
+  // Close the whole hamburger sidebar after choosing any page, on both
+  // narrow and wide screens. Group-heading toggles are not page navigation.
+  nav.addEventListener("click", event => {
+    const item = event.target.closest("button[data-page]");
+    if (!item || !nav.contains(item) || item.closest("[hidden]") || !menuButton) return;
+    const narrow = window.matchMedia("(max-width: 700px)").matches;
+    const open = narrow
+      ? sidebar?.classList.contains("is-open")
+      : !sidebar?.closest(".app-layout")?.classList.contains("sidebar-collapsed");
+    if (open) menuButton.click();
   });
   // Existing page controller handles other navigation. Placeholders are hidden
   // whenever a different page is selected by the existing controller.
