@@ -24,6 +24,7 @@ function createSheetsStore() {
    findByGoogleSub:async sub=>call("findByGoogleSub",{sub}),
    linkGoogleAtomic:async(user_id,sub)=>call("linkGoogleAtomic",{user_id,sub}),
    createToken:async token=>call("createToken",{token}),
+   throttleAtomic:async(key,limit,window_ms)=>call("throttleAtomic",{key,limit,window_ms}),
    consumeTokenAtomic:async(token_hash,purpose,password_hash)=>call("consumeTokenAtomic",{token_hash,purpose,password_hash}),
    findByEmail:async email=>call("findByEmail",{email}),
    findByLogin:async identifier=>call("findByLogin",{identifier}),
