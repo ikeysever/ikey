@@ -225,9 +225,26 @@ function inspectGen3Setup() {
   const quota=MailApp.getRemainingDailyQuota();
   report.mailAuthorized=true;
   report.mailQuotaAvailable=Number.isFinite(quota)&&quota>0;
- }catch(_){report.mailAuthorized=false}
+ }catch(err){
+  // Do not log raw Apps Script errors; they may contain account or file details.
+  const message=String(err&&err.message||"");
+  report.mailError=/permission|authorization|authorized|scope|consent/i.test(message)
+   ?"MAILAPP_PERMISSION_REQUIRED":"MAILAPP_CHECK_FAILED";
+  report.mailAuthorized=false;
+ }
  report.ready=report.spreadsheetIdConfigured&&report.apiKeyConfigured&&
   Object.values(report.sheets).every(v=>v==="ok")&&report.mailAuthorized&&report.mailQuotaAvailable;
  Logger.log(JSON.stringify(report));
  return report;
+}
+
+// Run this from the editor to request MailApp authorization or show the exact
+// Apps Script execution error. Read-only: does NOT send any email.
+function authorizeGen3MailApp() {
+ const quota=MailApp.getRemainingDailyQuota();
+ Logger.log(JSON.stringify({
+  mailAuthorized:true,
+  mailQuotaAvailable:Number.isFinite(quota)&&quota>0
+ }));
+ return quota>0;
 }

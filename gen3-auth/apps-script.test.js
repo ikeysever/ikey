@@ -94,3 +94,20 @@ test("read-only setup inspection checks Apps Script properties, schema and MailA
  assert.equal(messages[0].includes(secret),false);
  assert.equal(messages[0].includes("sheet-test-id"),false);
 });
+
+test("MailApp explicit authorization check is read-only and exposes the real exception",()=>{
+ const messages=[];
+ const ctx=vm.createContext({
+  Logger:{log:s=>messages.push(s)},
+  MailApp:{getRemainingDailyQuota:()=>12,sendEmail:()=>{throw Error("must never send mail")}}
+ });
+ new vm.Script(source).runInContext(ctx);
+ assert.equal(ctx.authorizeGen3MailApp(),true);
+ assert.deepEqual(messages,[JSON.stringify({mailAuthorized:true,mailQuotaAvailable:true})]);
+ const denied=vm.createContext({
+  Logger:{log:()=>{throw Error("should not log on failure")}},
+  MailApp:{getRemainingDailyQuota:()=>{throw Error("Authorization is required to perform that action")}}
+ });
+ new vm.Script(source).runInContext(denied);
+ assert.throws(()=>denied.authorizeGen3MailApp(),/Authorization is required/);
+});

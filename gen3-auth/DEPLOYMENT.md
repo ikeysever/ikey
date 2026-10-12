@@ -97,3 +97,13 @@ The status endpoint returns `enabled`, `mail`, `google` and a safe `reason` cate
 In the dedicated Apps Script editor, run the read-only `inspectGen3Setup` function. It returns only property presence, sheet header checks, MailApp authorization and quota availability, and a `ready` boolean; it does not create, update or delete any spreadsheet rows.
 
 Google sign-in is separately enabled by the Google Cloud OAuth consent configuration, an OAuth **Web application** client, and the two Render variables `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`. Its authorized redirect URI is `https://ikey.onrender.com/api/auth/google/callback`. Do not silently merge existing email accounts with Google accounts.
+
+## MailApp authorization when `inspectGen3Setup` returns `mailAuthorized:false`
+
+1. Open the **dedicated** Gen3 Apps Script project and replace `Code.gs` with the current source from this repository; save.
+2. Select `authorizeGen3MailApp` in the editor function dropdown and click **Run**. This only reads the remaining daily MailApp quota; it **does not send an email**.
+3. If Google displays an authorization dialog, grant the requested access with the script owner account. If the run fails, inspect the editor's **Execution log** for the exact Google error (do not share account identifiers, script URLs, keys or tokens).
+4. If `appsscript.json` contains an explicit `oauthScopes` list, it must include `https://www.googleapis.com/auth/script.send_mail` and the spreadsheet scope needed by `SpreadsheetApp.openById`. If no explicit `oauthScopes` is present, Apps Script normally infers scopes from the code; do not create a manifest unnecessarily.
+5. Run `inspectGen3Setup` again. It should show `mailAuthorized:true` and `mailQuotaAvailable:true`. Save and deploy a **new version** of the existing Web App deployment (not a new URL) if source code was updated. Then refresh `/api/auth/status`.
+
+`MAILAPP_PERMISSION_REQUIRED` means the editor caught an authorization or scope-related error. `MAILAPP_CHECK_FAILED` means a different MailApp error. Both are safe classifications, not the original exception message.
