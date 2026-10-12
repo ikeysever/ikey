@@ -14,12 +14,12 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 </style></head><body>
 <main><p><a href="./login.html">← 返回登入頁</a></p><h1>建立 iKey 帳號</h1><p class="muted">自動多場景智慧鎖 · 第三代</p>
 <form id="register">
-<label for="display_name">顯示名稱</label><input id="display_name" name="display_name" maxlength="80" required autocomplete="nickname">
+<label for="username">帳號（英文字母開頭，4–24 字元）</label><input id="username" name="username" pattern="[a-z][a-z0-9_]{3,23}" minlength="4" maxlength="24" required autocomplete="username" placeholder="例如 ikey_user"><label for="display_name">顯示名稱</label><input id="display_name" name="display_name" maxlength="80" required autocomplete="nickname">
 <label for="email">電子郵件</label><input id="email" name="email" type="email" maxlength="254" required autocomplete="email">
 <label for="password">密碼（至少 8 字元）</label><input id="password" name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <label for="confirm">確認密碼</label><input id="confirm" name="confirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <button id="submit" type="submit">建立帳號</button></form>
-<button class="secondary" type="button" disabled title="待 Google OAuth 設定完成">使用 Google 繼續（準備中）</button>
+<a class="secondary" style="display:block;text-align:center;padding:13px;text-decoration:none;border-radius:10px" href="/api/auth/google/start">使用 Google 繼續</a>
 <p id="message" role="status" aria-live="polite"></p></main>
 <script>
 const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
@@ -28,9 +28,9 @@ e.preventDefault();msg.textContent='';
 const password=form.elements.namedItem('password').value;
 if(password!==form.elements.namedItem('confirm').value){msg.textContent='兩次密碼不一致';return}
 btn.disabled=true;
-try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:form.elements.namedItem('display_name').value,email:form.elements.namedItem('email').value,password})});
+try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.elements.namedItem('username').value,display_name:form.elements.namedItem('display_name').value,email:form.elements.namedItem('email').value,password})});
 const body=await res.json();if(!res.ok){msg.textContent=body.message||'目前無法建立帳號';return}
-msg.textContent='註冊成功，請使用帳號登入。';form.reset();}
+msg.textContent='註冊資料已建立，請至信箱收取驗證連結，驗證後即可登入。';form.reset();}
 catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
 });
 </script></body></html>
