@@ -1,11 +1,20 @@
-# Welcome integration — 2026-10-07
+# iKey Welcome 整合與第三版裝置監測調整（2026-10-12）
 
-Uses the approved iKey-Welcome-Latest-Handoff.zip Canvas renderer and raster assets, without redesigning the sequence. The renderer keeps the final 1920×1080 geometry, slow fingerprint flash, eight compartments, wordmark letter animation, final text and cubic easing. Original font subsets and OFL license are included. The background uses the shared iKey radial gradient.
+歡迎動畫延用核准的 iKey 掛鎖 Canvas 視覺、字體、音效與 9.8 秒時序。登入身分仍由各自的後端 Session 驗證；動畫本身不負責認證。
 
-After POST /api/login succeeds, loginPage is hidden. The animation runs while the existing /api/device/status request prepares dashboard data. At 8.3 seconds it holds until that request succeeds, including when all devices are legitimately offline. Only then does the white check draw, and the final chord and fade run one second later. homePage appears after the fade; regular device polling then continues. Failed data loading offers retry, with no successful ending. Status requests time out after 15 seconds.
+## 第三版登入流程
 
-The current dashboard only fetches device status. If future dashboard modules need other data, add their promises to the prepareHome callback in animation.js; do not use a timer as proof of readiness. Other navigation transitions are unchanged.
+1. 一般帳號使用 `/api/auth/me` 驗證 Session；舊管理員帳號使用 `/api/login/session`。
+2. 驗證成功後播放 `public/welcome-padlock.js`。動畫以自身時間軸結束，**不查詢任何裝置狀態 API，也不等待 ESP32 心跳**。
+3. 動畫完成後顯示首頁，並透過登入 Session 取得「我的帳號」資料。若音效遭瀏覽器政策阻擋，視覺動畫仍可完成。
+4. 登出後清除個人資料並回登入頁。
 
-intro.mp3 and final-chord.mp3 are split from the latest boosted preview at 9.3 seconds, the original fade/chord boundary. They preserve that preview's limited gain. Web Audio is unlocked from the login submit gesture; if browser policy blocks audio or audio download fails, visual playback continues silently. Image assets preload during credential entry. Missing required images offer retry.
+## 已移除的舊版依賴
 
-Validation: node --check public/welcome.js; node --check public/animation.js; node tests/welcome-state.cjs. The state test checks delayed readiness, failure, retry, repeat playback and cleanup. Browser visual/audio QA was unavailable because Chromium download was blocked in the execution environment. Before merging, verify a normal login, a slow/failing /api/device/status request, retry, audio on desktop/mobile, and portrait scaling. No backend or API contract changes.
+- `/api/device/heartbeat`、`/api/device/status`、`/api/login/admin/connections` 及固定兩台裝置的全域狀態追蹤。
+- 原本動畫等待裝置 API 成功、15 秒載入逾時與重試的邏輯。
+- 登入後的裝置狀態輪詢、全域連線指示燈與 ESP Robot／LVGL Terminal 斷線提示。
+
+**後續待辦**：新監測功能將由「專案中心 → 我的專案」管理。每個專案可能有多台裝置，必須先確認專案、裝置、成員權限與資料來源之間的關係，再定義新的心跳／狀態 API；不可直接沿用固定 `esp-robot`、`lvgl-terminal` 的全域模式。
+
+這次保留登入、歡迎動畫本身、LINE、Google Sheets、借還及其他獨立功能，不代表已完成新的多專案裝置監測。
