@@ -190,7 +190,8 @@ test("refresh restores only server-verified login session and does not save pass
   assert.match(app, /fetch\("\/api\/login\/session"/);
   assert.match(app, /credentials: "same-origin"/);
   assert.match(app, /cache: "no-store"/);
-  assert.match(app, /if \(!session\.authenticated \|\| loginAttempted\) return/);
+  assert.match(app, /if\(!authenticated\|\|loginAttempted\)continue/);
+  assert.match(app, /fetch\("\/api\/auth\/me"/);
   assert.match(app, /restoreLoginSession\(\)/);
   assert.doesNotMatch(app, /localStorage\.setItem\([^\n]*password/);
 });
@@ -208,7 +209,8 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
   const statusScript=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
   assert.match(html, /href="\/gen3\/forgot-password\.html"/);
   assert.match(html, /href="\/gen3\/register\.html"/);
-  assert.match(html, /href="\/gen3\/login\.html"/);
+  assert.match(html, /id="gen3LoginForm"/);
+  assert.match(html, /href="\/\?legacy=1"/);
   assert.match(server, /gen3Store\.health\(\)/);
   assert.match(html, /id="googleLoginLink" href="\/api\/auth\/google\/start"/);
   assert.match(html, /gen3-entry\.js/);
@@ -222,4 +224,24 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
   for(const page of ["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html","account.html"]){
     assert.ok(fs.existsSync(path.join(root,"gen3-auth",page)),page);
   }
+});
+
+test("Gen3 primary login uses server verified sessions, existing welcome, and main homepage",()=>{
+  const entry=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
+  const oauth=fs.readFileSync(path.join(root,"gen3-auth/google.js"),"utf8");
+  const gen3Login=fs.readFileSync(path.join(root,"gen3-auth/login.html"),"utf8");
+  assert.match(html,/id="gen3LoginPanel"/);
+  assert.match(html,/id="legacyLoginPanel"[^>]*hidden/);
+  assert.match(html,/id="loginForm"/);
+  assert.match(entry,/fetch\("\/api\/auth\/login"/);
+  assert.match(entry,/window\.iKeyGen3Enter\(\)/);
+  assert.match(app,/window\.iKeyGen3Enter=async/);
+  assert.match(app,/verifiedGen3\(\)/);
+  assert.match(app,/showAuthenticatedHome\("gen3",true\)/);
+  assert.match(app,/showDashboard\(\)/);
+  assert.match(app,/iKeyPadlockWelcome\.create/);
+  assert.match(app,/activeLoginKind==="gen3"\?"\/api\/auth\/logout":"\/api\/login\/logout"/);
+  assert.match(oauth,/res\.redirect\("\/\\?welcome=1"\)/);
+  assert.match(gen3Login,/location\.assign\("\/\\?welcome=1"\)/);
+  assert.doesNotMatch(entry,/fetch\("\/api\/login"/);
 });
