@@ -24,78 +24,29 @@
        登入頁
        ======================================== -->
 
-  <main
-    id="loginPage"
-    class="page"
-  >
-
-    <section class="login-box">
-
+  <main id="loginPage" class="page">
+    <section class="login-box" aria-labelledby="loginHeading">
       <div class="logo-area">
-
-        <img
-          src="./assets/brand/ikey-nextgen.svg"
-          alt="iKey"
-          class="logo"
-        >
-
+        <img src="./assets/brand/ikey-nextgen.svg" alt="iKey" class="logo">
       </div>
-
-      <h1>
-        iKey 自動多場景智慧鎖
-      </h1>
-
-      <p>
-        智慧鎖與專案管理平台
-      </p>
-
-
+      <h1 id="loginHeading">歡迎回到 iKey</h1>
+      <p>自動多場景智慧鎖</p>
       <form id="loginForm">
-
         <div class="form-group">
-
-          <label for="account">
-            帳號
-          </label>
-
-          <input
-            id="account"
-            name="account"
-            type="text"
-            autocomplete="username"
-            required
-          >
-
+          <label for="account">帳號或電子郵件</label>
+          <input id="account" name="account" type="text" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
         </div>
-
-
         <div class="form-group">
-
-          <label for="password">
-            密碼
-          </label>
-
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-          >
-
+          <label for="password">密碼</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="請輸入密碼" required>
         </div>
-
-
-        <button type="submit">
-          登入系統
-        </button>
-
-        <p id="loginMessage"></p>
-
+        <div class="login-help"><span>忘記密碼？（準備中）</span></div>
+        <button type="submit">登入系統</button>
+        <p id="loginMessage" role="status" aria-live="polite"></p>
       </form>
-
+      <button class="login-google" type="button" disabled title="Google 登入尚未啟用">使用 Google 登入（準備中）</button>
+      <p class="login-register-note">還沒有帳號？<span>建立帳號（準備中）</span></p>
     </section>
-
   </main>
 
 
