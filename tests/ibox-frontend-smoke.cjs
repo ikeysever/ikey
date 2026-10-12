@@ -241,7 +241,7 @@ test("Gen3 primary login uses server verified sessions, existing welcome, and ma
   assert.match(app,/showDashboard\(\)/);
   assert.match(app,/iKeyPadlockWelcome\.create/);
   assert.match(app,/activeLoginKind==="gen3"\?"\/api\/auth\/logout":"\/api\/login\/logout"/);
-  assert.match(oauth,/res\.redirect\("\/\\?welcome=1"\)/);
-  assert.match(gen3Login,/location\.assign\("\/\\?welcome=1"\)/);
+  assert.match(oauth,/res\.redirect\("\/\?welcome=1"\)/);
+  assert.match(gen3Login,/location\.assign\("\/\?welcome=1"\)/);
   assert.doesNotMatch(entry,/fetch\("\/api\/login"/);
 });
