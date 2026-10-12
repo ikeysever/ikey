@@ -1,59 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
-<title>iKey｜我的帳號</title>
-<style>
-:root{color-scheme:dark;font-family:system-ui,"Noto Sans TC",sans-serif}*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);color:#f4f7fb}
-main{width:min(480px,calc(100% - 32px));padding:32px;border:1px solid #334155;border-radius:20px;background:rgba(20,31,52,.86);box-shadow:0 20px 80px #0006}
-.logo{display:block;width:82px;height:82px;margin:0 auto 16px}h1{text-align:center;margin:0 0 10px;font-size:27px}
-.muted{color:#a9b7cb;line-height:1.7}.data{padding:16px;border:1px solid #40516a;border-radius:12px;margin:18px 0}
-dl{margin:0}dt{color:#a9b7cb;font-size:13px;margin-top:14px}dt:first-child{margin-top:0}dd{margin:4px 0 0;overflow-wrap:anywhere}
-.action,button{display:block;width:100%;padding:13px;margin-top:12px;border:1px solid #506078;border-radius:10px;background:rgba(255,255,255,.04);color:#d9e5f6;font:inherit;font-weight:700;text-align:center;text-decoration:none;cursor:pointer}
-.primary{background:#68a9ff;color:#071222;border-color:#68a9ff}[hidden]{display:none!important}#message{min-height:20px;color:#ffdbad}
-</style></head><body><main>
-<img class="logo" src="/assets/brand/ikey-nextgen.svg" alt="iKey">
-<h1>我的 iKey 帳號</h1><p class="muted" style="text-align:center">帳號安全中心</p>
-<p id="message" role="status" aria-live="polite">正在確認登入狀態…</p>
-<section id="profile" hidden><div class="data"><dl>
-<dt>顯示名稱</dt><dd id="name"></dd>
-<dt>帳號</dt><dd id="username"></dd>
-<dt>電子郵件</dt><dd id="email"></dd>
-</dl></div>
-<button id="logout" class="primary" type="button">登出帳號</button>
-</section>
-<a id="login" class="action" href="/" hidden>前往登入頁</a>
-<a class="action" href="/">返回 iKey 網站</a>
-<p class="muted" style="font-size:12px">一般帳號與管理員權限分開；登入成功不會自動取得管理員權限。</p>
-</main><script>
-"use strict";
-const $=id=>document.getElementById(id);
-async function load(){
- try{
-  const response=await fetch("/api/auth/me",{credentials:"same-origin",cache:"no-store"});
-  if(!response.ok)throw Error("NOT_AUTHENTICATED");
-  const data=await response.json();
-  if(!data.authenticated||!data.user)throw Error("NOT_AUTHENTICATED");
-  $("name").textContent=data.user.display_name||"未設定";
-  $("username").textContent=data.user.username||"未設定";
-  $("email").textContent=data.user.email||"";
-  $("profile").hidden=false;
-  $("message").textContent="登入成功";
- }catch{
-  $("message").textContent="目前尚未登入，請先登入。";
-  $("login").hidden=false;
- }
-}
-$("logout").addEventListener("click",async()=>{
- $("logout").disabled=true;
- try{
-  const response=await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin"});
-  if(!response.ok)throw Error("LOGOUT_FAILED");
-  location.replace("/");
- }catch{
-  $("message").textContent="登出失敗，請稍後再試。";
-  $("logout").disabled=false;
- }
-});
-load();
-</script></body></html>
+<title>iKey｜帳號管理已整合至首頁</title>
+<meta http-equiv="refresh" content="0;url=/">
+</head><body><p>帳號管理已整合至 iKey 首頁。<a href="/">返回 iKey 首頁</a></p>
+<script>location.replace("/");</script></body></html>
