@@ -70,6 +70,17 @@ function createRouter(store) {
       return res.status(503).json({success:false,message:"暫時無法註冊，請稍後再試"});
     }
   });
+  router.post("/resend-verification",async(req,res)=>{
+    const generic={success:true,message:"若帳號尚未驗證，將收到新的驗證郵件"};
+    try{
+      if(!mailReady())return res.status(503).json({success:false,message:"郵件服務尚未設定"});
+      if(!(await store.throttleAtomic(rateKey("resend",req.ip),3,15*60000)))return res.status(429).json({success:false,message:"請稍後再試"});
+      let email;try{email=normalizeEmail(req.body?.email)}catch{return res.json(generic)}
+      const user=await store.findByEmail(email);
+      if(user?.account_status==="pending_verification")await sendToken(store,user,"verify_email");
+      return res.json(generic);
+    }catch{return res.status(503).json({success:false,message:"目前無法寄送驗證郵件"})}
+  });
   router.post("/forgot-password",async(req,res)=>{
     const generic={success:true,message:"如果此信箱已註冊，將收到密碼重設郵件"};
     try{
