@@ -457,7 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pageDescription) {
 
       pageDescription.textContent =
-        "iKey 智慧鑰匙管理系統";
+        "iKey 自動多場景智慧鎖";
 
     }
 
@@ -3373,6 +3373,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  // Restore only a server-verified session after refresh. Never store credentials.
+  // A failed/expired session stays on the login screen.
+  let loginAttempted = false;
+  async function restoreLoginSession() {
+    try {
+      const response = await fetch("/api/login/session", {
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+      if (!response.ok) return;
+      const session = await response.json();
+      if (!session.authenticated || loginAttempted) return;
+      if (loginPage) loginPage.hidden = true;
+      if (homePage) homePage.hidden = false;
+      showDashboard();
+      startDevicePolling();
+    } catch (_) {
+      // Offline or unreachable backend: keep the login screen.
+    }
+  }
+  restoreLoginSession();
+
   // =========================================
   // 登入
   // =========================================
@@ -3384,6 +3406,7 @@ document.addEventListener("DOMContentLoaded", () => {
       async (event) => {
 
         event.preventDefault();
+        loginAttempted = true;
         // Audio playback is best-effort; visual welcome works without audio.
 
 
@@ -3537,6 +3560,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutButton.addEventListener(
       "click",
       () => {
+        loginAttempted = true;
         fetch("/api/login/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
 
         if (homePage) {
