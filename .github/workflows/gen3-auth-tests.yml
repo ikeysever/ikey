@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '22'
       - name: Run authentication unit tests
-        run: node --test gen3-auth/core.test.js
+        run: node --test gen3-auth/core.test.js gen3-auth/apps-script.test.js
       - name: Check server-side source syntax
         run: |
           node --check gen3-auth/core.js
