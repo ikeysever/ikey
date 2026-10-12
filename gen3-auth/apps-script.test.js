@@ -66,3 +66,31 @@ test("MailApp health and token-bound delivery reject spoofing, replay, and expir
  assert.throws(()=>ctx.execute("sendMail",{to:user.email,subject,body}),/INVALID_MAIL_TOKEN/);
  assert.equal(sent.length,1);
 });
+
+test("read-only setup inspection checks Apps Script properties, schema and MailApp without exposing secrets",()=>{
+ const headers={
+  Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at","username"],
+  Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
+  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
+  Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
+ };
+ const secret="secret_only_for_test_at_least_32_chars";
+ const messages=[];
+ const ctx=vm.createContext({
+  Logger:{log:s=>messages.push(s)},
+  PropertiesService:{getScriptProperties:()=>({getProperty:name=>name==="GEN3_SPREADSHEET_ID"?"sheet-test-id":secret})},
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>({
+   getRange:()=>({getValues:()=>[headers[name]]})
+  })})},
+  MailApp:{getRemainingDailyQuota:()=>15}
+ });
+ new vm.Script(source).runInContext(ctx);
+ const report=ctx.inspectGen3Setup();
+ assert.equal(report.ready,true);
+ assert.equal(report.mailAuthorized,true);
+ assert.equal(report.mailQuotaAvailable,true);
+ assert.deepEqual(Object.keys(report.sheets).sort(),Object.keys(headers).sort());
+ assert.equal(messages.length,1);
+ assert.equal(messages[0].includes(secret),false);
+ assert.equal(messages[0].includes("sheet-test-id"),false);
+});
