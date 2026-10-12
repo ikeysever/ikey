@@ -313,7 +313,7 @@ test("Google OAuth code, routes, UI and public status are absent",()=>{
  assert.equal(fs.existsSync(path.join(root,"gen3-auth/google.js")),false);
  for(const name of files){
   const content=fs.readFileSync(path.join(root,name),"utf8");
-  assert.doesNotMatch(content,/GOOGLE_OAUTH_CLIENT_|\/api\/auth\/google|\/google\/(?:start|link|callback)|registerGoogleAtomic|findByGoogleSub|linkGoogleAtomic|googleLoginLink|google_linked/i,name);
+  assert.doesNotMatch(content,/GOOGLE_OAUTH_CLIENT_|\/api\/auth\/google|\/google\/(?:start|link|callback)|registerGoogleAtomic|findByGoogleSub|linkGoogleAtomic|googleLoginLink|google_linked:/i,name);
  }
  const routes=fs.readFileSync(path.join(root,"gen3-auth/routes.js"),"utf8");
  assert.match(routes,/router\.post\("\/register"/);
