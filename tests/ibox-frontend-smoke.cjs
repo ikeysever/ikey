@@ -264,7 +264,11 @@ test("primary login matches the approved standalone design and recovery returns 
     if(page!=="login.html")assert.match(content,/href="\/"/,page);
   }
   const recovery=fs.readFileSync(path.join(root,"gen3-auth/forgot-password.html"),"utf8");
-  assert.match(recovery,/href="\/">← 返回登入頁/);
+  assert.match(recovery,/href="\\/">← 返回登入頁/);
+  assert.match(recovery,/ikeydaangaogong@gmail\\.com/);
+  assert.match(recovery,/href="mailto:ikeydaangaogong@gmail\\.com\\?subject=/);
+  assert.match(recovery,/如需重設密碼，請聯繫 iKey 管理團隊/);
+  assert.doesNotMatch(recovery,/<form|寄送重設連結|\\/api\\/auth\\/forgot-password/);
 });
 
 test("Gen3 readiness reports safe diagnostic categories without leaking credentials",()=>{
