@@ -2537,7 +2537,7 @@ function createSystemStatusFlex(databaseHealth) {
         ? "#7de2b1"
         : "#ff7b7b"
     ),
-{
+    {
       type: "separator",
       margin: "lg",
       color: "#31445f"
