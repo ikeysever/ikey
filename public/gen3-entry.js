@@ -19,16 +19,16 @@ document.addEventListener("DOMContentLoaded",()=>{
       ready=data.enabled===true;
       googleReady=ready&&data.google===true;
       status.textContent=!ready
-        ?"第三代帳號後端尚未完成連線驗證。管理員可使用下方專用入口登入。"
+        ?"帳號服務尚未完成後端連線驗證，暫時無法登入。管理員可使用專用入口。"
         :!data.mail
-          ?"帳號登入已可使用；註冊與重設密碼仍待 MailApp 寄信授權。"
+          ?"帳號登入已可使用；註冊與重設密碼仍待寄信授權。"
           :!googleReady
-            ?"第三代帳號登入、註冊與密碼重設已開放；Google 登入尚待設定。"
-            :"第三代帳號系統已開放。";
+            ?"Google 登入尚待設定。"
+            :"";
       submit.disabled=!ready;
     }catch{
       ready=false;
-      status.textContent="目前無法確認第三代帳號服務狀態，請稍後再試。";
+      status.textContent="目前無法確認帳號服務狀態，請稍後再試。";
     }
     if(!googleReady){
       google.setAttribute("aria-disabled","true");
