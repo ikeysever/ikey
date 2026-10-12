@@ -1,6 +1,5 @@
 const express = require("express");
 const crypto = require("crypto");
-const deviceRoutes = require("./device");
 
 const router = express.Router();
 
@@ -2509,30 +2508,7 @@ function createSlotStatusFlex(
 }
 
 
-function createSystemStatusFlex(
-  devices,
-  databaseHealth
-) {
-
-  const esp =
-    devices[
-      "esp-robot"
-    ] ||
-    {
-      online: false,
-      lastSeen: null
-    };
-
-
-  const terminal =
-    devices[
-      "lvgl-terminal"
-    ] ||
-    {
-      online: false,
-      lastSeen: null
-    };
-
+function createSystemStatusFlex(databaseHealth) {
 
   const contents = [
     {
@@ -2553,41 +2529,6 @@ function createSystemStatusFlex(
       margin: "md"
     },
     createStatusLine(
-      "ESP32 控制器",
-      esp.online
-        ? "正常"
-        : "斷線",
-      esp.online
-        ? "#7de2b1"
-        : "#ffb86b"
-    ),
-    createStatusLine(
-      "上次連線",
-      formatTaipeiDateTime(
-        esp.lastSeen
-      )
-    ),
-    createStatusLine(
-      "螢幕控制器",
-      terminal.online
-        ? "正常"
-        : "斷線",
-      terminal.online
-        ? "#7de2b1"
-        : "#ffb86b"
-    ),
-    createStatusLine(
-      "上次連線",
-      formatTaipeiDateTime(
-        terminal.lastSeen
-      )
-    ),
-    createStatusLine(
-      "UptimeRobot",
-      "尚未提供",
-      "#a6b2c5"
-    ),
-    createStatusLine(
       "資料庫",
       databaseHealth.online
         ? "連線正常"
@@ -2595,11 +2536,6 @@ function createSystemStatusFlex(
       databaseHealth.online
         ? "#7de2b1"
         : "#ff7b7b"
-    ),
-    createStatusLine(
-      "DB 上次更新",
-      "尚未提供",
-      "#a6b2c5"
     ),
     {
       type: "separator",
@@ -2669,23 +2605,8 @@ async function createSlotStatusForLine() {
 
 
 async function createSystemStatusForLine() {
-
-  const devices =
-    typeof deviceRoutes.getStatusSnapshot ===
-      "function"
-      ? deviceRoutes.getStatusSnapshot()
-      : {};
-
-
-  const databaseHealth =
-    await databaseHealthCheck();
-
-
-  return createSystemStatusFlex(
-    devices,
-    databaseHealth
-  );
-
+  const databaseHealth = await databaseHealthCheck();
+  return createSystemStatusFlex(databaseHealth);
 }
 
 

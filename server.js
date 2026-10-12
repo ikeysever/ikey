@@ -4,7 +4,6 @@ const path = require("path");
 const loginRoutes = require("./routes/login");
 const adminAuthRoutes = require("./lib/ibox/admin-auth-routes");
 const healthRoutes = require("./routes/health");
-const deviceRoutes = require("./routes/device");
 const databaseRoutes = require("./routes/database");
 const lineRoutes = require("./routes/line");
 
@@ -44,11 +43,6 @@ app.use(
 app.use(
   "/api/health",
   healthRoutes
-);
-
-app.use(
-  "/api/device",
-  deviceRoutes
 );
 
 app.use(

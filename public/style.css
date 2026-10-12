@@ -580,44 +580,6 @@ button {
 }
 
 
-/* 系統連線狀態 */
-
-.connection-status {
-  display: flex;
-
-  align-items: center;
-
-  gap: 9px;
-
-  padding: 8px 13px;
-
-  border:
-    1px solid rgba(125, 226, 177, 0.2);
-
-  border-radius: 999px;
-
-  background:
-    rgba(125, 226, 177, 0.055);
-
-  color: var(--success);
-
-  font-size: 13px;
-}
-
-.connection-dot {
-  width: 8px;
-
-  height: 8px;
-
-  border-radius: 50%;
-
-  background: var(--success);
-
-  box-shadow:
-    0 0 10px rgba(125, 226, 177, 0.65);
-}
-
-
 /* ========================================
    內容頁
    ======================================== */
@@ -1305,12 +1267,7 @@ button {
   .main-header h1 {
     font-size: 23px;
   }
-
-  .connection-status {
-    display: none;
-  }
-
-  .content-page {
+.content-page {
     padding: 20px;
   }
 
@@ -2715,7 +2672,6 @@ button {
 .ikey-welcome-status{position:absolute;right:18px;top:12px;font-size:13px;color:#dce6f1;z-index:1}
 .ikey-welcome-status:not(.done):before{content:"";display:inline-block;width:10px;height:10px;border:1px solid currentColor;border-top-color:transparent;border-radius:50%;margin-right:8px;animation:ikey-welcome-spin 1s linear infinite}
 .ikey-welcome-status.done:before{content:"✓";color:#7de2b1;margin-right:8px}
-.ikey-welcome-retry{position:absolute;top:52%;left:50%;transform:translate(-50%,-50%);background:#142034;color:#f8fafc;border:1px solid #67e8f9;border-radius:8px;padding:12px 24px;cursor:pointer;z-index:2}
 @keyframes ikey-welcome-spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){.ikey-welcome-stage{height:85vh;min-height:420px}.ikey-welcome-status{font-size:11px;right:8px}}
 @media(prefers-reduced-motion:reduce){.ikey-welcome-status:before{animation:none}}

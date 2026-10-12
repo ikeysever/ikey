@@ -42,6 +42,10 @@ jobs:
           for i in {1..30}; do
             if curl --silent --show-error --fail http://127.0.0.1:3100/api/health > /tmp/ikey-ci-health.json 2>/dev/null; then
               cat /tmp/ikey-ci-health.json
+              # Retired global two-device endpoints must not be reachable.
+              test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/api/device/status)" = "404"
+              test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"deviceId":"esp-robot"}' http://127.0.0.1:3100/api/device/heartbeat)" = "404"
+              test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/api/login/admin/connections)" = "404"
               exit 0
             fi
             if ! kill -0 "$server_pid" 2>/dev/null; then
