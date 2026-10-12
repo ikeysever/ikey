@@ -1,6 +1,13 @@
 name: Gen3 Auth Read-only Connectivity Test
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/gen3-auth-registration
+    paths:
+      - '.github/workflows/gen3-auth-smoke.yml'
+      - 'gen3-auth/smoke.js'
+      - 'gen3-auth/sheets-store.js'
 
 permissions:
   contents: read
