@@ -19,9 +19,7 @@ dl{margin:0}dt{color:#a9b7cb;font-size:13px;margin-top:14px}dt:first-child{margi
 <dt>顯示名稱</dt><dd id="name"></dd>
 <dt>帳號</dt><dd id="username"></dd>
 <dt>電子郵件</dt><dd id="email"></dd>
-<dt>Google 綁定</dt><dd id="linked"></dd>
 </dl></div>
-<a id="linkGoogle" class="action" href="/api/auth/google/link" hidden>綁定 Google 帳號</a>
 <button id="logout" class="primary" type="button">登出帳號</button>
 </section>
 <a id="login" class="action" href="/" hidden>前往登入頁</a>
@@ -37,13 +35,10 @@ async function load(){
   const data=await response.json();
   if(!data.authenticated||!data.user)throw Error("NOT_AUTHENTICATED");
   $("name").textContent=data.user.display_name||"未設定";
-  $("username").textContent=data.user.username||"Google 帳號";
+  $("username").textContent=data.user.username||"未設定";
   $("email").textContent=data.user.email||"";
-  $("linked").textContent=data.user.google_linked?"已綁定":"尚未綁定";
   $("profile").hidden=false;
   $("message").textContent="登入成功";
-  const status=await fetch("/api/auth/status",{credentials:"same-origin",cache:"no-store"}).then(r=>r.json()).catch(()=>null);
-  $("linkGoogle").hidden=Boolean(data.user.google_linked)||status?.google!==true;
  }catch{
   $("message").textContent="目前尚未登入，請先登入。";
   $("login").hidden=false;

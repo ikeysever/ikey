@@ -4,12 +4,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   const $=id=>document.getElementById(id);
   const panel=$("gen3LoginPanel"),legacy=$("legacyLoginPanel");
   const form=$("gen3LoginForm"),submit=$("gen3LoginSubmit");
-  const message=$("gen3LoginMessage"),status=$("gen3AuthStatus"),google=$("googleLoginLink");
-  if(!panel||!legacy||!form||!submit||!message||!status||!google)return;
+  const message=$("gen3LoginMessage"),status=$("gen3AuthStatus");
+  if(!panel||!legacy||!form||!submit||!message||!status)return;
   const legacyRequested=new URLSearchParams(location.search).get("legacy")==="1";
   panel.hidden=legacyRequested;
   legacy.hidden=!legacyRequested;
-  let ready=false,googleReady=false;
+  let ready=false;
   async function checkStatus(){
     submit.disabled=true;
     try{
@@ -17,32 +17,17 @@ document.addEventListener("DOMContentLoaded",()=>{
       if(!response.ok)throw Error("STATUS_UNAVAILABLE");
       const data=await response.json();
       ready=data.enabled===true;
-      googleReady=ready&&data.google===true;
       status.textContent=!ready
         ?"帳號服務尚未完成後端連線驗證（"+(data.reason||"STATUS_UNKNOWN")+"）。管理員可使用專用入口。"
         :!data.mail
           ?"帳號登入已可使用；註冊與重設密碼仍待寄信授權。"
-          :!googleReady
-            ?"Google 登入尚待設定。"
-            :"";
+          :"";
       submit.disabled=!ready;
     }catch{
       ready=false;
       status.textContent="目前無法確認帳號服務狀態，請稍後再試。";
     }
-    if(!googleReady){
-      google.setAttribute("aria-disabled","true");
-      google.title="Google 登入尚未完成設定";
-    }else{
-      google.removeAttribute("aria-disabled");
-      google.removeAttribute("title");
-    }
   }
-  google.addEventListener("click",event=>{
-    if(googleReady)return;
-    event.preventDefault();
-    message.textContent="Google 登入尚未完成設定，目前無法使用。";
-  });
   form.addEventListener("submit",async event=>{
     event.preventDefault();
     if(!form.reportValidity()||!ready)return;

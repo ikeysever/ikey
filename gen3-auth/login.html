@@ -16,12 +16,9 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <form id="login" novalidate><label for="email">帳號或電子郵件</label><input id="email" name="email" type="text" maxlength="254" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
 <label for="password">密碼</label><input id="password" name="password" type="password" autocomplete="current-password" required>
 <button id="submit" type="submit">登入系統</button></form>
-<a id="googleEntry" class="action secondary" href="/api/auth/google/start">使用 Google 登入</a>
 <div class="links"><a href="./register.html">建立帳號</a><a href="./forgot-password.html">忘記密碼？</a></div>
 <p id="message" role="status" aria-live="polite"></p>
-<a id="googleLink" class="action secondary" href="/api/auth/google/link" hidden>綁定 Google 帳號</a>
 <a class="action secondary" href="/?legacy=1">管理員專用入口</a>
-<p class="notice">帳號安全：既有電子郵件帳號不會自動與 Google 合併，請先登入再綁定。</p>
 </main><script>
 const form=document.getElementById('login'),msg=document.getElementById('message'),btn=document.getElementById('submit');
 
@@ -36,11 +33,5 @@ fetch("/api/auth/me",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?
 }).catch(()=>{});
 fetch("/api/auth/status",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
  if(d?.enabled!==true){btn.disabled=true;msg.textContent="帳號服務尚未完成後端連線驗證，請稍後再試。";}
- const google=document.getElementById("googleEntry");
- if(d?.google!==true){
-   google.setAttribute("aria-disabled","true");
-   google.style.opacity=".55";
-   google.addEventListener("click",e=>{e.preventDefault();msg.textContent="Google 登入尚未完成 OAuth 設定。"});
- }
 }).catch(()=>{btn.disabled=true;msg.textContent="目前無法確認帳號服務狀態。";});
 </script></body></html>

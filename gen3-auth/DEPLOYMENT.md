@@ -1,109 +1,51 @@
-# iKey Gen3 authentication deployment gate
+# iKey Gen3 帳號系統部署與測試
 
-Status: **MailApp-only account flows prepared; the Render API is fail-closed until the dedicated Apps Script Web App passes a read-only version/authorization check.**
+## 目前功能
 
-## Existing system isolation
-- Existing `/api/login`, legacy user sheets, dashboard, device routes, and animations are untouched.
-- New API: `/api/auth/*`; new UI: `/gen3/login.html`, `register.html`, `forgot-password.html`, `verify-email.html`, `reset-password.html`, `account.html`.
-- Server mounts Gen3 **only** if `GEN3_AUTH_ENABLED=true` and every required environment variable is present. Do not flip the switch until Apps Script deployment and Google/MailApp validation succeed.
-- Render auto-deploys changes to `main`. Merge only after CI and real E2E staging verification.
+使用者可用 **帳號／電子郵件＋密碼** 註冊、驗證、登入、登出與重設密碼。第三方 Google OAuth 登入與帳號綁定已從伺服器、網頁、Apps Script 原始碼移除。
 
-## Spreadsheet
-Existing spreadsheet `1vOfpbIQ4px03vip_4zDq1t2KlRP9vUeg4R9JJ0OMXnc` retains all 11 legacy tabs.
-Gen3_Users now has two **appended** columns:
-- M: `email_verified_at`
-- N: `username`
-The original 12 columns and their order are preserved. Existing records may have blank values.
-Other Gen3 tabs: `Auth_Tokens`, `Auth_Sessions`, `Auth_Audit_Logs`.
+**注意：** 使用 Google Sheets 和 Apps Script 作為資料庫與寄信後端，與「使用 Google 帳號登入 iKey」是不同的功能。此次仍保留前者，否則一般帳號註冊與驗證信也會停止運作。
 
-## Deploy Apps Script FIRST
-The source is `gen3-auth/apps-script/Code.gs`. Update the standalone iKey Gen3 Auth API script and deploy a new Web App version. Existing deployed Apps Script is **not** updated by a GitHub commit.
-Retain its existing script properties `GEN3_SPREADSHEET_ID`, `GEN3_API_KEY` (do not expose the secret).
-Verify operations: `health`, `sendMail`, `registerAtomic`, `findByLogin`, `createToken`, `consumeTokenAtomic`, `registerGoogleAtomic`, `findByGoogleSub`, `linkGoogleAtomic`, `throttleAtomic`.
-Verify 14-column Gen3_Users header; no legacy tab writes.
+## 既有系統保護
 
-## Render environment (set in dashboard, never in GitHub)
-- `GEN3_AUTH_ENABLED=true` **only after** all checks below pass.
-- `GEN3_APPS_SCRIPT_URL` existing deployed Gen3 Web App URL
-- `GEN3_APPS_SCRIPT_KEY` existing shared key
-- **No Resend configuration is needed.** The MailApp sender is the Google account authorized to run the dedicated Apps Script Web App.
-- `GOOGLE_OAUTH_CLIENT_ID` Google Cloud OAuth Web client ID
-- `GOOGLE_OAUTH_CLIENT_SECRET` corresponding secret
+- 保留舊版 `/api/login`、管理員 Session、LINE、ESP32、借還流程、歡迎動畫及 11 張舊資料表。
+- 正式首頁使用 Gen3 一般帳號登入；舊版管理員入口為 `/?legacy=1`。
+- 一般帳號不會自動取得舊版管理員權限。
+- Google Sheet `Gen3_Users` 維持 14 欄，另有 `Auth_Tokens`、`Auth_Sessions`、`Auth_Audit_Logs`。
+- 原先兩個第三方登入專用欄位 `google_sub`、`google_linked_at` **只為維持欄位順序而保留，不再使用**。不要直接刪除欄位，避免與線上 Apps Script 版本不相容。
 
-Google Cloud OAuth authorized redirect URI (exact):
-`https://ikey.onrender.com/api/auth/google/callback`
-Authorized origin:
-`https://ikey.onrender.com`
-Consent screen must be configured/published appropriately; verify user eligibility.
+## GitHub、Render 與 Apps Script 的部署差異
 
-## Functional acceptance tests
-1. Register a new username/email, verify row status is pending and email contains a 30-minute one-time link.
-2. Login must fail before verification. Verify email and login with username **and** email.
-3. Duplicate username/email must fail atomically. MailApp verification works with rate limits.
-4. Forgot password returns generic response for unknown emails, reset link expires after 15 minutes and cannot be used twice.
-5. Password reset revokes old sessions. Re-login succeeds only with new password.
-6. Google login creates a verified account, validates Google-issued ID token audience/issuer/nonce/expiry; existing email accounts are **not** silently linked.
-7. Authenticated user explicitly links Google with same verified email; another user's Google subject cannot be linked.
-8. Legacy login, admin, project center, ESP32/LINE endpoints, original welcome and other animations still work.
-9. CI: `node --test gen3-auth/core.test.js gen3-auth/apps-script.test.js gen3-auth/routes.test.js`, plus existing `iKey CI` jobs.
-10. After staging and configuration verification, merge to main and check Render deploy status is `live`, then run smoke tests against the actual domain.
+1. GitHub `main` 合併後，Render 會自動部署 Node.js 伺服器與網頁；確認 Render Deploy 狀態為 `live`。
+2. **Apps Script 不會隨 GitHub 或 Render 自動更新。** 要移除線上 Apps Script 中舊有第三方登入操作，需手動開啟專用 `iKey_Gen3_Auth_API`，以最新版 `gen3-auth/apps-script/Code.gs` 完整覆蓋並儲存。
+3. 在 Apps Script 選擇「部署 → 管理部署作業 → 編輯 → 新版本 → 部署」，沿用原本 Web App URL。不要改動舊版資料庫 Apps Script。
+4. Apps Script Script Properties 保留 `GEN3_SPREADSHEET_ID`、`GEN3_API_KEY`。Render Environment 保留 `GEN3_AUTH_ENABLED=true`、`GEN3_APPS_SCRIPT_URL`、`GEN3_APPS_SCRIPT_KEY`；不要將任何金鑰貼到 GitHub 或聊天室。
+5. 若 Render 先更新，原有 Apps Script 尚未更新，一般帳號操作仍使用相同的操作名稱，預期可相容；但線上舊操作要等第 2–3 步才真正移除。
 
-## Known limitations / release blockers
-- No connected Apps Script editing/deployment action; manual script version deployment or a configured CI Apps Script API service account is required.
-- Google OAuth Web client credentials and Apps Script MailApp permission must be provisioned externally.
-- Browser E2E with real Google identity and delivered email has not been run.
-- Gen3 sessions do **not** authenticate the legacy dashboard automatically; migration requires explicit design and security testing. Do not remove legacy login until complete.
-- Google account linking requires authenticated Gen3 session; this is intentionally not automatic.
+## 驗收清單
 
-## Activation and live test checklist (MailApp-only)
+1. `https://ikey.onrender.com/api/auth/status` 回傳 `enabled:true`、`mail:true`，且不再提供第三方登入的 `google` 欄位。
+2. 網站首頁、`/gen3/login.html`、`/gen3/register.html`、`/gen3/account.html` 均無第三方登入／綁定按鈕。
+3. `/api/auth/google/start`、`/api/auth/google/link`、`/api/auth/google/callback` 不再存在（HTTP 404）。
+4. 註冊測試帳號，收到 30 分鐘有效的驗證信；驗證前不能登入，驗證後能登入。
+5. 以帳號或 Email 登入、登出，驗證 7 天 Session；忘記密碼的 15 分鐘一次性連結正常。
+6. 檢查舊版管理員、LINE、ESP32、借還鑰匙、歡迎動畫仍可使用。
+7. 執行 CI：`node --test gen3-auth/core.test.js gen3-auth/apps-script.test.js gen3-auth/routes.test.js` 與既有 smoke tests。
 
-1. In [Google Apps Script](https://script.google.com/home/projects), open the **dedicated** `iKey_Gen3_Auth_API` project (never the legacy database script). Replace its `Code.gs` with the reviewed file in this repository; save.
-2. Ensure Script Properties `GEN3_SPREADSHEET_ID` and `GEN3_API_KEY` still exist. **Do not paste their values into GitHub or ChatGPT.**
-3. Deploy > Manage deployments > Edit the dedicated Web App > **New version** > Deploy. Authorize Google Sheets and MailApp permissions for the executing Google account. Do not overwrite any legacy deployment.
-4. The deployed `health` action must return `version: "gen3-mailapp-v2"`, `storage: true`, and `mail_ready: true` (the latter requires MailApp authorization and available daily quota). `/api/auth/status` shows only booleans and never secrets.
-5. Set/retain `GEN3_APPS_SCRIPT_URL` and `GEN3_APPS_SCRIPT_KEY` in Render service `ikey`, then set `GEN3_AUTH_ENABLED=true`. The Node.js server verifies the Apps Script health response before allowing account writes. If the Web App is outdated or unreachable, the account API responds 503 and does not write registration data.
-6. Confirm `https://ikey.onrender.com/api/auth/status` reports `enabled:true,mail:true`. Register a **test account**, receive and verify the email, log in at `/gen3/login.html`, view `/gen3/account.html`, log out, request password reset, and verify the link works once only.
-7. Google OAuth is independent: add `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` in Render and authorize redirect `https://ikey.onrender.com/api/auth/google/callback`. Google remains unavailable until configured.
-8. Legacy `/api/login` and the main dashboard remain separate from `ikey_gen3_session`; Gen3 login never grants admin rights automatically.
+## 診斷
 
-**Rollback:** set `GEN3_AUTH_ENABLED=false` in Render to disable Gen3 writes immediately; existing legacy login, LINE, ESP32, and Sheets remain unchanged. The Google Apps Script source committed to GitHub is **not** automatically deployed by Render.
+`/api/auth/status` 的 `reason` 僅回傳安全分類：
+- `CONFIG_MISSING`：Render 的 Gen3 啟用開關、Apps Script URL 或金鑰缺失。
+- `APPS_SCRIPT_AUTH_FAILED`：Render 與 Apps Script 金鑰不一致。
+- `APPS_SCRIPT_SCHEMA_MISMATCH`：試算表欄位或存取權有問題。
+- `APPS_SCRIPT_OUTDATED_ACTION`：Apps Script 版本過舊。
+- `APPS_SCRIPT_NON_JSON_RESPONSE`：Web App URL 或部署存取設定有問題。
+- `MAILAPP_NOT_READY`：MailApp 授權或額度尚未就緒。
 
-## Main website login, approved welcome, and homepage (October 2026)
+如需檢查 MailApp，於 Apps Script 編輯器執行 `inspectGen3Setup` 或 `authorizeGen3MailApp`；後者只讀取剩餘寄信額度，不寄信。
 
-- `/` now shows the Gen3 username/email + password form by default. Its POST target is `/api/auth/login` and success is verified with `/api/auth/me`; only then does the approved `public/welcome-padlock.js` animation play and reveal the existing `#homePage`.
-- Google OAuth callback and the standalone `/gen3/login.html` also return to `/?welcome=1`. The homepage controller checks the Gen3 session before playing welcome; a forged query string cannot authenticate a visitor.
-- Refreshing the website restores only a verified Gen3 or existing legacy administrator session. No password or session secret is stored in browser storage.
-- The original administrator UI is **not** the default login screen. It is accessible only through the small `/?legacy=1` administrator entry. Existing `/api/login` and signed admin sessions remain unchanged until a separate, reviewed migration.
-- Gen3 users have `global_role:user` and **do not inherit legacy superadmin rights**. Protected admin endpoints continue to validate the separate administrator session on the server.
-- Logout revokes the appropriate Gen3 or legacy session. The Gen3 account sidebar links to `/gen3/account.html`.
-- **Activation remains blocked if** `/api/auth/status` shows `enabled:false`. This is a real upstream Apps Script deployment/configuration issue; the UI must not pretend that login, MailApp or Google OAuth works until independently verified.
-- Rollback the homepage login change by reverting the relevant GitHub commit; no legacy login data or Google Sheet records are deleted by this UI migration.
+## 安全與復原
 
-## Diagnosing a blocked signup
-
-The status endpoint returns `enabled`, `mail`, `google` and a safe `reason` category (no API keys, spreadsheet IDs or OAuth secrets). The Render startup log prints only whether each required setting is configured.
-
-| reason | What to check |
-|---|---|
-| CONFIG_MISSING | Render service ikey needs GEN3_AUTH_ENABLED=true, a dedicated Apps Script Web App GEN3_APPS_SCRIPT_URL, and matching GEN3_APPS_SCRIPT_KEY (32+ chars). |
-| APPS_SCRIPT_AUTH_FAILED | Apps Script Script Property GEN3_API_KEY must exactly match Render GEN3_APPS_SCRIPT_KEY. Never paste either value into a chat, repository, or screenshot. |
-| APPS_SCRIPT_SHEET_NOT_SET | Apps Script Script Property GEN3_SPREADSHEET_ID must point to the existing iKey_Database. |
-| APPS_SCRIPT_SCHEMA_MISMATCH | The executing Apps Script account needs edit access to the spreadsheet, and the four Gen3 tab headers must match HEADERS exactly. |
-| APPS_SCRIPT_VERSION_MISMATCH | Save the current gen3-auth/apps-script/Code.gs and deploy a **new Web App version** of the dedicated script. A GitHub or Render deploy does not update Apps Script. |
-| APPS_SCRIPT_NON_JSON_RESPONSE | Confirm the dedicated Web App deployment URL ends with /exec and the Web App access settings allow the Render server to call it without a Google login HTML page. The API key still authenticates each POST. |
-| APPS_SCRIPT_HTTP_ERROR, APPS_SCRIPT_TIMEOUT, APPS_SCRIPT_CONNECTION_FAILED | Inspect the Apps Script deployment and Render connectivity; never change the legacy script to resolve this. |
-| MAILAPP_NOT_READY | In the Apps Script editor run inspectGen3Setup to authorize Sheets and MailApp, then check remaining MailApp daily quota. |
-
-In the dedicated Apps Script editor, run the read-only `inspectGen3Setup` function. It returns only property presence, sheet header checks, MailApp authorization and quota availability, and a `ready` boolean; it does not create, update or delete any spreadsheet rows.
-
-Google sign-in is separately enabled by the Google Cloud OAuth consent configuration, an OAuth **Web application** client, and the two Render variables `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`. Its authorized redirect URI is `https://ikey.onrender.com/api/auth/google/callback`. Do not silently merge existing email accounts with Google accounts.
-
-## MailApp authorization when `inspectGen3Setup` returns `mailAuthorized:false`
-
-1. Open the **dedicated** Gen3 Apps Script project and replace `Code.gs` with the current source from this repository; save.
-2. Select `authorizeGen3MailApp` in the editor function dropdown and click **Run**. This only reads the remaining daily MailApp quota; it **does not send an email**.
-3. If Google displays an authorization dialog, grant the requested access with the script owner account. If the run fails, inspect the editor's **Execution log** for the exact Google error (do not share account identifiers, script URLs, keys or tokens).
-4. If `appsscript.json` contains an explicit `oauthScopes` list, it must include `https://www.googleapis.com/auth/script.send_mail` and the spreadsheet scope needed by `SpreadsheetApp.openById`. If no explicit `oauthScopes` is present, Apps Script normally infers scopes from the code; do not create a manifest unnecessarily.
-5. Run `inspectGen3Setup` again. It should show `mailAuthorized:true` and `mailQuotaAvailable:true`. Save and deploy a **new version** of the existing Web App deployment (not a new URL) if source code was updated. Then refresh `/api/auth/status`.
-
-`MAILAPP_PERMISSION_REQUIRED` means the editor caught an authorization or scope-related error. `MAILAPP_CHECK_FAILED` means a different MailApp error. Both are safe classifications, not the original exception message.
+- **GitHub 刪除檔案不會清除 Git commit 歷史。** 若任何真正的密鑰曾被提交，應立即在提供者端撤銷／輪替，不可只刪檔。
+- 這次沒有建立第三方登入 OAuth 憑證，也不需要在 Render 新增相關環境變數；如果曾自行建立，應到 Google Cloud 撤銷該用戶端。
+- 緊急停用一般帳號寫入：Render 設 `GEN3_AUTH_ENABLED=false`。舊版管理員、LINE、ESP32 不受此開關影響。

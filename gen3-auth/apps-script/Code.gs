@@ -59,21 +59,6 @@ function execute(action,p) {
    if(p.user.global_role!=="user" || p.user.account_status!=="pending_verification" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
    append(TABS.users,p.user);return {user_id:p.user.user_id};
   });
-  case "findByGoogleSub":return rows(TABS.users).find(r=>r.value.google_sub===String(p.sub||"") && !!r.value.google_sub)?.value||null;
-  case "registerGoogleAtomic":return locked(()=>{
-   const u=p.user||{};
-   if(!u.google_sub||!u.user_id||!u.email||!u.email.includes("@")||u.global_role!=="user"||u.account_status!=="active"||!u.email_verified_at)throw Error("INVALID_GOOGLE_ACCOUNT");
-   const all=rows(TABS.users);
-   if(all.some(r=>r.value.google_sub===u.google_sub||r.value.email.toLowerCase()===u.email.toLowerCase()))return null;
-   append(TABS.users,u);return u;
-  });
-  case "linkGoogleAtomic":return locked(()=>{
-   const all=rows(TABS.users),r=all.find(x=>x.value.user_id===p.user_id);
-   if(!r||r.value.account_status!=="active"||!p.sub||all.some(x=>x.value.google_sub===p.sub && x.value.user_id!==p.user_id))return null;
-   if(r.value.google_sub && r.value.google_sub!==p.sub)return null;
-   r.value.google_sub=p.sub;r.value.google_linked_at=new Date().toISOString();r.value.updated_at=r.value.google_linked_at;
-   overwrite(TABS.users,r.index,r.value);return r.value;
-  });
   case "throttleAtomic":return locked(()=>{
    const key=String(p.key||"");
    const limit=Number(p.limit),windowMs=Number(p.window_ms);

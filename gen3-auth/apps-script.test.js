@@ -111,3 +111,9 @@ test("MailApp explicit authorization check is read-only and exposes the real exc
  new vm.Script(source).runInContext(denied);
  assert.throws(()=>denied.authorizeGen3MailApp(),/Authorization is required/);
 });
+
+test("Apps Script no longer exposes Google OAuth account operations",()=>{
+ for(const action of ["registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic"]){
+  assert.equal(source.includes('case "'+action+'"'),false);
+ }
+});

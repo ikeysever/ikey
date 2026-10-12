@@ -13,7 +13,7 @@ test("password hashed with salt and verified",()=>{
   assert.equal(auth.passwordVerify("wrong-password",a),false);
   assert.throws(()=>auth.passwordHash("short"));
 });
-test("account status blocks Google and password",()=>{
+test("account status blocks password authentication",()=>{
   assert.equal(auth.active({account_status:"disabled"}),false);
   assert.equal(auth.active({account_status:"pending_deletion"}),false);
   assert.equal(auth.active({account_status:"temporarily_locked",locked_until:"2099-01-01T00:00:00Z"}),false);
