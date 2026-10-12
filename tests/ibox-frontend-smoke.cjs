@@ -171,3 +171,10 @@ test("sidebar accordion animates and desktop hamburger can collapse the whole si
   assert.match(script, /menuButton\.click\(\)/);
   assert.match(html, /id="sidebarMenuButton"/);
 });
+
+test("next generation iKey branding uses the lock and key logo", () => {
+  assert.match(html, /assets\/brand\/ikey-nextgen\.svg/);
+  assert.match(html, /<link rel="icon" type="image\/svg\+xml"/);
+  assert.match(html, /iKey 自動多場景智慧鎖/);
+  assert.doesNotMatch(html, /智慧鑰匙管理系統|智慧校園管理系統/);
+});
