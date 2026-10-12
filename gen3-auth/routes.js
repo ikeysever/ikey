@@ -20,9 +20,24 @@ function cookieOptions(req) {
   return {httpOnly:true,secure: Boolean(req.secure || req.get("x-forwarded-proto")==="https"),
     sameSite:"lax",path:"/",maxAge:SESSION_MS};
 }
-function sameOrigin(req) {\n  const origin=req.get("origin");\n  if(!origin)return true;\n  try {\n    const u=new URL(origin);\n    const host=req.get("host");\n    const scheme=req.secure||req.get("x-forwarded-proto")==="https"?"https:":"http:";\n    return u.protocol===scheme && u.host===host;\n  } catch {return false;}\n}\nfunction createRouter(store) {
+function sameOrigin(req) {
+  const origin=req.get("origin");
+  if(!origin)return true;
+  try {
+    const u=new URL(origin);
+    const host=req.get("host");
+    const scheme=req.secure||req.get("x-forwarded-proto")==="https"?"https:":"http:";
+    return u.protocol===scheme && u.host===host;
+  } catch {return false;}
+}
+function createRouter(store) {
   const router=express.Router();
-  router.use((req,res,next)=>{\n    res.set("Cache-Control","no-store");\n    if(["POST","PUT","PATCH","DELETE"].includes(req.method) && !sameOrigin(req))\n      return res.status(403).json({success:false,message:"來源驗證失敗"});\n    next();\n  });
+  router.use((req,res,next)=>{
+    res.set("Cache-Control","no-store");
+    if(["POST","PUT","PATCH","DELETE"].includes(req.method) && !sameOrigin(req))
+      return res.status(403).json({success:false,message:"來源驗證失敗"});
+    next();
+  });
   const ready=Boolean(store && ["registerAtomic","findByEmail","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
@@ -85,8 +100,11 @@ function sameOrigin(req) {\n  const origin=req.get("origin");\n  if(!origin)retu
       const user=await store.findById(s.user_id);
       if(!active(user)) return res.status(401).json({authenticated:false});
       const expiry=new Date(Date.now()+SESSION_MS).toISOString();
-      await store.touchSession(s.session_id,expiry,new Date().toISOString());
-      res.cookie(COOKIE,raw,cookieOptions(req));
+      if(Date.parse(s.expires_at)-Date.now()<SESSION_MS-60*60*1000){
+        const renewed=await store.touchSession(s.session_id,expiry,new Date().toISOString());
+        if(!renewed)return res.status(401).json({authenticated:false});
+        res.cookie(COOKIE,raw,cookieOptions(req));
+      }
       return res.json({authenticated:true,user:safeUser(user)});
     } catch(err){return res.status(503).json({authenticated:false,message:"暫時無法驗證登入狀態"})}
   });
