@@ -1267,12 +1267,7 @@ button {
   .main-header h1 {
     font-size: 23px;
   }
-
-  .connection-status {
-    display: none;
-  }
-
-  .content-page {
+.content-page {
     padding: 20px;
   }
 
