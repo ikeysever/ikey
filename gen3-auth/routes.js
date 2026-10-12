@@ -40,7 +40,7 @@ function createRouter(store) {
       return res.status(403).json({success:false,message:"來源驗證失敗"});
     next();
   });
-  const ready=Boolean(store && ["registerAtomic","findByEmail","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic"].every(k=>typeof store[k]==="function"));
+  const ready=Boolean(store && ["registerAtomic","findByEmail","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
     try {
@@ -49,9 +49,11 @@ function createRouter(store) {
       const email=normalizeEmail(req.body?.email);
       const display_name=String(req.body?.display_name||"").trim();
       if(!display_name || display_name.length>MAX_NAME) return res.status(400).json({success:false,message:"顯示名稱不符合規定"});
+      const username=String(req.body?.username||"").trim().toLowerCase();
+      if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))return res.status(400).json({success:false,message:"帳號須為 4 至 24 字元英數字或底線，並以字母開頭"});
       const password_hash=passwordHash(req.body?.password);
       const now=new Date().toISOString();
-      const user={user_id:crypto.randomUUID(),email,password_hash,display_name,
+      const user={user_id:crypto.randomUUID(),email,username,password_hash,display_name,
         global_role:"user",account_status:"pending_verification",failed_login_attempts:0,
         locked_until:"",created_at:now,updated_at:now,google_sub:"",google_linked_at:"",email_verified_at:""};
       // Adapter MUST atomically compare normalized email and insert or return duplicate.
@@ -105,9 +107,10 @@ function createRouter(store) {
   router.get("/google/callback",(req,res)=>google.callback(req,res,store));
   router.post("/login",async(req,res)=>{
     try {
-      const email=normalizeEmail(req.body?.email);
-      if(!throttle("login:"+req.ip+":"+email,10)) return res.status(429).json({success:false,message:"請稍後再試"});
-      const user=await store.findByEmail(email);
+      const identifier=String(req.body?.identifier||req.body?.email||"").trim().toLowerCase();
+      if(identifier.length>254||!identifier)return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
+      if(!throttle("login:"+req.ip+":"+identifier,10)) return res.status(429).json({success:false,message:"請稍後再試"});
+      const user=await store.findByLogin(identifier);
       // Use a dummy hash to reduce timing differences for nonexistent users.
       const dummy="scrypt:v1:AAAAAAAAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
       const matches=passwordVerify(req.body?.password,user?.password_hash||dummy);
