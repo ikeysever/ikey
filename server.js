@@ -114,6 +114,20 @@ function gen3FailureCategory(err){
     return "APPS_SCRIPT_SCHEMA_MISMATCH";
   if(msg==="GEN3_STORAGE_HTTP_ERROR")return "APPS_SCRIPT_HTTP_ERROR";
   if(msg==="GEN3_STORAGE_UNKNOWN_ACTION")return "APPS_SCRIPT_OUTDATED_ACTION";
+  // GAS can return a descriptive exception message instead of a symbolic
+  // error code. Categorize it without ever echoing its raw text (which can
+  // contain a private spreadsheet identifier or Google account details).
+  if(msg.startsWith("GEN3_STORAGE_")){
+    const detail=msg.slice("GEN3_STORAGE_".length);
+    if(/MailApp|mail quota|remainingdailyquota|email service|daily limit/i.test(detail))
+      return "APPS_SCRIPT_MAILAPP_ACCESS_FAILED";
+    if(/permission|authorization|authorized|access denied|insufficient|OAuth|consent|scope/i.test(detail))
+      return "APPS_SCRIPT_PERMISSION_DENIED";
+    if(/SpreadsheetApp|openById|spreadsheet|document|file not found|No item with the given ID|not accessible/i.test(detail))
+      return "APPS_SCRIPT_SPREADSHEET_ACCESS_FAILED";
+    if(/Exception:|Error:|Service invoked|Internal error|Script function/i.test(detail))
+      return "APPS_SCRIPT_EXECUTION_ERROR";
+  }
   // Apps Script returns short symbolic error codes. Never log raw upstream
   // responses, credentials, URLs, stack traces, or unvalidated error text.
   if(/^GEN3_STORAGE_[A-Z0-9_]{1,64}$/.test(msg))return "APPS_SCRIPT_"+msg.slice("GEN3_STORAGE_".length);
