@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iKey 第三代｜建立帳號</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Noto Sans TC",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);color:#f4f7fb}
+main{width:min(440px,calc(100% - 32px));padding:32px;border:1px solid #334155;border-radius:20px;background:rgba(20,31,52,.86);box-shadow:0 20px 80px #0006}
+h1{margin:0 0 6px;font-size:29px}.muted{color:#a9b7cb;margin:0 0 28px}label{display:block;margin:16px 0 6px}
+input{width:100%;padding:13px;border:1px solid #506078;border-radius:10px;background:#0b1220;color:white;font:inherit}
+input:focus{outline:2px solid #65a7ff;outline-offset:1px}button{width:100%;padding:13px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;margin-top:22px;background:#68a9ff;color:#071222}
+button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:#d9e5f6;border:1px solid #52637b;margin-top:10px}
+#message{min-height:24px;margin-top:16px}a{color:#9ac9ff}
+</style></head><body>
+<main><h1>建立 iKey 帳號</h1><p class="muted">自動多場景智慧鎖 · 第三代</p>
+<form id="register">
+<label for="display_name">顯示名稱</label><input id="display_name" name="display_name" maxlength="80" required autocomplete="nickname">
+<label for="email">電子郵件</label><input id="email" name="email" type="email" maxlength="254" required autocomplete="email">
+<label for="password">密碼（至少 8 字元）</label><input id="password" name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
+<label for="confirm">確認密碼</label><input id="confirm" name="confirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
+<button id="submit" type="submit">建立帳號</button></form>
+<button class="secondary" type="button" disabled title="待 Google OAuth 設定完成">使用 Google 繼續（準備中）</button>
+<p id="message" role="status" aria-live="polite"></p></main>
+<script>
+const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
+form.addEventListener('submit',async e=>{
+e.preventDefault();msg.textContent='';
+const password=form.password.value;
+if(password!==form.confirm.value){msg.textContent='兩次密碼不一致';return}
+btn.disabled=true;
+try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:form.display_name.value,email:form.email.value,password})});
+const body=await res.json();if(!res.ok){msg.textContent=body.message||'目前無法建立帳號';return}
+msg.textContent='註冊成功';window.location.assign('/');}
+catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
+});
+</script></body></html>
