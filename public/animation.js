@@ -3109,7 +3109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try{
       if(playWelcome&&window.iKeyPadlockWelcome){
         // Welcome animation is independent of global device connectivity.
-        await window.iKeyPadlockWelcome.create(()=>Promise.resolve()).promise;
+        await window.iKeyPadlockWelcome.create().promise;
       }
       if(homePage)homePage.hidden=false;
       showDashboard();
@@ -3251,7 +3251,7 @@ document.addEventListener("DOMContentLoaded", () => {
           activeLoginKind = "legacy";
           if (loginPage) loginPage.hidden = true;
           if (window.iKeyPadlockWelcome) {
-            await window.iKeyPadlockWelcome.create(() => Promise.resolve()).promise;
+            await window.iKeyPadlockWelcome.create().promise;
             showDashboard();
           } else {
             await enterDashboard();
