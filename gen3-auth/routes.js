@@ -8,6 +8,7 @@ const {sendToken,configured:mailReady}=require("./email");
 const google=require("./google");
 const COOKIE = "ikey_gen3_session";
 const MAX_NAME = 80;
+const rateKey=(kind,ip,identifier="")=>crypto.createHash("sha256").update(kind+":"+ip+":"+identifier).digest("hex");
 const RATE = new Map(); // per-process preliminary throttle; production requires shared storage
 function throttle(key, limit=10, windowMs=15*60*1000) {
   const now=Date.now(), row=RATE.get(key);
@@ -40,11 +41,11 @@ function createRouter(store) {
       return res.status(403).json({success:false,message:"來源驗證失敗"});
     next();
   });
-  const ready=Boolean(store && ["registerAtomic","findByEmail","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic"].every(k=>typeof store[k]==="function"));
+  const ready=Boolean(store && ["registerAtomic","findByEmail","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic","throttleAtomic"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
     try {
-      if(!throttle("register:"+req.ip,5)) return res.status(429).json({success:false,message:"請稍後再試"});
+      if(!throttle("register:"+req.ip,5)||!(await store.throttleAtomic(rateKey("register",req.ip),5,15*60000))) return res.status(429).json({success:false,message:"請稍後再試"});
       if(!mailReady())return res.status(503).json({success:false,message:"電子郵件驗證服務尚未設定"});
       const email=normalizeEmail(req.body?.email);
       const display_name=String(req.body?.display_name||"").trim();
@@ -73,7 +74,7 @@ function createRouter(store) {
     const generic={success:true,message:"如果此信箱已註冊，將收到密碼重設郵件"};
     try{
       if(!mailReady())return res.status(503).json({success:false,message:"郵件服務尚未設定"});
-      if(!throttle("forgot:"+req.ip,5))return res.status(429).json({success:false,message:"請稍後再試"});
+      if(!throttle("forgot:"+req.ip,5)||!(await store.throttleAtomic(rateKey("forgot",req.ip),5,15*60000)))return res.status(429).json({success:false,message:"請稍後再試"});
       let email;try{email=normalizeEmail(req.body?.email)}catch{return res.json(generic)}
       const user=await store.findByEmail(email);
       if(user && user.account_status==="active")await sendToken(store,user,"reset_password");
@@ -82,7 +83,7 @@ function createRouter(store) {
   });
   router.post("/reset-password",async(req,res)=>{
     try{
-      if(!throttle("reset:"+req.ip,8))return res.status(429).json({success:false,message:"請稍後再試"});
+      if(!throttle("reset:"+req.ip,8)||!(await store.throttleAtomic(rateKey("reset",req.ip),8,15*60000)))return res.status(429).json({success:false,message:"請稍後再試"});
       const raw=req.body?.token;
       if(typeof raw!=="string"||raw.length<30||raw.length>128)return res.status(400).json({success:false,message:"連結無效或已過期"});
       const hashed=passwordHash(req.body?.password);
@@ -109,7 +110,7 @@ function createRouter(store) {
     try {
       const identifier=String(req.body?.identifier||req.body?.email||"").trim().toLowerCase();
       if(identifier.length>254||!identifier)return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
-      if(!throttle("login:"+req.ip+":"+identifier,10)) return res.status(429).json({success:false,message:"請稍後再試"});
+      if(!throttle("login:"+req.ip+":"+identifier,10)||!(await store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000))) return res.status(429).json({success:false,message:"請稍後再試"});
       const user=await store.findByLogin(identifier);
       // Use a dummy hash to reduce timing differences for nonexistent users.
       const dummy="scrypt:v1:AAAAAAAAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
