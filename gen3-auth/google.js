@@ -55,7 +55,7 @@ async function callback(req,res,store){
    res.cookie(COOKIE,s.raw,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:7*24*60*60*1000});
   }
   await store.audit({user_id:user.user_id,event_type:mode==="link"?"google_link":"login",result:"success",auth_method:"google"});
-  return res.redirect("/gen3/account.html?google=success");
+  return res.redirect("/?welcome=1");
  }catch(err){console.error("Gen3 Google OAuth",err.message);return res.status(503).send("Google 驗證暫時無法完成，請稍後重試");}
 }
 module.exports={enabled,begin,callback};
