@@ -269,3 +269,19 @@ test("primary login matches the approved standalone design and recovery returns 
   const recovery=fs.readFileSync(path.join(root,"gen3-auth/forgot-password.html"),"utf8");
   assert.match(recovery,/href="\/">← 返回登入頁/);
 });
+
+test("Gen3 readiness reports safe diagnostic categories without leaking credentials",()=>{
+ const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
+ const register=fs.readFileSync(path.join(root,"gen3-auth/register.html"),"utf8");
+ assert.match(server,/appsScriptUrlConfigured:gen3UrlValid/);
+ assert.match(server,/appsScriptKeyConfigured:gen3KeyValid/);
+ assert.match(server,/googleOAuthConfigured:googleReady/);
+ assert.match(server,/reason:r.reason/);
+ assert.match(server,/APPS_SCRIPT_VERSION_MISMATCH/);
+ assert.match(server,/APPS_SCRIPT_AUTH_FAILED/);
+ assert.match(server,/APPS_SCRIPT_SCHEMA_MISMATCH/);
+ assert.match(server,/MAILAPP_NOT_READY/);
+ assert.match(register,/診斷：/);
+ assert.match(register,/APPS_SCRIPT_NON_JSON_RESPONSE/);
+ assert.doesNotMatch(server,/console\.log\(process\.env\)/);
+});
