@@ -45,16 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (description) description.textContent = "iKey · 介面規劃階段";
 
   });
-  // Mobile: close the drawer after selecting a page.
-  // Desktop: keep the sidebar visible until the user manually collapses it.
-  nav.addEventListener("click", event => {
-    const item = event.target.closest("button[data-page]");
-    if (!item || !nav.contains(item) || item.closest("[hidden]") || !menuButton) return;
-    if (window.matchMedia("(max-width: 700px)").matches &&
-        sidebar?.classList.contains("is-open")) {
-      menuButton.click();
-    }
-  });
   // Existing page controller handles other navigation. Placeholders are hidden
   // whenever a different page is selected by the existing controller.
   document.querySelectorAll(".sidebar-item[data-page]").forEach(button => {
