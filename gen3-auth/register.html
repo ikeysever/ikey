@@ -47,9 +47,21 @@ fetch("/api/auth/status",{cache:"no-store",credentials:"same-origin"}).then(r=>r
    google.addEventListener("click",e=>{e.preventDefault();msg.textContent="Google 登入尚未完成設定。"});
    google.style.opacity=".55";
  }
- if(!mailReady)msg.textContent=d?.enabled===true
-   ?"目前寄信功能尚未完成授權，註冊與驗證信暫時無法送出。"
-   :"帳號服務尚未完成後端連線驗證，暫時無法註冊。";
+ if(!mailReady){
+   const reason=d?.reason||"STATUS_UNKNOWN";
+   const help={
+     CONFIG_MISSING:"伺服器尚未完成 Apps Script 連線設定。",
+     APPS_SCRIPT_AUTH_FAILED:"Apps Script 驗證金鑰不一致，請檢查部署與指令碼屬性。",
+     APPS_SCRIPT_SHEET_NOT_SET:"Apps Script 尚未設定資料庫試算表。",
+     APPS_SCRIPT_SCHEMA_MISMATCH:"Apps Script 無法存取帳號資料表，或欄位版本不符。",
+     APPS_SCRIPT_VERSION_MISMATCH:"Apps Script 尚未部署最新版帳號程式。",
+     APPS_SCRIPT_NON_JSON_RESPONSE:"Apps Script 未回傳正確資料，請檢查 Web App 部署存取權。",
+     APPS_SCRIPT_HTTP_ERROR:"Apps Script 網路服務目前無法使用。",
+     APPS_SCRIPT_TIMEOUT:"Apps Script 連線逾時。",
+     MAILAPP_NOT_READY:"MailApp 寄信授權或每日寄信額度尚未就緒。"
+   };
+   msg.textContent=(help[reason]||"帳號服務尚未完成後端連線驗證，暫時無法註冊。")+"（診斷："+reason+"）";
+ }
 }).catch(()=>{
  document.getElementById("submit").disabled=true;
  document.getElementById("resend").disabled=true;
