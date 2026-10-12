@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       ready=data.enabled===true;
       googleReady=ready&&data.google===true;
       status.textContent=!ready
-        ?"帳號服務尚未完成後端連線驗證，暫時無法登入。管理員可使用專用入口。"
+        ?"帳號服務尚未完成後端連線驗證（"+(data.reason||"STATUS_UNKNOWN")+"）。管理員可使用專用入口。"
         :!data.mail
           ?"帳號登入已可使用；註冊與重設密碼仍待寄信授權。"
           :!googleReady
