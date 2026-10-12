@@ -2910,3 +2910,35 @@ button {
 @media (max-width: 480px) {
   #loginPage #gen3LoginPanel { padding: 32px; }
 }
+
+/* Gen3: homepage + verified account overview (no separate account page). */
+.ikey-home-account {
+  margin-bottom: 20px;
+  padding: clamp(20px,3vw,30px);
+  border: 1px solid rgba(124,166,216,.24);
+  border-radius: 18px;
+  background: linear-gradient(135deg,rgba(27,49,80,.78),rgba(20,31,52,.78) 60%,rgba(10,20,37,.92));
+  box-shadow: 0 16px 48px rgba(0,0,0,.15);
+}
+.ikey-home-account[hidden],.ikey-home-account [hidden] { display:none!important; }
+.ikey-account-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:16px; }
+.ikey-account-kicker { margin:0 0 8px;color:#86b9ff;font-size:11px;font-weight:750;letter-spacing:.14em; }
+.ikey-account-heading h2 { margin:0;font-size:clamp(21px,2.5vw,28px);color:#f4f7fb; }
+.ikey-account-greeting { margin:10px 0 0;color:#b9cee7;font-size:14px;line-height:1.6;overflow-wrap:anywhere; }
+.ikey-account-refresh { flex-shrink:0;border:1px solid #59779b;border-radius:10px;background:rgba(255,255,255,.045);color:#d9e9ff;padding:10px 14px;font:inherit;font-size:13px;cursor:pointer; }
+.ikey-account-refresh:hover:not(:disabled),.ikey-account-refresh:focus-visible { border-color:#8fcaff;background:rgba(104,169,255,.12); }
+.ikey-account-refresh:disabled { opacity:.6;cursor:wait; }
+.ikey-account-message { min-height:20px;margin:10px 0 0;color:#9fb6d1;font-size:12px; }
+.ikey-account-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px; }
+.ikey-account-field { min-width:0;min-height:90px;padding:16px;border:1px solid rgba(154,201,255,.13);border-radius:12px;background:rgba(7,12,22,.33); }
+.ikey-account-field span { display:block;margin-bottom:10px;color:#a9b7cb;font-size:12px; }
+.ikey-account-field strong { display:block;color:#f4f7fb;font-size:15px;font-weight:650;line-height:1.5;overflow-wrap:anywhere; }
+.ikey-account-legacy { margin-top:18px;padding:18px;border:1px solid rgba(154,201,255,.17);border-radius:12px;color:#c4d2e5;line-height:1.7; }
+.ikey-account-help { margin:18px 0 0;color:#9fb6d1;font-size:13px; }
+.ikey-account-help a { color:#9ac9ff;text-underline-offset:3px; }
+@media(max-width:980px) { .ikey-account-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:580px) {
+  .ikey-account-heading { flex-wrap:wrap; }
+  .ikey-account-grid { grid-template-columns:1fr; }
+  .ikey-account-field { min-height:0; }
+}
