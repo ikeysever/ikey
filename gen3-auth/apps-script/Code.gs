@@ -74,6 +74,18 @@ function execute(action,p) {
    r.value.google_sub=p.sub;r.value.google_linked_at=new Date().toISOString();r.value.updated_at=r.value.google_linked_at;
    overwrite(TABS.users,r.index,r.value);return r.value;
   });
+  case "throttleAtomic":return locked(()=>{
+   const key=String(p.key||"");
+   const limit=Number(p.limit),windowMs=Number(p.window_ms);
+   if(!/^[a-f0-9]{64}$/.test(key)||!Number.isInteger(limit)||limit<1||limit>100||windowMs<1000||windowMs>86400000)throw Error("INVALID_RATE_LIMIT");
+   const r=rows(TABS.tokens).find(x=>x.value.purpose==="rate_limit"&&x.value.token_hash===key);
+   const now=Date.now();
+   if(!r){append(TABS.tokens,{token_id:Utilities.getUuid(),user_id:"1",token_hash:key,purpose:"rate_limit",target_email:"",created_at:new Date(now).toISOString(),expires_at:new Date(now+windowMs).toISOString(),used_at:""});return true;}
+   if(Date.parse(r.value.expires_at)<=now){r.value.user_id="1";r.value.created_at=new Date(now).toISOString();r.value.expires_at=new Date(now+windowMs).toISOString();overwrite(TABS.tokens,r.index,r.value);return true;}
+   const n=Number(r.value.user_id||0);
+   if(n>=limit)return false;
+   r.value.user_id=String(n+1);overwrite(TABS.tokens,r.index,r.value);return true;
+  });
   case "createToken":return locked(()=>{
    const t=p.token||{};
    if(!t.token_hash||!t.user_id||!["verify_email","reset_password"].includes(t.purpose)||Date.parse(t.expires_at)<=Date.now())throw Error("INVALID_TOKEN");
