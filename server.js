@@ -92,7 +92,7 @@ const gen3Ready=Boolean(
 );
 // Expose only the Gen3 HTML entry pages. Never serve server-side auth source,
  // Apps Script code, tests, or deployment notes as static files.
-const gen3Pages=new Set(["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html"]);
+const gen3Pages=new Set(["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html","account.html"]);
 app.get("/gen3/:page",(req,res)=>{
   if(!gen3Pages.has(req.params.page))return res.status(404).send("Not Found");
   res.set("Cache-Control","no-store");
