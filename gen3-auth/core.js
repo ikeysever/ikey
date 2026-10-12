@@ -32,7 +32,7 @@ function passwordVerify(password, stored) {
   } catch { return false; }
 }
 function safeUser(user) {
-  return { user_id:user.user_id,email:user.email,display_name:user.display_name,
+  return { user_id:user.user_id,email:user.email,username:user.username||"",display_name:user.display_name,
     global_role:user.global_role,account_status:user.account_status,
     google_linked: Boolean(user.google_sub) };
 }
