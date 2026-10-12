@@ -84,6 +84,25 @@ app.use(
  * =========================================
  */
 
+// Third-generation authentication is isolated and fail-closed.
+const gen3Ready=Boolean(
+  process.env.GEN3_AUTH_ENABLED==="true" &&
+  process.env.GEN3_APPS_SCRIPT_URL &&
+  process.env.GEN3_APPS_SCRIPT_KEY &&
+  process.env.RESEND_API_KEY &&
+  process.env.GEN3_MAIL_FROM &&
+  process.env.GOOGLE_OAUTH_CLIENT_ID &&
+  process.env.GOOGLE_OAUTH_CLIENT_SECRET
+);
+if(gen3Ready){
+  const {createSheetsStore}=require("./gen3-auth/sheets-store");
+  const {createRouter}=require("./gen3-auth/routes");
+  app.use("/api/auth",createRouter(createSheetsStore()));
+  app.use("/gen3",express.static(path.join(__dirname,"gen3-auth"),{
+    index:false,fallthrough:false,setHeaders(res){res.setHeader("Cache-Control","no-store");res.setHeader("X-Content-Type-Options","nosniff");}
+  }));
+}
+
 app.listen(
   PORT,
   () => {
