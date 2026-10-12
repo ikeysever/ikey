@@ -24,3 +24,19 @@ test("session is hashed and expires in 7 days",()=>{
   assert.notEqual(s.raw,s.record.session_token_hash);
   assert.equal(Date.parse(s.record.expires_at),auth.SESSION_MS);
 });
+
+test("reject malformed and oversized stored password hashes",()=>{
+  assert.equal(auth.passwordVerify("a-long-password","scrypt:v1:bad:bad"),false);
+  assert.equal(auth.passwordVerify("a-long-password","not-a-hash"),false);
+  assert.equal(auth.passwordVerify(null,auth.passwordHash("a-long-password")),false);
+});
+test("expired lock can recover but disabled accounts cannot",()=>{
+  assert.equal(auth.active({account_status:"temporarily_locked",locked_until:"2020-01-01T00:00:00Z"}),true);
+  assert.equal(auth.active({account_status:"disabled",locked_until:"2020-01-01T00:00:00Z"}),false);
+});
+test("session tokens are random and only their hashes are stored",()=>{
+  const a=auth.newSession("u",0),b=auth.newSession("u",0);
+  assert.notEqual(a.raw,b.raw);
+  assert.equal(a.record.session_token_hash,auth.hashToken(a.raw));
+  assert.equal(a.record.revoked_at,"");
+});
