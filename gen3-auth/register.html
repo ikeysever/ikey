@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>iKey 第三代｜建立帳號</title>
+<title>iKey｜建立帳號</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,"Noto Sans TC",sans-serif}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);color:#f4f7fb}
@@ -12,7 +12,7 @@ input:focus{outline:2px solid #65a7ff;outline-offset:1px}button{width:100%;paddi
 button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:#d9e5f6;border:1px solid #52637b;margin-top:10px}
 #message{min-height:24px;margin-top:16px}a{color:#9ac9ff}
 </style></head><body>
-<main><p><a href="./login.html">← 返回登入頁</a></p><h1>建立 iKey 帳號</h1><p class="muted">自動多場景智慧鎖 · 第三代</p>
+<main><p><a href="/">← 返回登入頁</a></p><h1>建立 iKey 帳號</h1><p class="muted">自動多場景智慧鎖</p>
 <form id="register">
 <label for="username">帳號（英文字母開頭，4–24 字元）</label><input id="username" name="username" pattern="[a-z][a-z0-9_]{3,23}" minlength="4" maxlength="24" required autocomplete="username" placeholder="例如 ikey_user"><label for="display_name">顯示名稱</label><input id="display_name" name="display_name" maxlength="80" required autocomplete="nickname">
 <label for="email">電子郵件</label><input id="email" name="email" type="email" maxlength="254" required autocomplete="email">
@@ -49,7 +49,7 @@ fetch("/api/auth/status",{cache:"no-store",credentials:"same-origin"}).then(r=>r
  }
  if(!mailReady)msg.textContent=d?.enabled===true
    ?"目前寄信功能尚未完成授權，註冊與驗證信暫時無法送出。"
-   :"第三代帳號服務尚未完成後端連線驗證，暫時無法註冊。";
+   :"帳號服務尚未完成後端連線驗證，暫時無法註冊。";
 }).catch(()=>{
  document.getElementById("submit").disabled=true;
  document.getElementById("resend").disabled=true;
