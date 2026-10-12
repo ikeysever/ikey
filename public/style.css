@@ -2779,10 +2779,13 @@ button {
 
 /* Third-generation login visual refresh; preserve existing login JS selectors. */
 .login-help{display:flex;justify-content:flex-end;color:#a6b2c5;font-size:13px;margin:-2px 0 12px}
-.login-google{display:block;width:100%;margin-top:12px;padding:13px 18px;border-radius:12px;border:1px solid rgba(148,163,184,.32);background:rgba(255,255,255,.035);color:#b8c4d8;font-weight:650}
-.login-google:disabled{cursor:not-allowed;opacity:.7}
+.login-google{display:block;width:100%;margin-top:12px;padding:13px 18px;border-radius:12px;border:1px solid rgba(148,163,184,.32);background:rgba(255,255,255,.035);color:#d9e5f6;font-weight:650;text-align:center;text-decoration:none;cursor:pointer}
+.login-google[aria-disabled="true"]{cursor:not-allowed;opacity:.6}
+.login-google:hover:not([aria-disabled="true"]),.login-help a:hover,.login-register-note a:hover{color:#fff;border-color:#8fcaff}
+.login-help a,.login-register-note a{color:#8fcaff;text-decoration:underline;text-underline-offset:3px}
+.gen3-auth-status{font-size:12px!important;color:#a6b2c5!important;margin:8px 0 0!important;line-height:1.6}
 .login-register-note{font-size:14px!important;margin:18px 0 0!important;color:var(--muted)}
-.login-register-note span{color:#8fcaff;margin-left:5px}
+.login-register-note a{margin-left:5px}
 #loginPage .logo{width:92px;max-height:92px}
 #loginPage .logo-area{margin-bottom:20px}
 @media(max-width:480px){#loginPage{padding:16px}#loginPage .login-box{padding:28px 22px}}
