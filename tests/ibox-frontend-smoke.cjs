@@ -206,17 +206,17 @@ test("main login provides Gen3 account entrypoints without exposing backend sour
   const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
   const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
   const statusScript=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
-  assert.match(html, /href="\\/gen3\\/forgot-password\\.html"/);
-  assert.match(html, /href="\\/gen3\\/register\\.html"/);
-  assert.match(html, /id="googleLoginLink" href="\\/api\\/auth\\/google\\/start"/);
-  assert.match(html, /gen3-entry\\.js/);
+  assert.match(html, /href="\/gen3\/forgot-password\.html"/);
+  assert.match(html, /href="\/gen3\/register\.html"/);
+  assert.match(html, /id="googleLoginLink" href="\/api\/auth\/google\/start"/);
+  assert.match(html, /gen3-entry\.js/);
   assert.doesNotMatch(html, /忘記密碼？（準備中）|使用 Google 登入（準備中）|建立帳號（準備中）/);
-  assert.match(css, /\\.login-help a/);
-  assert.match(statusScript, /\\/api\\/auth\\/status/);
+  assert.match(css, /\.login-help a/);
+  assert.match(statusScript, /\/api\/auth\/status/);
   assert.match(statusScript, /aria-disabled/);
   assert.match(server, /gen3Pages=new Set/);
-  assert.match(server, /app\\.get\\("\\/api\\/auth\\/status"/);
-  assert.doesNotMatch(server, /express\\.static\\(path\\.join\\(__dirname,"gen3-auth"/);
+  assert.match(server, /app\.get\("\/api\/auth\/status"/);
+  assert.doesNotMatch(server, /express\.static\(path\.join\(__dirname,"gen3-auth"/);
   for(const page of ["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html"]){
     assert.ok(fs.existsSync(path.join(root,"gen3-auth",page)),page);
   }
