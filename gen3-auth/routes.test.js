@@ -20,6 +20,7 @@ function fakeStore(){
  recordLoginFailureAtomic:async id=>users.find(u=>u.user_id===id),
  recordLoginSuccessAtomic:async id=>users.find(u=>u.user_id===id),
  createSession:async()=>true,findSessionByHash:async()=>null,touchSession:async()=>true,revokeSession:async()=>true,
+ throttleAtomic:async()=>true,
  createToken:async t=>{tokens.push(t);return true},
  consumeTokenAtomic:async(hash,purpose,pass)=>{
   const t=tokens.find(x=>x.token_hash===hash&&x.purpose===purpose&&!x.used_at);
