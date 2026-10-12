@@ -90,12 +90,27 @@ const gen3Ready=Boolean(
   process.env.GEN3_APPS_SCRIPT_URL &&
   process.env.GEN3_APPS_SCRIPT_KEY
 );
+// Expose only the Gen3 HTML entry pages. Never serve server-side auth source,
+ // Apps Script code, tests, or deployment notes as static files.
+const gen3Pages=new Set(["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html"]);
+app.get("/gen3/:page",(req,res)=>{
+  if(!gen3Pages.has(req.params.page))return res.status(404).send("Not Found");
+  res.set("Cache-Control","no-store");
+  res.set("X-Content-Type-Options","nosniff");
+  res.sendFile(path.join(__dirname,"gen3-auth",req.params.page));
+});
+const googleReady=gen3Ready&&Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID&&process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+app.get("/api/auth/status",(req,res)=>{
+  res.set("Cache-Control","no-store");
+  res.json({enabled:gen3Ready,google:googleReady});
+});
 if(gen3Ready){
   const {createSheetsStore}=require("./gen3-auth/sheets-store");
   const {createRouter}=require("./gen3-auth/routes");
   app.use("/api/auth",createRouter(createSheetsStore()));
-  app.use("/gen3",express.static(path.join(__dirname,"gen3-auth"),{
-    index:false,fallthrough:false,setHeaders(res){res.setHeader("Cache-Control","no-store");res.setHeader("X-Content-Type-Options","nosniff");}
+}else{
+  app.use("/api/auth",(req,res)=>res.status(503).json({
+    success:false,code:"GEN3_NOT_CONFIGURED",message:"第三代帳號服務尚未完成設定，請稍後再試"
   }));
 }
 

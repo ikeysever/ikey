@@ -5,11 +5,12 @@ const express=require("express");
 const {createRouter}=require("./routes");
 const {passwordVerify}=require("./core");
 const old={...process.env};
-process.env.RESEND_API_KEY="test_only";
-process.env.GEN3_MAIL_FROM="iKey <noreply@example.com>";
+process.env.GEN3_APPS_SCRIPT_URL="https://script.google.com/macros/s/test-only/exec";
+process.env.GEN3_APPS_SCRIPT_KEY="test_only_key_at_least_32_characters_long";
 function fakeStore(){
- const users=[],tokens=[],audit=[];
- return {users,tokens,audit,
+ const users=[],tokens=[],audit=[],sent=[];
+ return {users,tokens,audit,sent,
+ sendMail:async(to,subject,body)=>{sent.push({to,subject,text:body});return true},
  registerAtomic:async u=>{if(users.some(x=>x.email===u.email||x.username===u.username))return null;users.push(u);return u},
  findByEmail:async email=>users.find(u=>u.email===email)||null,
  findByLogin:async id=>users.find(u=>u.email===id||u.username===id)||null,
@@ -36,11 +37,7 @@ test("registration, verification, login and single-use password reset",async()=>
  const store=fakeStore(),app=express();app.use(express.json());app.use("/api/auth",createRouter(store));
  const server=app.listen(0);
  const base="http://127.0.0.1:"+server.address().port;
- const sent=[],original=global.fetch;
- global.fetch=async(url,opts)=>{
-  if(String(url).startsWith("https://api.resend.com/emails")){sent.push(JSON.parse(opts.body));return {ok:true};}
-  return original(url,opts);
- };
+ const sent=store.sent,original=global.fetch;
  async function post(path,data){const r=await original(base+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});return {status:r.status,body:await r.json()};}
  try{
   let r=await post("/api/auth/register",{username:"student_1",display_name:"測試學生",email:"student@example.com",password:"safePassword123"});
@@ -56,5 +53,5 @@ test("registration, verification, login and single-use password reset",async()=>
   r=await post("/api/auth/reset-password",{token:token2,password:"newPassword123"});assert.equal(r.status,200);
   assert.equal(passwordVerify("newPassword123",store.users[0].password_hash),true);
   r=await post("/api/auth/reset-password",{token:token2,password:"newPassword456"});assert.equal(r.status,400);
- }finally{global.fetch=original;await new Promise(resolve=>server.close(resolve));Object.assign(process.env,old)}
+ }finally{await new Promise(resolve=>server.close(resolve));Object.assign(process.env,old)}
 });

@@ -40,12 +40,13 @@
           <label for="password">密碼</label>
           <input id="password" name="password" type="password" autocomplete="current-password" placeholder="請輸入密碼" required>
         </div>
-        <div class="login-help"><span>忘記密碼？（準備中）</span></div>
+        <div class="login-help"><a href="/gen3/forgot-password.html">忘記密碼？</a></div>
         <button type="submit">登入系統</button>
         <p id="loginMessage" role="status" aria-live="polite"></p>
       </form>
-      <button class="login-google" type="button" disabled title="Google 登入尚未啟用">使用 Google 登入（準備中）</button>
-      <p class="login-register-note">還沒有帳號？<span>建立帳號（準備中）</span></p>
+      <a class="login-google" id="googleLoginLink" href="/api/auth/google/start">使用 Google 登入</a>
+      <p class="login-register-note">還沒有帳號？<a href="/gen3/register.html">建立帳號</a></p>
+      <p id="gen3AuthStatus" class="gen3-auth-status" role="status" aria-live="polite"></p>
     </section>
   </main>
 
@@ -762,6 +763,7 @@
   <script src="./admin-operations.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./welcome-padlock.js"></script>
+  <script src="./gen3-entry.js" defer></script>
   <script src="./animation.js"></script>
   <script src="./sidebar-pages.js"></script>
 
