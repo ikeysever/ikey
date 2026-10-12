@@ -2542,6 +2542,10 @@ document.addEventListener("DOMContentLoaded", () => {
       () => {
 
         const page = item.dataset.page;
+        if (page === "my-account" && activeLoginKind === "gen3") {
+          location.assign("/gen3/account.html");
+          return;
+        }
         // Only mobile navigation closes the drawer; desktop stays as the user left it.
         if (narrowSidebar.matches) setSidebarOpen(false);
 
