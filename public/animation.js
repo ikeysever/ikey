@@ -3108,8 +3108,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if(loginPage)loginPage.hidden=true;
     try{
       if(playWelcome&&window.iKeyPadlockWelcome){
+        // Welcome animation is independent of global device connectivity.
         await window.iKeyPadlockWelcome.create(()=>Promise.resolve()).promise;
-      }else if(playWelcome){
       }
       if(homePage)homePage.hidden=false;
       showDashboard();
