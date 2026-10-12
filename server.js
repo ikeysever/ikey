@@ -113,8 +113,16 @@ function gen3FailureCategory(err){
   if(msg.startsWith("GEN3_STORAGE_MISSING_SHEET_")||msg.startsWith("GEN3_STORAGE_SCHEMA_MISMATCH_"))
     return "APPS_SCRIPT_SCHEMA_MISMATCH";
   if(msg==="GEN3_STORAGE_HTTP_ERROR")return "APPS_SCRIPT_HTTP_ERROR";
+  if(msg==="GEN3_STORAGE_UNKNOWN_ACTION")return "APPS_SCRIPT_OUTDATED_ACTION";
+  // Apps Script returns short symbolic error codes. Never log raw upstream
+  // responses, credentials, URLs, stack traces, or unvalidated error text.
+  if(/^GEN3_STORAGE_[A-Z0-9_]{1,64}$/.test(msg))return "APPS_SCRIPT_"+msg.slice("GEN3_STORAGE_".length);
   if(err?.name==="AbortError")return "APPS_SCRIPT_TIMEOUT";
   if(err?.name==="SyntaxError")return "APPS_SCRIPT_NON_JSON_RESPONSE";
+  const networkCode=String(err?.cause?.code||"");
+  if(["ENOTFOUND","EAI_AGAIN"].includes(networkCode))return "APPS_SCRIPT_DNS_FAILURE";
+  if(["ECONNRESET","ECONNREFUSED","ETIMEDOUT"].includes(networkCode))return "APPS_SCRIPT_NETWORK_FAILURE";
+  if(err?.name==="TypeError"&&msg==="fetch failed")return "APPS_SCRIPT_FETCH_FAILED";
   return "APPS_SCRIPT_CONNECTION_FAILED";
 }
 async function checkGen3(){
