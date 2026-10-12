@@ -324,3 +324,28 @@ test("Google OAuth code, routes, UI and public status are absent",()=>{
  assert.match(routes,/router\.post\("\/login"/);
  assert.match(routes,/router\.post\("\/forgot-password"/);
 });
+
+test("homepage merges account details without a separate account sidebar page",()=>{
+  const profile=fs.readFileSync(path.join(root,"public/home-account.js"),"utf8");
+  const legacyAccount=fs.readFileSync(path.join(root,"gen3-auth/account.html"),"utf8");
+  assert.match(html,/id="ikeyHomeAccount"/);
+  for(const id of ["ikeyHomeUsername","ikeyHomeDisplayName","ikeyHomeEmail","ikeyHomeStatus",
+    "ikeyHomeRole","ikeyHomeAccountProfile","ikeyHomeAccountRefresh","ikeyHomeAccountLegacy"]){
+    assert.match(html,new RegExp('id="'+id+'"'));
+  }
+  assert.match(html,/Google 帳號綁定/);
+  assert.match(html,/已停用（第三版不提供）/);
+  assert.match(html,/id="dashboardPage"/);
+  assert.doesNotMatch(html,/data-page="my-account"|id="ikeyPage-my-account"/);
+  assert.match(html,/src="\.\/home-account\.js"/);
+  assert.match(profile,/fetch\("\/api\/auth\/me"/);
+  assert.match(profile,/credentials:"same-origin",cache:"no-store"/);
+  assert.match(profile,/\.textContent =/);
+  assert.doesNotMatch(profile,/innerHTML|localStorage|sessionStorage/);
+  assert.match(app,/iKeyHomeAccount\.load\(kind\)/);
+  assert.match(app,/iKeyHomeAccount\.load\("legacy"\)/);
+  assert.match(app,/iKeyHomeAccount\.clear\(\)/);
+  assert.doesNotMatch(app,/location\.assign\("\/gen3\/account\.html"\)/);
+  assert.match(legacyAccount,/location\.replace\("\/"\)/);
+  assert.match(css,/\.ikey-account-grid/);
+});
