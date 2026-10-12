@@ -21,3 +21,14 @@ test("legacy tab names are not part of Gen3 write target schema",()=>{
     assert.equal(source.includes('append("'+name+'"'),false);
   }
 });
+
+test("free Apps Script MailApp sends only iKey account email",()=>{
+ const sent=[];
+ const ctx=vm.createContext({MailApp:{getRemainingDailyQuota:()=>10,sendEmail:x=>sent.push(x)}});
+ new vm.Script(source).runInContext(ctx);
+ assert.equal(ctx.execute("sendMail",{to:"student@example.com",subject:"iKey 電子郵件驗證",body:"請驗證 https://ikey.onrender.com/gen3/verify-email.html?token=abc"}),true);
+ assert.equal(sent.length,1);
+ assert.equal(sent[0].to,"student@example.com");
+ assert.throws(()=>ctx.execute("sendMail",{to:"bad",subject:"iKey 電子郵件驗證",body:"https://ikey.onrender.com/gen3/verify-email.html"}),/INVALID_MAIL/);
+ assert.throws(()=>ctx.execute("sendMail",{to:"student@example.com",subject:"任意郵件",body:"https://ikey.onrender.com/gen3/verify-email.html"}),/INVALID_MAIL/);
+});
