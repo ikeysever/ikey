@@ -32,13 +32,13 @@ function rows(name) {
  const headers=HEADERS[name],data=tab.getRange(2,1,n-1,headers.length).getValues();
  return data.map((r,i)=>({index:i+2,value:Object.fromEntries(headers.map((h,j)=>[h,String(r[j]??"")]))}));
 }
-function append(name,value) {
+function cellText(value) {\n const s=String(value??"");\n return /^[\\s]*[=+\\-@]/.test(s) ? "\\u0027"+s : s;\n}\nfunction append(name,value) {
  const tab=sheet(name);
- tab.appendRow(HEADERS[name].map(h=>String(value[h]??"")));
+ tab.appendRow(HEADERS[name].map(h=>cellText(value[h])));
 }
 function overwrite(name,index,value) {
  const tab=sheet(name);
- tab.getRange(index,1,1,HEADERS[name].length).setValues([HEADERS[name].map(h=>String(value[h]??""))]);
+ tab.getRange(index,1,1,HEADERS[name].length).setValues([HEADERS[name].map(h=>cellText(value[h]))]);
 }
 function locked(fn) {
  const lock=LockService.getScriptLock();
@@ -49,7 +49,7 @@ function execute(action,p) {
  switch(action) {
   case "registerAtomic":return locked(()=>{
    const email=String(p.user?.email||"").trim().toLowerCase();
-   if(!email || rows(TABS.users).some(r=>r.value.email.toLowerCase()===email))return null;
+   if(!email || !p.user?.user_id || !p.user?.password_hash || !/^scrypt:v1:/.test(p.user.password_hash) || rows(TABS.users).some(r=>r.value.email.toLowerCase()===email))return null;
    if(p.user.global_role!=="user" || p.user.account_status!=="active" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
    append(TABS.users,p.user);return {user_id:p.user.user_id};
   });
