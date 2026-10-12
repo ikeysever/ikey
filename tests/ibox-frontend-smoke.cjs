@@ -179,12 +179,11 @@ test("next generation iKey branding uses the lock and key logo", () => {
   assert.doesNotMatch(html, /智慧鑰匙管理系統|智慧校園管理系統/);
 });
 
-test("sidebar auto-closes only on mobile; desktop remains expanded", () => {
-  const script = fs.readFileSync(path.join(root, "public/sidebar-pages.js"), "utf8");
-  assert.match(script, /event\.target\.closest\("button\[data-page\]"\)/);
-  assert.match(script, /window\.matchMedia\("\(max-width: 700px\)"\)\.matches &&/);
-  assert.match(script, /sidebar\?\.classList\.contains\("is-open"\)/);
-  assert.doesNotMatch(script, /if \(open\) menuButton\.click\(\)/);
+test("mobile sidebar closes on navigation; desktop keeps its previous state", () => {
+  const navScript = fs.readFileSync(path.join(root, "public/sidebar-pages.js"), "utf8");
+  assert.match(app, /if \(narrowSidebar\.matches\) setSidebarOpen\(false\)/);
+  assert.doesNotMatch(app, /const page = item\.dataset\.page;\s*setSidebarOpen\(false\)/);
+  assert.doesNotMatch(navScript, /menuButton\.click\(\)/);
 });
 
 test("refresh restores only server-verified login session and does not save passwords", () => {
