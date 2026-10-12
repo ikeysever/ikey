@@ -9,7 +9,7 @@ const TABS = Object.freeze({
  users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens"
 });
 const HEADERS = Object.freeze({
- Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at"],
+ Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at","username"],
  Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
  Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
@@ -54,7 +54,8 @@ function execute(action,p) {
  switch(action) {
   case "registerAtomic":return locked(()=>{
    const email=String(p.user?.email||"").trim().toLowerCase();
-   if(!email || !p.user?.user_id || !p.user?.password_hash || !/^scrypt:v1:/.test(p.user.password_hash) || rows(TABS.users).some(r=>r.value.email.toLowerCase()===email))return null;
+   if(!email || !p.user?.user_id || !p.user?.password_hash || !/^scrypt:v1:/.test(p.user.password_hash) || rows(TABS.users).some(r=>r.value.email.toLowerCase()===email || (p.user.username && r.value.username.toLowerCase()===p.user.username.toLowerCase())))return null;
+   if(!/^[a-z][a-z0-9_]{3,23}$/.test(String(p.user.username||"")))throw Error("INVALID_USERNAME");
    if(p.user.global_role!=="user" || p.user.account_status!=="pending_verification" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
    append(TABS.users,p.user);return {user_id:p.user.user_id};
   });
@@ -100,7 +101,7 @@ function execute(action,p) {
    r.value.used_at=new Date().toISOString();overwrite(TABS.tokens,r.index,r.value);
    return {user_id:u.value.user_id};
   });
-  case "findByLogin":return rows(TABS.users).find(r=>r.value.email===String(p.identifier||"").trim().toLowerCase())?.value||null;
+  case "findByLogin":return rows(TABS.users).find(r=>(r.value.email===String(p.identifier||"").trim().toLowerCase()||r.value.username.toLowerCase()===String(p.identifier||"").trim().toLowerCase()))?.value||null;
   case "findByEmail":return rows(TABS.users).find(r=>r.value.email===String(p.email||"").toLowerCase())?.value||null;
   case "findById":return rows(TABS.users).find(r=>r.value.user_id===p.user_id)?.value||null;
   case "recordLoginFailureAtomic":return locked(()=>{
