@@ -86,6 +86,13 @@ function execute(action,p) {
    if(n>=limit)return false;
    r.value.user_id=String(n+1);overwrite(TABS.tokens,r.index,r.value);return true;
   });
+  case "sendMail":return (()=>{
+   const to=String(p.to||"").trim().toLowerCase(),subject=String(p.subject||""),body=String(p.body||"");
+   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(to)||to.length>254||!/^iKey (電子郵件驗證|密碼重設)$/.test(subject)||body.length>3000||!body.includes("https://ikey.onrender.com/gen3/"))throw Error("INVALID_MAIL");
+   if(MailApp.getRemainingDailyQuota()<1)throw Error("MAIL_QUOTA_EXCEEDED");
+   MailApp.sendEmail({to,subject,body,name:"iKey 智慧鑰匙管理系統"});
+   return true;
+  })();
   case "createToken":return locked(()=>{
    const t=p.token||{};
    if(!t.token_hash||!t.user_id||!["verify_email","reset_password"].includes(t.purpose)||Date.parse(t.expires_at)<=Date.now())throw Error("INVALID_TOKEN");
