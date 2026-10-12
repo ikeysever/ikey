@@ -4,19 +4,12 @@ const {token,hashToken}=require("./core");
 const BASE="https://ikey.onrender.com";
 function configured(){return Boolean(process.env.GEN3_APPS_SCRIPT_URL&&process.env.GEN3_APPS_SCRIPT_KEY);}
 async function sendMail(store,to,subject,body){
- if(!configured())throw Error("MAIL_NOT_CONFIGURED");
- if(process.env.RESEND_API_KEY&&process.env.GEN3_MAIL_FROM){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
- try{
-  const r=await fetch("https://api.resend.com/emails",{method:"POST",signal:controller.signal,headers:{"Authorization":"Bearer "+process.env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from:process.env.GEN3_MAIL_FROM,to:[to],subject,text:body})});
-  if(!r.ok)throw Error("MAIL_DELIVERY_FAILED");
- }finally{clearTimeout(timer)}
- }else{
-  if(typeof store.sendMail!=="function")throw Error("MAIL_PROVIDER_NOT_CONFIGURED");
-  await store.sendMail(to,subject,body);
- }
+ if(!configured()||typeof store?.sendMail!=="function")throw Error("MAIL_NOT_CONFIGURED");
+ // Gen3 always uses its dedicated Apps Script MailApp; never fall back to Resend.
+ if(await store.sendMail(to,subject,body)!==true)throw Error("MAIL_DELIVERY_FAILED");
 }
 async function sendToken(store,user,purpose){
+ if(!["verify_email","reset_password"].includes(purpose))throw Error("INVALID_MAIL_PURPOSE");
  if(!configured())throw Error("MAIL_NOT_CONFIGURED");
  const raw=token(),ttl=purpose==="reset_password"?15:30;
  const record={token_id:crypto.randomUUID(),user_id:user.user_id,token_hash:hashToken(raw),purpose,target_email:user.email,created_at:new Date().toISOString(),expires_at:new Date(Date.now()+ttl*60000).toISOString(),used_at:""};
