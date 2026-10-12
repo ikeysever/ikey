@@ -1,0 +1,27 @@
+name: Gen3 Apps Script connectivity (read-only)
+on:
+  push:
+    branches: [feat/gen3-auth-mailapp-activation]
+    paths:
+      - '.github/workflows/gen3-auth-connectivity.yml'
+      - 'gen3-auth/smoke.js'
+      - 'gen3-auth/sheets-store.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify dedicated Gen3 Apps Script connectivity (read only)
+        env:
+          GEN3_APPS_SCRIPT_URL: ${{ secrets.GEN3_APPS_SCRIPT_URL }}
+          GEN3_APPS_SCRIPT_KEY: ${{ secrets.GEN3_APPS_SCRIPT_KEY }}
+        run: node gen3-auth/smoke.js
