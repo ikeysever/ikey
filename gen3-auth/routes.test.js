@@ -15,9 +15,6 @@ function fakeStore(){
  findByEmail:async email=>users.find(u=>u.email===email)||null,
  findByLogin:async id=>users.find(u=>u.email===id||u.username===id)||null,
  findById:async id=>users.find(u=>u.user_id===id)||null,
- findByGoogleSub:async sub=>users.find(u=>u.google_sub===sub)||null,
- registerGoogleAtomic:async u=>{users.push(u);return u},
- linkGoogleAtomic:async(id,sub)=>{const u=users.find(x=>x.user_id===id);if(u)u.google_sub=sub;return u},
  recordLoginFailureAtomic:async id=>users.find(u=>u.user_id===id),
  recordLoginSuccessAtomic:async id=>users.find(u=>u.user_id===id),
  createSession:async()=>true,findSessionByHash:async()=>null,touchSession:async()=>true,revokeSession:async()=>true,
@@ -40,6 +37,10 @@ test("registration, verification, login and single-use password reset",async()=>
  const sent=store.sent,original=global.fetch;
  async function post(path,data){const r=await original(base+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});return {status:r.status,body:await r.json()};}
  try{
+  for(const endpoint of ["/api/auth/google/start","/api/auth/google/link","/api/auth/google/callback"]){
+   const response=await original(base+endpoint);
+   assert.equal(response.status,404,endpoint);
+  }
   let r=await post("/api/auth/register",{username:"student_1",display_name:"測試學生",email:"student@example.com",password:"safePassword123"});
   assert.equal(r.status,201);assert.equal(store.users[0].account_status,"pending_verification");assert.equal(sent.length,1);
   r=await post("/api/auth/login",{identifier:"student_1",password:"safePassword123"});assert.equal(r.status,403);
