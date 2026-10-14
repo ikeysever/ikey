@@ -17,7 +17,7 @@ function fakeStore(){
 test("username-only registration, login and removed mail routes",async()=>{
  const store=fakeStore(),app=express();app.use(express.json());app.use("/api/auth",createRouter(store));
  const server=app.listen(0),base="http://127.0.0.1:"+server.address().port;
- async function post(path,data){const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});return {status:r.status,body:await r.json()};}
+ async function post(path,data){const r=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});const raw=await r.text();let body={};try{body=JSON.parse(raw)}catch{}return {status:r.status,body};}
  try{
   let r=await post("/api/auth/register",{username:"student_1",display_name:"測試學生",password:"safePassword123"});
   assert.equal(r.status,201);assert.equal(store.users[0].account_status,"active");
