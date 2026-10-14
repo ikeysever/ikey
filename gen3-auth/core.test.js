@@ -2,10 +2,6 @@
 const assert = require("node:assert/strict");
 const {test} = require("node:test");
 const auth = require("./core");
-test("normalize email and reject invalid input",()=>{
-  assert.equal(auth.normalizeEmail(" A@EXAMPLE.COM "),"a@example.com");
-  assert.throws(()=>auth.normalizeEmail("invalid"));
-});
 test("password hashed with salt and verified",()=>{
   const a=auth.passwordHash("a-long-password"),b=auth.passwordHash("a-long-password");
   assert.notEqual(a,b);
@@ -16,6 +12,7 @@ test("password hashed with salt and verified",()=>{
 test("account status blocks password authentication",()=>{
   assert.equal(auth.active({account_status:"disabled"}),false);
   assert.equal(auth.active({account_status:"pending_deletion"}),false);
+  assert.equal(auth.active({account_status:"pending_verification"}),true);
   assert.equal(auth.active({account_status:"temporarily_locked",locked_until:"2099-01-01T00:00:00Z"}),false);
   assert.equal(auth.active({account_status:"temporarily_locked",locked_until:"2020-01-01T00:00:00Z"}),true);
 });

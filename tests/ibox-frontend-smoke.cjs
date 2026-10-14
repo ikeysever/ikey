@@ -205,26 +205,18 @@ test("logo reference contains horizontal key, padlock and circular technology ri
   assert.match(svg, /<circle cx="120" cy="279"/);
 });
 
-test("main login provides Gen3 account entrypoints without exposing backend sources",()=>{
-  const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
-  const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
-  const statusScript=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
-  assert.match(html, /href="\/gen3\/forgot-password\.html"/);
-  assert.match(html, /href="\/gen3\/register\.html"/);
-  assert.match(html, /id="gen3LoginForm"/);
-  assert.match(html, /href="\/\?legacy=1"/);
-  assert.match(server, /gen3Store\.health\(\)/);
-  assert.match(html, /gen3-entry\.js/);
-  assert.doesNotMatch(html, /忘記密碼？（準備中）|建立帳號（準備中）/);
-  assert.match(css, /\.login-help a/);
-  assert.match(statusScript, /\/api\/auth\/status/);
-  assert.doesNotMatch(statusScript, /googleLoginLink|googleReady/);
-  assert.match(server, /gen3Pages=new Set/);
-  assert.match(server, /app\.get\("\/api\/auth\/status"/);
-  assert.doesNotMatch(server, /express\.static\(path\.join\(__dirname,"gen3-auth"/);
-  for(const page of ["login.html","register.html","forgot-password.html","verify-email.html","reset-password.html","account.html"]){
-    assert.ok(fs.existsSync(path.join(root,"gen3-auth",page)),page);
-  }
+test("main login exposes username-only Gen3 account without legacy recovery pages",()=>{
+ const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
+ const statusScript=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
+ assert.match(html,/href="\/gen3\/register\.html"/);
+ assert.match(html,/id="gen3LoginForm"/);
+ assert.match(html,/href="\/\?legacy=1"/);
+ assert.match(server,/gen3Store\.health\(\)/);
+ assert.match(statusScript,/\/api\/auth\/status/);
+ assert.doesNotMatch(html,/帳號或電子郵件|忘記密碼\.html|ikeyV3Email/);
+ assert.match(server,/gen3Pages=new Set/);
+ for(const page of ["login.html","register.html","account.html"])assert.ok(fs.existsSync(path.join(root,"gen3-auth",page)));
+ for(const page of ["forgot-password.html","verify-email.html","reset-password.html"])assert.equal(fs.existsSync(path.join(root,"gen3-auth",page)),false);
 });
 
 test("Gen3 primary login uses server verified sessions, existing welcome, and main homepage",()=>{
@@ -245,44 +237,28 @@ test("Gen3 primary login uses server verified sessions, existing welcome, and ma
   assert.doesNotMatch(entry,/fetch\("\/api\/login"/);
 });
 
-test("primary login matches the approved standalone design and recovery returns home",()=>{
-  const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
-  const status=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
-  const pages=["login.html","forgot-password.html","register.html","account.html","verify-email.html","reset-password.html"];
-  assert.match(html,/id="gen3LoginPanel"/);
-  assert.match(html,/class="ikey-login-subtitle">自動多場景智慧鎖<\/p>/);
-  assert.match(html,/class="ikey-login-links"/);
-  assert.match(html,/class="ikey-admin-entry" href="\/\?legacy=1"/);
-  assert.match(html,/id="legacyLoginPanel"[^>]*hidden/);
-  assert.match(css,/#loginPage #gen3LoginPanel \.form-group input/);
-  assert.match(css,/background: #68a9ff/);
-  assert.match(css,/background: #0b1220/);
-  assert.match(status,/fetch\("\/api\/auth\/status"/);
-  assert.doesNotMatch(html,/第三代/);
-  assert.doesNotMatch(status,/第三代/);
-  for(const page of pages){
-    const content=fs.readFileSync(path.join(root,"gen3-auth",page),"utf8");
-    assert.doesNotMatch(content,/第三代/,page);
-    if(page!=="login.html")assert.match(content,/href="\/"/,page);
-  }
-  const recovery=fs.readFileSync(path.join(root,"gen3-auth/forgot-password.html"),"utf8");
-  assert.match(recovery,/href="\/">← 返回登入頁/);
-  assert.match(recovery,/ikeydaangaogong@gmail\.com/);
-  assert.match(recovery,/href="mailto:ikeydaangaogong@gmail\.com\?subject=/);
-  assert.match(recovery,/如需重設密碼，請聯繫 iKey 管理團隊/);
-  assert.doesNotMatch(recovery,/<form|寄送重設連結|\/api\/auth\/forgot-password/);
+test("primary login and registration use username only",()=>{
+ const css=fs.readFileSync(path.join(root,"public/style.css"),"utf8");
+ const status=fs.readFileSync(path.join(root,"public/gen3-entry.js"),"utf8");
+ assert.match(html,/id="gen3LoginPanel"/);
+ assert.match(html,/class="ikey-login-subtitle">自動多場景智慧鎖<\/p>/);
+ assert.match(html,/id="legacyLoginPanel"[^>]*hidden/);
+ assert.match(css,/#loginPage #gen3LoginPanel \.form-group input/);
+ assert.match(status,/fetch\("\/api\/auth\/status"/);
+ for(const page of ["login.html","register.html","account.html"]){
+  const content=fs.readFileSync(path.join(root,"gen3-auth",page),"utf8");
+  assert.doesNotMatch(content,/電子郵件|驗證信|忘記密碼\.html/);
+ }
 });
 
-test("Gen3 readiness reports safe diagnostic categories without leaking credentials",()=>{
+test("Gen3 readiness gates registration on username-only Apps Script version",()=>{
  const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
  const register=fs.readFileSync(path.join(root,"gen3-auth/register.html"),"utf8");
  assert.match(server,/appsScriptUrlConfigured:gen3UrlValid/);
  assert.match(server,/appsScriptKeyConfigured:gen3KeyValid/);
- assert.match(server,/reason:r.reason/);
+ assert.match(server,/registration:r.registration/);
  assert.match(server,/APPS_SCRIPT_VERSION_MISMATCH/);
- assert.match(server,/APPS_SCRIPT_AUTH_FAILED/);
- assert.match(server,/APPS_SCRIPT_SCHEMA_MISMATCH/);
- assert.match(server,/MAILAPP_NOT_READY/);
+ assert.match(server,/APPS_SCRIPT_UPGRADE_REQUIRED/);
  assert.match(register,/診斷：/);
  assert.match(register,/APPS_SCRIPT_NON_JSON_RESPONSE/);
  assert.doesNotMatch(server,/console\.log\(process\.env\)/);
@@ -297,7 +273,7 @@ test("Gen3 error categorization distinguishes stale Apps Script deployment and n
  assert.match(server,/GEN3_STORAGE_\[A-Z0-9_\]/);
 });
 
-test("Gen3 health errors safely distinguish permission, spreadsheet and MailApp failures",()=>{
+test("Gen3 health errors distinguish permission and spreadsheet failures",()=>{
  const vm=require("node:vm");
  const server=fs.readFileSync(path.join(root,"server.js"),"utf8");
  const from=server.indexOf("function gen3FailureCategory(err){");
@@ -306,25 +282,22 @@ test("Gen3 health errors safely distinguish permission, spreadsheet and MailApp 
  const categorize=vm.runInNewContext("("+server.slice(from,to).trim()+")");
  assert.equal(categorize(new Error("GEN3_STORAGE_Exception: You do not have permission to call SpreadsheetApp.openById on private-id")),"APPS_SCRIPT_PERMISSION_DENIED");
  assert.equal(categorize(new Error("GEN3_STORAGE_Exception: Service Spreadsheets failed while accessing document with id private-id")),"APPS_SCRIPT_SPREADSHEET_ACCESS_FAILED");
- assert.equal(categorize(new Error("GEN3_STORAGE_Exception: MailApp.getRemainingDailyQuota is not authorized")),"APPS_SCRIPT_MAILAPP_ACCESS_FAILED");
- assert.equal(categorize(new Error("GEN3_STORAGE_Exception: Unexpected internal error")),"APPS_SCRIPT_EXECUTION_ERROR");
  assert.equal(categorize(new Error("GEN3_STORAGE_UNKNOWN_ACTION")),"APPS_SCRIPT_OUTDATED_ACTION");
  assert.equal(categorize(new Error("GEN3_STORAGE_UNAUTHORIZED")),"APPS_SCRIPT_AUTH_FAILED");
 });
 
-test("Google OAuth code, routes, UI and public status are absent",()=>{
- const files=["server.js","gen3-auth/routes.js","gen3-auth/sheets-store.js","gen3-auth/core.js",
+test("external login and mail registration endpoints are absent",()=>{
+ const paths=["server.js","gen3-auth/routes.js","gen3-auth/sheets-store.js","gen3-auth/core.js",
   "gen3-auth/apps-script/Code.gs","gen3-auth/login.html","gen3-auth/register.html",
   "gen3-auth/account.html","public/index.html","public/gen3-entry.js"];
- assert.equal(fs.existsSync(path.join(root,"gen3-auth/google.js")),false);
- for(const name of files){
+ for(const name of paths){
   const content=fs.readFileSync(path.join(root,name),"utf8");
   assert.doesNotMatch(content,/GOOGLE_OAUTH_CLIENT_|\/api\/auth\/google|\/google\/(?:start|link|callback)|registerGoogleAtomic|findByGoogleSub|linkGoogleAtomic|googleLoginLink|google_linked:/i,name);
  }
  const routes=fs.readFileSync(path.join(root,"gen3-auth/routes.js"),"utf8");
  assert.match(routes,/router\.post\("\/register"/);
  assert.match(routes,/router\.post\("\/login"/);
- assert.match(routes,/router\.post\("\/forgot-password"/);
+ assert.doesNotMatch(routes,/router\.post\("\/(?:forgot-password|reset-password|verify-email|resend-verification)"/);
 });
 
 test("Gen3 homepage is fully rebuilt and keeps other app sections intact",()=>{
@@ -337,7 +310,7 @@ test("Gen3 homepage is fully rebuilt and keeps other app sections intact",()=>{
     assert.ok(html.includes(name),name);
   }
   for(const id of ["ikeyV3Greeting","ikeyV3Account","ikeyV3AccountRefresh",
-    "ikeyV3Gen3Fields","ikeyV3AdminFields","ikeyV3Username","ikeyV3Email",
+    "ikeyV3Gen3Fields","ikeyV3AdminFields","ikeyV3Username",
     "ikeyV3AdminUsername"]){
     assert.match(html,new RegExp('id="'+id+'"'));
   }
