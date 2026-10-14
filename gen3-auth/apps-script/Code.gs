@@ -9,8 +9,8 @@ const TABS = Object.freeze({
  users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens"
 });
 const HEADERS = Object.freeze({
- Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","email_verified_at","username"],
- Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
+ Gen3_Users:["user_id","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","username"],
+ Auth_Tokens:["token_id","user_id","token_hash","purpose","created_at","expires_at","used_at"],
  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
  Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
 });
@@ -53,11 +53,14 @@ function locked(fn) {
 function execute(action,p) {
  switch(action) {
   case "registerAtomic":return locked(()=>{
-   const email=String(p.user?.email||"").trim().toLowerCase();
-   if(!email || !p.user?.user_id || !p.user?.password_hash || !/^scrypt:v1:/.test(p.user.password_hash) || rows(TABS.users).some(r=>r.value.email.toLowerCase()===email || (p.user.username && r.value.username.toLowerCase()===p.user.username.toLowerCase())))return null;
-   if(!/^[a-z][a-z0-9_]{3,23}$/.test(String(p.user.username||"")))throw Error("INVALID_USERNAME");
-   if(p.user.global_role!=="user" || p.user.account_status!=="pending_verification" || p.user.email!==email)throw Error("INVALID_REGISTRATION");
-   append(TABS.users,p.user);return {user_id:p.user.user_id};
+   const u=p.user||{},username=String(u.username||"").trim().toLowerCase();
+   if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))throw Error("INVALID_USERNAME");
+   if(!u.user_id||!/^scrypt:v1:/.test(String(u.password_hash||""))||
+      !String(u.display_name||"").trim()||String(u.display_name).length>80||
+      u.global_role!=="user"||u.account_status!=="active"||u.username!==username)
+      throw Error("INVALID_REGISTRATION");
+   if(rows(TABS.users).some(r=>r.value.username.toLowerCase()===username))return null;
+   append(TABS.users,u);return {user_id:u.user_id};
   });
   case "throttleAtomic":return locked(()=>{
    const key=String(p.key||"");
@@ -65,68 +68,17 @@ function execute(action,p) {
    if(!/^[a-f0-9]{64}$/.test(key)||!Number.isInteger(limit)||limit<1||limit>100||windowMs<1000||windowMs>86400000)throw Error("INVALID_RATE_LIMIT");
    const r=rows(TABS.tokens).find(x=>x.value.purpose==="rate_limit"&&x.value.token_hash===key);
    const now=Date.now();
-   if(!r){append(TABS.tokens,{token_id:Utilities.getUuid(),user_id:"1",token_hash:key,purpose:"rate_limit",target_email:"",created_at:new Date(now).toISOString(),expires_at:new Date(now+windowMs).toISOString(),used_at:""});return true;}
+   if(!r){append(TABS.tokens,{token_id:Utilities.getUuid(),user_id:"1",token_hash:key,purpose:"rate_limit",created_at:new Date(now).toISOString(),expires_at:new Date(now+windowMs).toISOString(),used_at:""});return true;}
    if(Date.parse(r.value.expires_at)<=now){r.value.user_id="1";r.value.created_at=new Date(now).toISOString();r.value.expires_at=new Date(now+windowMs).toISOString();overwrite(TABS.tokens,r.index,r.value);return true;}
    const n=Number(r.value.user_id||0);
    if(n>=limit)return false;
    r.value.user_id=String(n+1);overwrite(TABS.tokens,r.index,r.value);return true;
   });
   case "health":return (()=>{
-   // Read-only release gate: require the dedicated schema and authorized MailApp.
    Object.values(TABS).forEach(name=>sheet(name));
-   const quota=MailApp.getRemainingDailyQuota();
-   return {version:"gen3-mailapp-v2",storage:true,mail_ready:Number.isFinite(quota)&&quota>0};
+   return {version:"gen3-username-v3",storage:true};
   })();
-  case "sendMail":return locked(()=>{
-   const to=String(p.to||"").trim().toLowerCase();
-   const subject=String(p.subject||""),body=String(p.body||"");
-   const match=body.match(/^請在 (15|30) 分鐘內開啟連結(重設密碼|驗證電子郵件)：\nhttps:\/\/ikey\.onrender\.com\/gen3\/(reset-password|verify-email)\.html\?token=([A-Za-z0-9_-]{40,128})$/);
-   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||to.length>254||body.length>3000||!match)throw Error("INVALID_MAIL");
-   const purpose=match[2]==="重設密碼"?"reset_password":"verify_email";
-   if(match[1]!== (purpose==="reset_password"?"15":"30") ||
-      match[3]!== (purpose==="reset_password"?"reset-password":"verify-email") ||
-      subject!==(purpose==="reset_password"?"iKey 密碼重設":"iKey 電子郵件驗證"))throw Error("INVALID_MAIL");
-   const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,match[4],Utilities.Charset.UTF_8);
-   const hash=bytes.map(b=>("0"+(b&255).toString(16)).slice(-2)).join("");
-   const token=rows(TABS.tokens).find(x=>x.value.token_hash===hash&&x.value.purpose===purpose&&!x.value.used_at&&
-     x.value.target_email===to&&Date.parse(x.value.expires_at)>Date.now());
-   if(!token)throw Error("INVALID_MAIL_TOKEN");
-   const user=rows(TABS.users).find(x=>x.value.user_id===token.value.user_id)?.value;
-   if(!user||user.email!==to||
-      (purpose==="verify_email"?user.account_status!=="pending_verification":user.account_status!=="active"))throw Error("INVALID_MAIL_RECIPIENT");
-   if(MailApp.getRemainingDailyQuota()<1)throw Error("MAIL_QUOTA_EXCEEDED");
-   MailApp.sendEmail({to,subject,body,name:"iKey 智慧鑰匙管理系統"});
-   return true;
-  });
-  case "createToken":return locked(()=>{
-   const t=p.token||{};
-   if(!t.token_hash||!t.user_id||!["verify_email","reset_password"].includes(t.purpose)||Date.parse(t.expires_at)<=Date.now())throw Error("INVALID_TOKEN");
-   const u=rows(TABS.users).find(x=>x.value.user_id===t.user_id)?.value;
-   if(!u||u.email!==t.target_email||u.account_status==="disabled")return false;
-   append(TABS.tokens,t);return true;
-  });
-  case "consumeTokenAtomic":return locked(()=>{
-   const r=rows(TABS.tokens).find(x=>x.value.token_hash===p.token_hash && x.value.purpose===p.purpose);
-   if(!r||r.value.used_at||Date.parse(r.value.expires_at)<=Date.now())return null;
-   const u=rows(TABS.users).find(x=>x.value.user_id===r.value.user_id);
-   if(!u||u.value.email!==r.value.target_email||u.value.account_status==="disabled"||u.value.account_status==="pending_deletion")return null;
-   if(p.purpose==="reset_password"){
-    if(!/^scrypt:v1:/.test(String(p.password_hash||"")))throw Error("INVALID_PASSWORD_HASH");
-    u.value.password_hash=p.password_hash;u.value.failed_login_attempts="0";u.value.locked_until="";u.value.account_status="active";
-    u.value.updated_at=new Date().toISOString();overwrite(TABS.users,u.index,u.value);
-    rows(TABS.sessions).filter(x=>x.value.user_id===u.value.user_id&&!x.value.revoked_at).forEach(x=>{
-     x.value.revoked_at=new Date().toISOString();x.value.revoked_reason="password_reset";overwrite(TABS.sessions,x.index,x.value);
-    });
-   }else if(p.purpose==="verify_email"){
-    u.value.email_verified_at=new Date().toISOString();
-    if(u.value.account_status==="pending_verification")u.value.account_status="active";
-    u.value.updated_at=new Date().toISOString();overwrite(TABS.users,u.index,u.value);
-   }
-   r.value.used_at=new Date().toISOString();overwrite(TABS.tokens,r.index,r.value);
-   return {user_id:u.value.user_id};
-  });
-  case "findByLogin":return rows(TABS.users).find(r=>(r.value.email===String(p.identifier||"").trim().toLowerCase()||r.value.username.toLowerCase()===String(p.identifier||"").trim().toLowerCase()))?.value||null;
-  case "findByEmail":return rows(TABS.users).find(r=>r.value.email===String(p.email||"").toLowerCase())?.value||null;
+  case "findByLogin":return rows(TABS.users).find(r=>r.value.username.toLowerCase()===String(p.identifier||"").trim().toLowerCase())?.value||null;
   case "findById":return rows(TABS.users).find(r=>r.value.user_id===p.user_id)?.value||null;
   case "recordLoginFailureAtomic":return locked(()=>{
    const r=rows(TABS.users).find(x=>x.value.user_id===p.user_id);
@@ -149,6 +101,7 @@ function execute(action,p) {
     if(Date.parse(u.locked_until||"")>Date.now())return null;
     u.account_status="active";u.locked_until="";
    }
+   if(u.account_status==="pending_verification")u.account_status="active";
    if(u.account_status!=="active")return null;
    u.failed_login_attempts="0";u.updated_at=new Date().toISOString();
    overwrite(TABS.users,r.index,u);return u;
@@ -191,45 +144,15 @@ function doPost(e) {
  } catch(err){return respond({ok:false,error:String(err.message||"INTERNAL_ERROR")})}
 }
 
-// Run this once from the Apps Script editor after setting Script Properties.
-// Read-only: checks schema, MailApp permission and quota; never prints secrets.
-function inspectGen3Setup() {
- const properties=PropertiesService.getScriptProperties();
- const report={
-  spreadsheetIdConfigured:Boolean(properties.getProperty("GEN3_SPREADSHEET_ID")),
-  apiKeyConfigured:String(properties.getProperty("GEN3_API_KEY")||"").length>=32,
-  sheets:{},
-  mailAuthorized:false,
-  mailQuotaAvailable:false
- };
+// Read-only setup inspection. Never log secrets or personal data.
+function inspectGen3Setup(){
+ const props=PropertiesService.getScriptProperties();
+ const report={spreadsheetIdConfigured:Boolean(props.getProperty("GEN3_SPREADSHEET_ID")),
+  apiKeyConfigured:String(props.getProperty("GEN3_API_KEY")||"").length>=32,sheets:{}};
  for(const name of Object.values(TABS)){
   try{sheet(name);report.sheets[name]="ok"}
   catch(err){report.sheets[name]=String(err.message||"ERROR").startsWith("SCHEMA_MISMATCH")?"schema_mismatch":"not_accessible"}
  }
- try{
-  const quota=MailApp.getRemainingDailyQuota();
-  report.mailAuthorized=true;
-  report.mailQuotaAvailable=Number.isFinite(quota)&&quota>0;
- }catch(err){
-  // Do not log raw Apps Script errors; they may contain account or file details.
-  const message=String(err&&err.message||"");
-  report.mailError=/permission|authorization|authorized|scope|consent/i.test(message)
-   ?"MAILAPP_PERMISSION_REQUIRED":"MAILAPP_CHECK_FAILED";
-  report.mailAuthorized=false;
- }
- report.ready=report.spreadsheetIdConfigured&&report.apiKeyConfigured&&
-  Object.values(report.sheets).every(v=>v==="ok")&&report.mailAuthorized&&report.mailQuotaAvailable;
- Logger.log(JSON.stringify(report));
- return report;
-}
-
-// Run this from the editor to request MailApp authorization or show the exact
-// Apps Script execution error. Read-only: does NOT send any email.
-function authorizeGen3MailApp() {
- const quota=MailApp.getRemainingDailyQuota();
- Logger.log(JSON.stringify({
-  mailAuthorized:true,
-  mailQuotaAvailable:Number.isFinite(quota)&&quota>0
- }));
- return quota>0;
+ report.ready=report.spreadsheetIdConfigured&&report.apiKeyConfigured&&Object.values(report.sheets).every(v=>v==="ok");
+ Logger.log(JSON.stringify(report));return report;
 }

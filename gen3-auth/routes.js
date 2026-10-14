@@ -3,8 +3,7 @@
 // trusted adapter with atomic uniqueness checks. No Sheets credentials in browser.
 const express = require("express");
 const crypto = require("node:crypto");
-const {normalizeEmail,passwordHash,passwordVerify,safeUser,active,newSession,hashToken,SESSION_MS} = require("./core");
-const {sendToken,configured:mailReady}=require("./email");
+const {passwordHash,passwordVerify,safeUser,active,newSession,hashToken,SESSION_MS} = require("./core");
 const COOKIE = "ikey_gen3_session";
 const MAX_NAME = 80;
 const rateKey=(kind,ip,identifier="")=>crypto.createHash("sha256").update(kind+":"+ip+":"+identifier).digest("hex");
@@ -40,90 +39,36 @@ function createRouter(store) {
       return res.status(403).json({success:false,message:"來源驗證失敗"});
     next();
   });
-  const ready=Boolean(store && ["registerAtomic","findByEmail","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","createToken","consumeTokenAtomic","throttleAtomic"].every(k=>typeof store[k]==="function"));
+  const ready=Boolean(store && ["registerAtomic","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","throttleAtomic"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
   router.post("/register",async(req,res)=>{
-    try {
-      if(!throttle("register:"+req.ip,5)||!(await store.throttleAtomic(rateKey("register",req.ip),5,15*60000))) return res.status(429).json({success:false,message:"請稍後再試"});
-      if(!mailReady())return res.status(503).json({success:false,message:"電子郵件驗證服務尚未設定"});
-      const email=normalizeEmail(req.body?.email);
+    try{
+      if(!throttle("register:"+req.ip,5)||!(await store.throttleAtomic(rateKey("register",req.ip),5,15*60000)))
+        return res.status(429).json({success:false,message:"請稍後再試"});
       const display_name=String(req.body?.display_name||"").trim();
-      if(!display_name || display_name.length>MAX_NAME) return res.status(400).json({success:false,message:"顯示名稱不符合規定"});
+      if(!display_name||display_name.length>MAX_NAME)return res.status(400).json({success:false,message:"顯示名稱不符合規定"});
       const username=String(req.body?.username||"").trim().toLowerCase();
-      if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))return res.status(400).json({success:false,message:"帳號須為 4 至 24 字元英數字或底線，並以字母開頭"});
+      if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))
+        return res.status(400).json({success:false,message:"帳號須為 4 至 24 字元英數字或底線，並以字母開頭"});
       const password_hash=passwordHash(req.body?.password);
       const now=new Date().toISOString();
-      const user={user_id:crypto.randomUUID(),email,username,password_hash,display_name,
-        global_role:"user",account_status:"pending_verification",failed_login_attempts:0,
-        locked_until:"",created_at:now,updated_at:now,email_verified_at:""};
-      // Adapter MUST atomically compare normalized email and insert or return duplicate.
+      const user={user_id:crypto.randomUUID(),username,password_hash,display_name,
+        global_role:"user",account_status:"active",failed_login_attempts:0,
+        locked_until:"",created_at:now,updated_at:now};
       const inserted=await store.registerAtomic(user);
-      if(!inserted) return res.status(409).json({success:false,message:"此電子郵件已註冊"});
+      if(!inserted)return res.status(409).json({success:false,message:"此帳號已被使用"});
       await store.audit({user_id:user.user_id,event_type:"register",result:"success",auth_method:"password"});
-      try {
-        await sendToken(store,user,"verify_email");
-      } catch(mailError) {
-        // Account already exists: never falsely report that registration failed.
-        console.error("Gen3 verification mail unavailable",mailError.code||mailError.message);
-        return res.status(202).json({success:true,email_sent:false,
-          message:"帳號已建立，但驗證信暫時無法寄出。請稍後使用「重新寄送驗證信」。"});
-      }
-      // Explicit login after registration avoids partial-success cookie issues.
-      return res.status(201).json({success:true,email_sent:true,user:safeUser(user),message:"註冊成功，請至電子郵件收取驗證連結"});
-    } catch(err) {
-      if(["INVALID_EMAIL","INVALID_PASSWORD"].includes(err.message)) return res.status(400).json({success:false,message:"電子郵件或密碼格式不符合規定"});
+      return res.status(201).json({success:true,user:safeUser(user),message:"帳號建立成功，請使用帳號與密碼登入"});
+    }catch(err){
+      if(err.message==="INVALID_PASSWORD")return res.status(400).json({success:false,message:"密碼須為 8 至 128 字元"});
       console.error("Gen3 registration error",err.code||err.message);
       return res.status(503).json({success:false,message:"暫時無法註冊，請稍後再試"});
     }
   });
-  router.post("/resend-verification",async(req,res)=>{
-    const generic={success:true,message:"若帳號尚未驗證，將收到新的驗證郵件"};
-    try{
-      if(!mailReady())return res.status(503).json({success:false,message:"郵件服務尚未設定"});
-      if(!(await store.throttleAtomic(rateKey("resend",req.ip),3,15*60000)))return res.status(429).json({success:false,message:"請稍後再試"});
-      let email;try{email=normalizeEmail(req.body?.email)}catch{return res.json(generic)}
-      const user=await store.findByEmail(email);
-      if(user?.account_status==="pending_verification")await sendToken(store,user,"verify_email");
-      return res.json(generic);
-    }catch{return res.status(503).json({success:false,message:"目前無法寄送驗證郵件"})}
-  });
-  router.post("/forgot-password",async(req,res)=>{
-    const generic={success:true,message:"如果此信箱已註冊，將收到密碼重設郵件"};
-    try{
-      if(!mailReady())return res.status(503).json({success:false,message:"郵件服務尚未設定"});
-      if(!throttle("forgot:"+req.ip,5)||!(await store.throttleAtomic(rateKey("forgot",req.ip),5,15*60000)))return res.status(429).json({success:false,message:"請稍後再試"});
-      let email;try{email=normalizeEmail(req.body?.email)}catch{return res.json(generic)}
-      const user=await store.findByEmail(email);
-      if(user && user.account_status==="active")await sendToken(store,user,"reset_password");
-      return res.json(generic);
-    }catch(err){console.error("Gen3 recovery",err.message);return res.status(503).json({success:false,message:"暫時無法寄送郵件"})}
-  });
-  router.post("/reset-password",async(req,res)=>{
-    try{
-      if(!throttle("reset:"+req.ip,8)||!(await store.throttleAtomic(rateKey("reset",req.ip),8,15*60000)))return res.status(429).json({success:false,message:"請稍後再試"});
-      const raw=req.body?.token;
-      if(typeof raw!=="string"||raw.length<30||raw.length>128)return res.status(400).json({success:false,message:"連結無效或已過期"});
-      const hashed=passwordHash(req.body?.password);
-      const done=await store.consumeTokenAtomic(hashToken(raw),"reset_password",hashed);
-      if(!done)return res.status(400).json({success:false,message:"連結無效或已過期"});
-      await store.audit({user_id:done.user_id,event_type:"password_reset",result:"success",auth_method:"email"});
-      return res.json({success:true,message:"密碼已重設，請重新登入"});
-    }catch(err){if(err.message==="INVALID_PASSWORD")return res.status(400).json({success:false,message:"密碼須為 8 至 128 字元"});return res.status(503).json({success:false,message:"暫時無法重設密碼"})}
-  });
-  router.post("/verify-email",async(req,res)=>{
-    try{
-      const raw=req.body?.token;
-      if(typeof raw!=="string"||raw.length<30||raw.length>128)return res.status(400).json({success:false,message:"驗證連結無效"});
-      const done=await store.consumeTokenAtomic(hashToken(raw),"verify_email","");
-      if(!done)return res.status(400).json({success:false,message:"驗證連結已失效"});
-      await store.audit({user_id:done.user_id,event_type:"email_verified",result:"success",auth_method:"email"});
-      return res.json({success:true,message:"電子郵件驗證成功，請登入"});
-    }catch{return res.status(503).json({success:false,message:"目前無法驗證電子郵件"})}
-  });
   router.post("/login",async(req,res)=>{
     try {
-      const identifier=String(req.body?.identifier||req.body?.email||"").trim().toLowerCase();
-      if(identifier.length>254||!identifier)return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
+      const identifier=String(req.body?.identifier||"").trim().toLowerCase();
+      if(!/^[a-z][a-z0-9_]{3,23}$/.test(identifier))return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
       if(!throttle("login:"+req.ip+":"+identifier,10)||!(await store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000))) return res.status(429).json({success:false,message:"請稍後再試"});
       const user=await store.findByLogin(identifier);
       // Use a dummy hash to reduce timing differences for nonexistent users.
@@ -144,7 +89,6 @@ function createRouter(store) {
       res.cookie(COOKIE,s.raw,cookieOptions(req));
       return res.json({success:true,user:safeUser(updated)});
     } catch(err) {
-      if(err.message==="INVALID_EMAIL") return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
       console.error("Gen3 login error",err.code||err.message);
       return res.status(503).json({success:false,message:"登入服務暫時無法使用"});
     }

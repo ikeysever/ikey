@@ -7,12 +7,6 @@ const hashToken = token => crypto.createHash("sha256").update(token).digest("hex
 const token = () => crypto.randomBytes(32).toString("base64url");
 const nowIso = () => new Date().toISOString();
 
-function normalizeEmail(value) {
-  if (typeof value !== "string") throw new Error("INVALID_EMAIL");
-  const email = value.trim().toLowerCase();
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("INVALID_EMAIL");
-  return email;
-}
 function passwordHash(password) {
   if (typeof password !== "string" || password.length < 8 || password.length > 128) throw new Error("INVALID_PASSWORD");
   const salt = crypto.randomBytes(16);
@@ -32,13 +26,13 @@ function passwordVerify(password, stored) {
   } catch { return false; }
 }
 function safeUser(user) {
-  return { user_id:user.user_id,email:user.email,username:user.username||"",display_name:user.display_name,
+  return { user_id:user.user_id,username:user.username||"",display_name:user.display_name,
     global_role:user.global_role,account_status:user.account_status };
 }
 function active(user, at = Date.now()) {
   if (!user || user.account_status === "disabled" || user.account_status === "pending_deletion") return false;
   if (user.account_status === "temporarily_locked" && Date.parse(user.locked_until || "") > at) return false;
-  return user.account_status === "active" ||
+  return user.account_status === "active" || user.account_status === "pending_verification" ||
     (user.account_status === "temporarily_locked" && Date.parse(user.locked_until || "") <= at);
 }
 function newSession(userId, at=Date.now()) {
@@ -48,5 +42,5 @@ function newSession(userId, at=Date.now()) {
     expires_at:new Date(at+SESSION_MS).toISOString(),last_seen_at:new Date(at).toISOString(),
     revoked_at:"",revoked_reason:"" } };
 }
-module.exports={SESSION_MS,LOCK_MS,hashToken,token,nowIso,normalizeEmail,
+module.exports={SESSION_MS,LOCK_MS,hashToken,token,nowIso,
   passwordHash,passwordVerify,safeUser,active,newSession};

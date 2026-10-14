@@ -21,11 +21,7 @@ function createSheetsStore() {
  return {
    health:async()=>call("health"),
    registerAtomic:async user=>call("registerAtomic",{user}),
-   createToken:async token=>call("createToken",{token}),
-   sendMail:async(to,subject,body)=>call("sendMail",{to,subject,body}),
    throttleAtomic:async(key,limit,window_ms)=>call("throttleAtomic",{key,limit,window_ms}),
-   consumeTokenAtomic:async(token_hash,purpose,password_hash)=>call("consumeTokenAtomic",{token_hash,purpose,password_hash}),
-   findByEmail:async email=>call("findByEmail",{email}),
    findByLogin:async identifier=>call("findByLogin",{identifier}),
    findById:async user_id=>call("findById",{user_id}),
    recordLoginFailureAtomic:async user_id=>call("recordLoginFailureAtomic",{user_id}),
