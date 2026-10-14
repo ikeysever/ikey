@@ -116,6 +116,6 @@ test("MailApp explicit authorization check is read-only and exposes the real exc
 test("Gen3 account schema contains only first-party account fields",()=>{
  const ctx=vm.createContext({});
  new vm.Script(source).runInContext(ctx);
- const headers=Array.from(ctx.HEADERS.Gen3_Users);
+ const headers=Array.from(vm.runInContext("HEADERS.Gen3_Users",ctx));
  assert.deepEqual(headers,["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","email_verified_at","username"]);
 });
