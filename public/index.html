@@ -7,6 +7,7 @@
   <title>iKey 自動多場景智慧鎖</title>
   <link rel="icon" type="image/svg+xml" href="./assets/brand/ikey-nextgen.svg">
   <link rel="stylesheet" href="./project-center.css">
+  <link rel="stylesheet" href="./gen3-project-hub.css">
 
   <link
     rel="stylesheet"
@@ -122,7 +123,7 @@
         <nav class="sidebar-nav" aria-label="主選單">
           <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁</span></button>
           <div class="sidebar-group">
-            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-project-center" data-sidebar-toggle="project-center"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>專案中心</span></button>
+            <button class="sidebar-item ikey-nav-toggle" type="button" data-page="project-center-home" aria-expanded="false" aria-controls="ikey-nav-project-center" data-sidebar-toggle="project-center"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>專案中心</span></button>
             <div class="ikey-nav-children" id="ikey-nav-project-center" inert>
             <button class="sidebar-item ikey-subnav" type="button" data-page="project-apply">專案申請</button>
             <button class="sidebar-item ikey-subnav" type="button" data-page="my-projects">我的專案</button>
@@ -208,14 +209,137 @@
              首頁 Dashboard
              ================================== -->
 
-        <section id="ikeyPage-project-apply" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>專案申請</h2><p>提交新專案申請</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
+        <!-- Gen3 project center: navigation prototype; no project API or device actions. -->
+        <section id="ikeyPage-project-center-home" class="content-page ikey-hub" hidden data-ikey-placeholder aria-labelledby="ikeyHubTitle">
+          <div class="ikey-hub-hero">
+            <div>
+              <p class="ikey-hub-eyebrow">iKey · GENERATION 3 / PROJECT CENTER</p>
+              <h2 id="ikeyHubTitle">iKey 專案中心</h2>
+              <p>從一個地方開始，建立專案、加入團隊，並管理每個專案所屬的 iBox 與成員。</p>
+            </div>
+            <div class="ikey-hub-orbit" aria-hidden="true">iKey</div>
+          </div>
+          <p class="ikey-hub-note">選擇你要進行的工作。此版本先提供網頁介面預覽，尚未連接專案資料與設備操作。</p>
+          <div class="ikey-hub-grid">
+            <article class="ikey-hub-tile">
+              <span class="ikey-hub-tile-icon" aria-hidden="true">✦</span>
+              <h3>專案申請</h3>
+              <p>建立專案、加入專案、追蹤申請紀錄。讓每個新的管理空間從這裡開始。</p>
+              <button type="button" class="ikey-hub-button" data-ikey-hub-go="project-apply">前往專案申請 <span aria-hidden="true">→</span></button>
+            </article>
+            <article class="ikey-hub-tile">
+              <span class="ikey-hub-tile-icon" aria-hidden="true">▦</span>
+              <h3>我的專案</h3>
+              <p>選擇參與的專案，進入專案總覽、iBox、成員、設定、審核及操作歷程。</p>
+              <button type="button" class="ikey-hub-button" data-ikey-hub-go="my-projects">前往我的專案 <span aria-hidden="true">→</span></button>
+            </article>
+          </div>
         </section>
 
-        <section id="ikeyPage-my-projects" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>我的專案</h2><p>查看參與的專案</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
+        <section id="ikeyPage-project-apply" class="content-page ikey-hub" hidden data-ikey-placeholder aria-labelledby="ikeyHubApplyTitle">
+          <div class="ikey-hub-hero">
+            <div>
+              <p class="ikey-hub-eyebrow">PROJECT CENTER / APPLICATIONS</p>
+              <h2 id="ikeyHubApplyTitle">專案申請</h2>
+              <p>建立新的專案、加入既有專案，或查看你的申請進度。</p>
+            </div>
+            <div class="ikey-hub-orbit" aria-hidden="true">✦</div>
+          </div>
+          <div class="ikey-hub-tabs" role="tablist" aria-label="專案申請功能" data-ikey-hub-tabs="applications">
+            <button type="button" id="ikeyHubTabCreate" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelCreate" aria-selected="true" data-ikey-hub-tab="create">建立專案</button>
+            <button type="button" id="ikeyHubTabJoin" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelJoin" aria-selected="false" data-ikey-hub-tab="join">加入專案</button>
+            <button type="button" id="ikeyHubTabRequests" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelRequests" aria-selected="false" data-ikey-hub-tab="requests">申請紀錄</button>
+          </div>
+          <section id="ikeyHubPanelCreate" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabCreate" data-ikey-hub-panel="create">
+            <div class="ikey-hub-section-header"><h3>建立你的專案</h3><span class="ikey-hub-tag">五步驟流程規劃</span></div>
+            <p>未來將透過五步驟建立精簡的專案申請，提交後依權限進行審核；核准前不會建立實體設備授權。</p>
+            <div class="ikey-hub-step-list" aria-label="建立專案五步驟">
+              <div class="ikey-hub-step"><strong>01</strong>基本資訊</div>
+              <div class="ikey-hub-step"><strong>02</strong>專案用途</div>
+              <div class="ikey-hub-step"><strong>03</strong>管理成員</div>
+              <div class="ikey-hub-step"><strong>04</strong>設定確認</div>
+              <div class="ikey-hub-step"><strong>05</strong>提交申請</div>
+            </div>
+            <button class="ikey-hub-button" type="button" disabled>開始建立專案 · 待功能串接</button>
+            <div class="ikey-hub-callout">這裡展示流程入口；詳細欄位及後端申請功能仍在設計中，不會儲存或送出資料。</div>
+          </section>
+          <section id="ikeyHubPanelJoin" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabJoin" data-ikey-hub-panel="join" hidden>
+            <h3>加入既有專案</h3>
+            <p>輸入管理員提供的邀請碼。正式功能將依邀請碼設定，直接加入或送交管理員審核。</p>
+            <label class="ikey-hub-field" for="ikeyHubJoinCode">專案邀請碼
+              <input id="ikeyHubJoinCode" type="text" placeholder="邀請碼功能尚未開放" autocomplete="off" disabled>
+            </label>
+            <button class="ikey-hub-button" type="button" disabled>送出加入申請 · 待功能串接</button>
+            <div class="ikey-hub-callout">邀請碼的有效期限、使用次數與審核模式將由正式後端驗證，不能只依賴前端檢查。</div>
+          </section>
+          <section id="ikeyHubPanelRequests" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabRequests" data-ikey-hub-panel="requests" hidden>
+            <h3>申請紀錄</h3>
+            <div class="ikey-hub-empty" role="status"><span class="ikey-hub-empty-icon" aria-hidden="true">◷</span><strong>尚未連接申請紀錄</strong><p>未來可查看建立與加入專案的待審核、核准、退回及駁回結果。此畫面目前不會讀取真實資料。</p></div>
+          </section>
+        </section>
+
+        <section id="ikeyPage-my-projects" class="content-page ikey-hub" hidden data-ikey-placeholder aria-labelledby="ikeyHubMyTitle">
+          <div class="ikey-hub-hero">
+            <div>
+              <p class="ikey-hub-eyebrow">PROJECT CENTER / MY WORKSPACES</p>
+              <h2 id="ikeyHubMyTitle">我的專案</h2>
+              <p>先選擇一個專案，再進入該專案的六個管理分頁。每個專案的資料與權限相互獨立。</p>
+            </div>
+            <div class="ikey-hub-orbit" aria-hidden="true">▦</div>
+          </div>
+          <label class="ikey-hub-field" for="ikeyHubProjectSelect">選擇專案
+            <select id="ikeyHubProjectSelect">
+              <option value="">請選擇專案</option>
+              <option value="preview">示範專案（僅供介面預覽，非真實資料）</option>
+            </select>
+          </label>
+          <div id="ikeyHubProjectEmpty" class="ikey-hub-empty" role="status">
+            <span class="ikey-hub-empty-icon" aria-hidden="true">▧</span>
+            <strong>請先選擇專案</strong>
+            <p>目前尚未串接實際專案清單。可選擇「示範專案」預覽六個管理分頁的操作方式。</p>
+          </div>
+          <div id="ikeyHubWorkspace" hidden>
+            <div class="ikey-hub-section-header">
+              <h3 id="ikeyHubSelectedProject">示範專案（介面預覽）</h3>
+              <span class="ikey-hub-tag">前端預覽 · 無真實權限</span>
+            </div>
+            <div class="ikey-hub-tabs" role="tablist" aria-label="專案管理分頁" data-ikey-hub-tabs="workspace">
+              <button type="button" id="ikeyHubTabOverview" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelOverview" aria-selected="true" data-ikey-hub-tab="overview">專案總覽</button>
+              <button type="button" id="ikeyHubTabIbox" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelIbox" aria-selected="false" data-ikey-hub-tab="ibox">iBox 管理</button>
+              <button type="button" id="ikeyHubTabMembers" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelMembers" aria-selected="false" data-ikey-hub-tab="members">成員管理</button>
+              <button type="button" id="ikeyHubTabSettings" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelSettings" aria-selected="false" data-ikey-hub-tab="settings">專案設定</button>
+              <button type="button" id="ikeyHubTabReviews" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelReviews" aria-selected="false" data-ikey-hub-tab="reviews">設定審核</button>
+              <button type="button" id="ikeyHubTabHistory" class="ikey-hub-tab" role="tab" aria-controls="ikeyHubPanelHistory" aria-selected="false" data-ikey-hub-tab="history">操作歷程</button>
+            </div>
+            <section id="ikeyHubPanelOverview" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabOverview" data-ikey-hub-panel="overview">
+              <h3>專案總覽</h3><p>查看專案基本資訊、運作狀態、成員概況、iBox 關聯與待處理事項。</p>
+              <div class="ikey-hub-subgrid">
+                <div class="ikey-hub-subcard"><strong>專案狀態</strong><span>啟用、待接管或封存狀態將由後端提供。</span></div>
+                <div class="ikey-hub-subcard"><strong>設備概況</strong><span>僅顯示目前專案有權查看的 iBox。</span></div>
+                <div class="ikey-hub-subcard"><strong>待處理事項</strong><span>整合申請、設定審核與重要通知。</span></div>
+              </div>
+            </section>
+            <section id="ikeyHubPanelIbox" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabIbox" data-ikey-hub-panel="ibox" hidden>
+              <h3>iBox 管理</h3><p>管理本專案關聯的設備、共享關係與設備功能。借用、歸還、開鎖等操作權限分別判斷。</p>
+              <div class="ikey-hub-empty"><strong>尚未連接設備清單</strong><p>此預覽不會搜尋、配對、修改或控制任何真實 iBox。</p></div>
+            </section>
+            <section id="ikeyHubPanelMembers" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabMembers" data-ikey-hub-panel="members" hidden>
+              <h3>成員管理</h3><p>查看成員、建立邀請碼、審核加入申請與邀請升任管理員。升任必須經本人接受。</p>
+              <div class="ikey-hub-empty"><strong>尚未連接成員資料</strong><p>正式版本將由伺服器驗證成員角色與管理權限。</p></div>
+            </section>
+            <section id="ikeyHubPanelSettings" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabSettings" data-ikey-hub-panel="settings" hidden>
+              <h3>專案設定</h3><p>依已確認的六個設定入口獨立管理。重要變更須經超級管理員核准後才生效。</p>
+              <div class="ikey-hub-empty"><strong>設定編輯功能尚未開放</strong><p>目前僅展示分頁位置，不會改動任何正式專案設定。</p></div>
+            </section>
+            <section id="ikeyHubPanelReviews" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabReviews" data-ikey-hub-panel="reviews" hidden>
+              <h3>設定審核</h3><p>追蹤重要設定與高風險設備授權的待審核、核准及駁回狀態。</p>
+              <div class="ikey-hub-empty"><strong>尚未連接審核紀錄</strong><p>開鎖等高風險授權在超級管理員核准前不會生效。</p></div>
+            </section>
+            <section id="ikeyHubPanelHistory" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabHistory" data-ikey-hub-panel="history" hidden>
+              <h3>操作歷程</h3><p>回溯成員異動、專案設定、iBox 授權及審核結果，保留操作者與生效時間。</p>
+              <div class="ikey-hub-empty"><strong>尚未連接操作歷程</strong><p>這裡不會顯示虛構的真實操作紀錄。</p></div>
+            </section>
+          </div>
         </section>
 
         <section id="ikeyPage-registration-review" class="content-page" hidden data-ikey-placeholder>
@@ -784,6 +908,7 @@
        JavaScript
        ======================================== -->
   <script src="./project-center.js"></script>
+  <script src="./gen3-project-hub.js"></script>
   <script src="./operations-overview.js"></script>
   <script src="./admin-console.js"></script>
   <script src="./admin-operations.js"></script>
