@@ -15,11 +15,10 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 <main><p><a href="/">← 返回登入頁</a></p><h1>建立 iKey 帳號</h1><p class="muted">自動多場景智慧鎖</p>
 <form id="register">
 <label for="username">帳號（英文字母開頭，4–24 字元）</label><input id="username" name="username" pattern="[a-z][a-z0-9_]{3,23}" minlength="4" maxlength="24" required autocomplete="username" placeholder="例如 ikey_user"><label for="display_name">顯示名稱</label><input id="display_name" name="display_name" maxlength="80" required autocomplete="nickname">
-<label for="email">電子郵件</label><input id="email" name="email" type="email" maxlength="254" required autocomplete="email">
 <label for="password">密碼（至少 8 字元）</label><input id="password" name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <label for="confirm">確認密碼</label><input id="confirm" name="confirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <button id="submit" type="submit">建立帳號</button></form>
-<p id="message" role="status" aria-live="polite"></p><button class="secondary" id="resend" type="button">重新寄送驗證信</button></main>
+<p id="message" role="status" aria-live="polite"></p></main>
 <script>
 const form=document.querySelector('#register'),msg=document.querySelector('#message'),btn=document.querySelector('#submit');
 form.addEventListener('submit',async e=>{
@@ -27,37 +26,25 @@ e.preventDefault();msg.textContent='';
 const password=form.elements.namedItem('password').value;
 if(password!==form.elements.namedItem('confirm').value){msg.textContent='兩次密碼不一致';return}
 btn.disabled=true;
-try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.elements.namedItem('username').value,display_name:form.elements.namedItem('display_name').value,email:form.elements.namedItem('email').value,password})});
+try{const res=await fetch('/api/auth/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.elements.namedItem('username').value,display_name:form.elements.namedItem('display_name').value,password})});
 const body=await res.json();if(!res.ok){msg.textContent=body.message||'目前無法建立帳號';return}
-msg.textContent=body.message||'註冊資料已建立，請至信箱收取驗證連結。';form.elements.namedItem('password').value='';form.elements.namedItem('confirm').value='';}
+msg.textContent=body.message||'帳號建立成功，請返回登入頁。';form.elements.namedItem('password').value='';form.elements.namedItem('confirm').value='';}
 catch{msg.textContent='連線失敗，請稍後重試'}finally{btn.disabled=false}
 });
-document.getElementById("resend").addEventListener("click",async()=>{const email=form.elements.namedItem("email").value;if(!email){msg.textContent="請先輸入電子郵件";return}const btn=document.getElementById("resend");btn.disabled=true;try{const r=await fetch("/api/auth/resend-verification",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});const d=await r.json();msg.textContent=d.message||"寄送失敗"}catch{msg.textContent="網路連線失敗"}finally{btn.disabled=false}});
-
 fetch("/api/auth/status",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(d=>{
- const mailReady=d?.mail===true;
- const submit=document.getElementById("submit");
- const resend=document.getElementById("resend");
- submit.disabled=!mailReady;
- resend.disabled=!mailReady;
- if(!mailReady){
-   const reason=d?.reason||"STATUS_UNKNOWN";
-   const help={
-     CONFIG_MISSING:"伺服器尚未完成 Apps Script 連線設定。",
-     APPS_SCRIPT_AUTH_FAILED:"Apps Script 驗證金鑰不一致，請檢查部署與指令碼屬性。",
-     APPS_SCRIPT_SHEET_NOT_SET:"Apps Script 尚未設定資料庫試算表。",
-     APPS_SCRIPT_SCHEMA_MISMATCH:"Apps Script 無法存取帳號資料表，或欄位版本不符。",
-     APPS_SCRIPT_VERSION_MISMATCH:"Apps Script 尚未部署最新版帳號程式。",
-     APPS_SCRIPT_NON_JSON_RESPONSE:"Apps Script 未回傳正確資料，請檢查 Web App 部署存取權。",
-     APPS_SCRIPT_HTTP_ERROR:"Apps Script 網路服務目前無法使用。",
-     APPS_SCRIPT_TIMEOUT:"Apps Script 連線逾時。",
-     MAILAPP_NOT_READY:"MailApp 寄信授權或每日寄信額度尚未就緒。"
-   };
-   msg.textContent=(help[reason]||"帳號服務尚未完成後端連線驗證，暫時無法註冊。")+"（診斷："+reason+"）";
+ const submit=document.getElementById("submit");submit.disabled=d?.registration!==true;
+ if(d?.registration!==true){
+  const reason=d?.reason||"STATUS_UNKNOWN";
+  const help={CONFIG_MISSING:"伺服器尚未完成帳號資料庫連線設定。",
+   APPS_SCRIPT_AUTH_FAILED:"Apps Script 驗證金鑰不一致。",
+   APPS_SCRIPT_SHEET_NOT_SET:"Apps Script 尚未設定資料庫。",
+   APPS_SCRIPT_SCHEMA_MISMATCH:"資料表欄位版本不符，請完成遷移。",
+   APPS_SCRIPT_VERSION_MISMATCH:"Apps Script 尚未部署相容的新版帳號程式。",
+   APPS_SCRIPT_UPGRADE_REQUIRED:"目前仍使用舊版帳號資料庫，註冊暫停，既有帳號可登入。",
+   APPS_SCRIPT_NON_JSON_RESPONSE:"Apps Script 未回傳正確資料。",
+   APPS_SCRIPT_HTTP_ERROR:"Apps Script 暫時無法連線。",
+   APPS_SCRIPT_TIMEOUT:"Apps Script 連線逾時。"};
+  msg.textContent=(help[reason]||"帳號服務尚未完成更新，暫時無法註冊。")+"（診斷："+reason+"）";
  }
-}).catch(()=>{
- document.getElementById("submit").disabled=true;
- document.getElementById("resend").disabled=true;
- msg.textContent="無法確認帳號服務狀態，請稍後再試。";
-});
+}).catch(()=>{document.getElementById("submit").disabled=true;msg.textContent="無法確認帳號服務狀態，請稍後再試。";});
 </script></body></html>

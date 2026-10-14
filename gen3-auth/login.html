@@ -13,10 +13,10 @@ button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;color:
 </style></head><body><main>
 <img class="logo" src="/assets/brand/ikey-nextgen.svg" alt="iKey">
 <h1>歡迎回到 iKey</h1><p class="muted">自動多場景智慧鎖</p>
-<form id="login" novalidate><label for="email">帳號或電子郵件</label><input id="email" name="email" type="text" maxlength="254" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
+<form id="login" novalidate><label for="username">帳號</label><input id="username" name="username" type="text" maxlength="24" autocomplete="username" placeholder="請輸入 iKey 帳號" required>
 <label for="password">密碼</label><input id="password" name="password" type="password" autocomplete="current-password" required>
 <button id="submit" type="submit">登入系統</button></form>
-<div class="links"><a href="./register.html">建立帳號</a><a href="./forgot-password.html">忘記密碼？</a></div>
+<div class="links"><a href="./register.html">建立帳號</a></div>
 <p id="message" role="status" aria-live="polite"></p>
 <a class="action secondary" href="/?legacy=1">管理員專用入口</a>
 </main><script>
@@ -24,7 +24,7 @@ const form=document.getElementById('login'),msg=document.getElementById('message
 
 form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='';
 if(!form.reportValidity())return;
-btn.disabled=true;try{const response=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:form.elements.namedItem('email').value,password:form.elements.namedItem('password').value})});
+btn.disabled=true;try{const response=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:form.elements.namedItem('username').value,password:form.elements.namedItem('password').value})});
 const data=await response.json();if(!response.ok){msg.textContent=data.message||'登入失敗';return}
 location.assign("/?welcome=1");
 }catch{msg.textContent='登入服務尚未啟用或連線失敗'}finally{btn.disabled=false}});

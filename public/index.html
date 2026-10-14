@@ -35,8 +35,8 @@
       <p class="ikey-login-subtitle">自動多場景智慧鎖</p>
       <form id="gen3LoginForm" novalidate>
         <div class="form-group">
-          <label for="gen3Account">帳號或電子郵件</label>
-          <input id="gen3Account" name="identifier" type="text" maxlength="254" autocomplete="username" placeholder="請輸入帳號或電子郵件" required>
+          <label for="gen3Account">帳號</label>
+          <input id="gen3Account" name="identifier" type="text" maxlength="24" autocomplete="username" placeholder="請輸入 iKey 帳號" required>
         </div>
         <div class="form-group">
           <label for="gen3Password">密碼</label>
@@ -46,7 +46,7 @@
       </form>
       <div class="ikey-login-links">
         <a href="/gen3/register.html">建立帳號</a>
-        <a href="/gen3/forgot-password.html">忘記密碼？</a>
+        <span>忘記密碼請聯繫管理團隊</span>
       </div>
       <p id="gen3LoginMessage" role="status" aria-live="polite"></p>
       <p id="gen3AuthStatus" class="gen3-auth-status" role="status" aria-live="polite"></p>
@@ -314,17 +314,16 @@
               <dl id="ikeyV3Gen3Fields" class="ikey-v3-account-fields" hidden>
                 <div><dt>帳號名稱</dt><dd id="ikeyV3Username">—</dd></div>
                 <div><dt>顯示名稱</dt><dd id="ikeyV3DisplayName">—</dd></div>
-                <div><dt>電子郵件</dt><dd id="ikeyV3Email">—</dd></div>
                 <div><dt>身分權限</dt><dd id="ikeyV3Role">—</dd></div>
                 <div><dt>帳號狀態</dt><dd id="ikeyV3AccountStatus">—</dd></div>
-                <div><dt>登入方式</dt><dd>帳號／電子郵件＋密碼</dd></div>
+                <div><dt>登入方式</dt><dd>iKey 帳號＋密碼</dd></div>
               </dl>
               <dl id="ikeyV3AdminFields" class="ikey-v3-account-fields" hidden>
                 <div><dt>帳號名稱</dt><dd id="ikeyV3AdminUsername">—</dd></div>
                 <div><dt>身分權限</dt><dd id="ikeyV3AdminRole">—</dd></div>
                 <div><dt>登入方式</dt><dd>管理員帳號＋密碼</dd></div>
               </dl>
-              <p id="ikeyV3AccountHelp" class="ikey-v3-account-help">忘記密碼？<a href="/gen3/forgot-password.html">聯繫 iKey 管理團隊</a></p>
+              <p id="ikeyV3AccountHelp" class="ikey-v3-account-help">忘記密碼請聯繫 iKey 管理團隊。</p>
             </section>
 
             <section class="ikey-v3-card ikey-v3-platform" aria-labelledby="ikeyV3PlatformTitle">

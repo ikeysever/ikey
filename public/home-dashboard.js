@@ -3,7 +3,7 @@
 // Gen3 and administrator login sessions use independent server endpoints.
 (() => {
   const el = id => document.getElementById(id);
-  const fieldIds = ["ikeyV3Username","ikeyV3DisplayName","ikeyV3Email","ikeyV3Role",
+  const fieldIds = ["ikeyV3Username","ikeyV3DisplayName","ikeyV3Role",
     "ikeyV3AccountStatus","ikeyV3AdminUsername","ikeyV3AdminRole"];
   let requestId = 0;
   let currentKind = null;
@@ -66,7 +66,6 @@
           temporarily_locked:"暫時鎖定",pending_deletion:"待刪除"};
         el("ikeyV3Username").textContent = username || "未設定";
         el("ikeyV3DisplayName").textContent = displayName || "未設定";
-        el("ikeyV3Email").textContent = String(user.email || "").trim() || "未設定";
         el("ikeyV3Role").textContent = roles[user.global_role] || "權限未確認";
         el("ikeyV3AccountStatus").textContent = statuses[user.account_status] || "狀態未確認";
         el("ikeyV3Gen3Fields").hidden = false;

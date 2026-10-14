@@ -19,9 +19,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       ready=data.enabled===true;
       status.textContent=!ready
         ?"帳號服務尚未完成後端連線驗證（"+(data.reason||"STATUS_UNKNOWN")+"）。管理員可使用專用入口。"
-        :!data.mail
-          ?"帳號登入已可使用；註冊與重設密碼仍待寄信授權。"
-          :"";
+        :data.registration!==true?"既有帳號可登入；新帳號註冊待資料庫升級完成。":"";
       submit.disabled=!ready;
     }catch{
       ready=false;
