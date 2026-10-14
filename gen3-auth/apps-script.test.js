@@ -30,7 +30,7 @@ test("MailApp health and token-bound delivery reject spoofing, replay, and expir
  const token={token_hash:hash,user_id:"u1",target_email:user.email,purpose:"verify_email",used_at:"",
    expires_at:new Date(Date.now()+30*60000).toISOString()};
  const columns={
-  Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at","username"],
+  Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","email_verified_at","username"],
   Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
   Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
   Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
@@ -69,7 +69,7 @@ test("MailApp health and token-bound delivery reject spoofing, replay, and expir
 
 test("read-only setup inspection checks Apps Script properties, schema and MailApp without exposing secrets",()=>{
  const headers={
-  Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at","username"],
+  Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","email_verified_at","username"],
   Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
   Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
   Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
@@ -112,8 +112,10 @@ test("MailApp explicit authorization check is read-only and exposes the real exc
  assert.throws(()=>denied.authorizeGen3MailApp(),/Authorization is required/);
 });
 
-test("Apps Script no longer exposes Google OAuth account operations",()=>{
- for(const action of ["registerGoogleAtomic","findByGoogleSub","linkGoogleAtomic"]){
-  assert.equal(source.includes('case "'+action+'"'),false);
- }
+
+test("Gen3 account schema contains only first-party account fields",()=>{
+ const ctx=vm.createContext({});
+ new vm.Script(source).runInContext(ctx);
+ const headers=Array.from(ctx.HEADERS.Gen3_Users);
+ assert.deepEqual(headers,["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","email_verified_at","username"]);
 });

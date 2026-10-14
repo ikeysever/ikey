@@ -9,7 +9,7 @@ const TABS = Object.freeze({
  users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens"
 });
 const HEADERS = Object.freeze({
- Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","google_sub","google_linked_at","email_verified_at","username"],
+ Gen3_Users:["user_id","email","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","email_verified_at","username"],
  Auth_Tokens:["token_id","user_id","token_hash","purpose","target_email","created_at","expires_at","used_at"],
  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
  Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]

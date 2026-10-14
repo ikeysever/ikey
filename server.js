@@ -108,12 +108,12 @@ function gen3FailureCategory(err){
   if(msg==="GEN3_STORAGE_UNKNOWN_ACTION")return "APPS_SCRIPT_OUTDATED_ACTION";
   // GAS can return a descriptive exception message instead of a symbolic
   // error code. Categorize it without ever echoing its raw text (which can
-  // contain a private spreadsheet identifier or Google account details).
+  // contain a private spreadsheet identifier or upstream service details).
   if(msg.startsWith("GEN3_STORAGE_")){
     const detail=msg.slice("GEN3_STORAGE_".length);
     if(/MailApp|mail quota|remainingdailyquota|email service|daily limit/i.test(detail))
       return "APPS_SCRIPT_MAILAPP_ACCESS_FAILED";
-    if(/permission|authorization|authorized|access denied|insufficient|OAuth|consent|scope/i.test(detail))
+    if(/permission|authorization|authorized|access denied|insufficient|consent|scope/i.test(detail))
       return "APPS_SCRIPT_PERMISSION_DENIED";
     if(/SpreadsheetApp|openById|spreadsheet|document|file not found|No item with the given ID|not accessible/i.test(detail))
       return "APPS_SCRIPT_SPREADSHEET_ACCESS_FAILED";
