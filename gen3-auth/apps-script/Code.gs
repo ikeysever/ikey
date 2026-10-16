@@ -6,13 +6,15 @@
  * WARNING: Apps Script Web Apps may redirect; do not log credentials.
  */
 const TABS = Object.freeze({
- users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens"
+ users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History"
 });
 const HEADERS = Object.freeze({
  Gen3_Users:["user_id","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","username"],
  Auth_Tokens:["token_id","user_id","token_hash","purpose","created_at","expires_at","used_at"],
  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
- Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"]
+ Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"],
+ Project_Requests:["request_id","project_id","user_id","request_type","request_status","reviewed_by","created_at","reviewed_at","project_name","project_description"],
+ Project_Review_History:["history_id","request_id","actor_user_id","event_type","from_status","to_status","note","created_at"]
 });
 function respond(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON)}
 function sheet(name) {
@@ -132,6 +134,52 @@ function execute(action,p) {
     result:v.result||"",auth_method:v.auth_method||"",ip_address:"",
     user_agent:"",details:"",created_at:new Date().toISOString()});return true;
   });
+  case "projectDraftSave":return locked(()=>{
+   const actor=String(p.actor_user_id||"").trim(),d=p.draft||{};
+   const name=String(d.project_name||"").trim(),description=String(d.project_description||"").trim();
+   const id=String(d.request_id||"").trim();
+   if(!actor||!rows(TABS.users).some(r=>r.value.user_id===actor&&r.value.account_status==="active"))throw Error("ACTOR_NOT_ACTIVE");
+   if(!name||name.length>100||description.length>2000||(id&&!/^[a-zA-Z0-9_-]{1,100}$/.test(id)))throw Error("INVALID_PROJECT_DRAFT");
+   const existing=id?rows(TABS.requests).find(r=>r.value.request_id===id):null;
+   if(id&&!existing)throw Error("REQUEST_NOT_FOUND");
+   if(existing){
+    if(existing.value.user_id!==actor)throw Error("REQUEST_FORBIDDEN");
+    if(existing.value.request_status!=="draft")throw Error("REQUEST_NOT_EDITABLE");
+    existing.value.project_name=name;existing.value.project_description=description;
+    overwrite(TABS.requests,existing.index,existing.value);
+    return {request_id:id,request_status:"draft"};
+   }
+   const requestId=Utilities.getUuid(),now=new Date().toISOString();
+   append(TABS.requests,{request_id:requestId,project_id:"",user_id:actor,request_type:"create",request_status:"draft",reviewed_by:"",created_at:now,reviewed_at:"",project_name:name,project_description:description});
+   append(TABS.history,{history_id:Utilities.getUuid(),request_id:requestId,actor_user_id:actor,event_type:"draft_created",from_status:"",to_status:"draft",note:"",created_at:now});
+   return {request_id:requestId,request_status:"draft"};
+  });
+  case "projectRequestsMine":return (()=>{
+   const actor=String(p.actor_user_id||"");
+   if(!actor)throw Error("INVALID_ACTOR");
+   return rows(TABS.requests).filter(r=>r.value.user_id===actor).map(r=>r.value);
+  })();
+  case "projectRequestSubmit":return locked(()=>{
+   const actor=String(p.actor_user_id||""),id=String(p.request_id||"");
+   if(!actor||!id||!/^[a-zA-Z0-9_-]{1,100}$/.test(id))throw Error("INVALID_REQUEST");
+   const r=rows(TABS.requests).find(x=>x.value.request_id===id);
+   if(!r)throw Error("REQUEST_NOT_FOUND");
+   if(r.value.user_id!==actor)throw Error("REQUEST_FORBIDDEN");
+   if(r.value.request_status!=="draft")throw Error("REQUEST_NOT_SUBMITTABLE");
+   const now=new Date().toISOString();
+   r.value.request_status="pending";
+   overwrite(TABS.requests,r.index,r.value);
+   append(TABS.history,{history_id:Utilities.getUuid(),request_id:id,actor_user_id:actor,event_type:"submitted",from_status:"draft",to_status:"pending",note:"",created_at:now});
+   return {request_id:id,request_status:"pending"};
+  });
+  case "projectReviewHistoryMine":return (()=>{
+   const actor=String(p.actor_user_id||""),id=String(p.request_id||"");
+   if(!actor||!id)throw Error("INVALID_REQUEST");
+   const request=rows(TABS.requests).find(x=>x.value.request_id===id)?.value;
+   if(!request)throw Error("REQUEST_NOT_FOUND");
+   if(request.user_id!==actor)throw Error("REQUEST_FORBIDDEN");
+   return rows(TABS.history).filter(r=>r.value.request_id===id).map(r=>r.value);
+  })();
   default:throw Error("UNKNOWN_ACTION");
  }
 }
