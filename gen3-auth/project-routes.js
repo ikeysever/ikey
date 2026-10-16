@@ -57,7 +57,9 @@ function createProjectRouter(authStore) {
       (request_id&&!/^[a-zA-Z0-9_-]+$/.test(request_id)))
       return res.status(400).json({success:false,code:"INVALID_PROJECT_DRAFT"});
     // Do not accept user_id, status or project_id from clients.
-    return execute(res,()=>projects.saveDraft(req.projectActor,{request_id,project_name:name,project_description:description}));
+    const settings=req.body?.settings||{},members=req.body?.members||[];
+    if(!settings||typeof settings!=="object"||Array.isArray(settings)||!Array.isArray(members)||members.length>50||!["tools","shared_box","consumables","parts","medicine","custom"].includes(settings.mode))return res.status(400).json({success:false,code:"INVALID_PROJECT_SETTINGS"});
+    return execute(res,()=>projects.saveDraft(req.projectActor,{request_id,project_name:name,project_description:description,settings,members}));
   });
   router.post("/requests/:id/submit",(req,res)=>{
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(req.params.id))return res.status(400).json({success:false,code:"INVALID_REQUEST_ID"});
