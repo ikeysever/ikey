@@ -47,6 +47,18 @@
     }
 
     document.querySelectorAll("[data-ikey-hub-tabs]").forEach(bindTabs);
+    const openPreview = document.getElementById("ikeyHubOpenCreatePreview");
+    const previewPanel = document.getElementById("ikeyHubCreatePreview");
+    if (openPreview && previewPanel) {
+      openPreview.addEventListener("click", () => {
+        const opening = previewPanel.hidden;
+        previewPanel.hidden = !opening;
+        openPreview.setAttribute("aria-expanded", String(opening));
+        openPreview.textContent = opening ? "收起建立專案預覽 ↑" : "開始建立專案 · 互動預覽 →";
+        if (opening) previewPanel.scrollIntoView({behavior:"smooth",block:"nearest"});
+      });
+    }
+
 
     const select = document.getElementById("ikeyHubProjectSelect");
     const workspace = document.getElementById("ikeyHubWorkspace");
