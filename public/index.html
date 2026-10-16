@@ -123,16 +123,7 @@
         <nav class="sidebar-nav" aria-label="主選單">
           <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁</span></button>
           <button class="sidebar-item" type="button" data-page="project-center-home"><span class="sidebar-icon">▦</span><span>專案中心</span></button>
-          <div class="sidebar-group" id="ikeyAdminNavGroup" hidden>
-            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-admin-console" data-sidebar-toggle="admin-console"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>管理員控制台</span></button>
-            <div class="ikey-nav-children" id="ikey-nav-admin-console" inert>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="overview"><span class="sidebar-icon">▤</span>營運總覽</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="registration-review">帳號註冊與審核</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="projects">專案管理</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="device-management">設備管理</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="activity-records">操作與借還紀錄</button>
-            </div>
-          </div>
+          
           <div class="sidebar-group" id="ikeyTerminalNavGroup" hidden>
             <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-terminal" data-sidebar-toggle="terminal"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>系統終端機</span></button>
             <div class="ikey-nav-children" id="ikey-nav-terminal" inert>
@@ -140,14 +131,7 @@
             <button class="sidebar-item ikey-subnav" type="button" data-page="terminal-help">詳細說明</button>
             </div>
           </div>
-          <div class="sidebar-group" id="ikeySuperadminNavGroup" hidden>
-            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-superadmin" data-sidebar-toggle="superadmin"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>超級管理員控制台</span></button>
-            <div class="ikey-nav-children" id="ikey-nav-superadmin" inert>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="admin">全站帳號與權限</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="sidebar-order">側欄與頁面排序</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="system-settings">系統設定</button>
-            </div>
-          </div>
+          
         </nav>
 
 
@@ -325,35 +309,20 @@
           </div>
         </section>
 
-        <section id="ikeyPage-registration-review" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>帳號註冊與審核</h2><p>管理待審核帳號</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
+        
 
-        <section id="ikeyPage-device-management" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>設備管理</h2><p>查看設備與管理設定</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
+        
 
-        <section id="ikeyPage-activity-records" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>操作與借還紀錄</h2><p>檢視稽核及借還紀錄</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
+        
 
         <section id="ikeyPage-terminal-help" class="content-page" hidden data-ikey-placeholder>
           <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>系統終端機 · 詳細說明</h2><p>即時事件、遠端指令與安全限制</p></div>
           <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
         </section>
 
-        <section id="ikeyPage-sidebar-order" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>側欄與頁面排序</h2><p>規劃各角色的側欄顯示順序</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
+        
 
-        <section id="ikeyPage-system-settings" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>系統設定</h2><p>檢視與規劃全站設定</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
+        
 
         <section id="projectCenterPage" class="content-page" hidden>
           <div class="ikey-project-hero">
@@ -371,28 +340,9 @@
           </div>
         </section>
 
-        <section id="ikeyOverviewPage" class="content-page" hidden>
-          <div class="ikey-project-hero">
-            <p class="ikey-project-kicker">iKey · 現有資料來源</p>
-            <h2>營運總覽</h2>
-            <p>使用既有 API 讀取使用者、教室、登錄設備與借還紀錄數量；不會更動任何資料或操作實體設備。</p>
-            <button id="ikeyOverviewRefresh" type="button" class="ikey-overview-refresh">重新整理資料</button>
-          </div>
-          <div id="ikeyOverviewStats" class="ikey-overview-grid" aria-live="polite"></div>
-          <p id="ikeyOverviewMessage" class="ikey-project-muted" role="status">開啟頁面後將讀取資料。</p>
-          <p class="ikey-project-note">注意：此處的設備數量為資料庫登錄筆數，不代表裝置目前在線；測試用 ESP32-01 不代表已接上實體硬體。</p>
-        </section>
+        
 
-        <section id="ikeyAdminPage" class="content-page" hidden>
-          <div class="ikey-project-hero">
-            <p class="ikey-project-kicker">iKey · 權限驗證</p>
-            <h2>超級管理員控制台</h2>
-            <p>管理員權限由後端驗證，未登入者無法取得管理資料。尚未完成的操作不會開放。</p>
-            <button id="ikeyAdminRefresh" type="button" class="ikey-overview-refresh">重新驗證</button>
-          </div>
-          <p id="ikeyAdminStatus" class="ikey-project-muted" role="status">等待伺服器驗證。</p>
-          <div id="ikeyAdminPanel" class="ikey-project-detail"></div>
-        </section>
+        
 
         <!-- Gen3 首頁：全新獨立版面；其他登入、側欄與控制台保持原狀。 -->
         <section id="dashboardPage" class="content-page ikey-v3-home">
