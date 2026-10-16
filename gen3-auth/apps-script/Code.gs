@@ -6,7 +6,7 @@
  * WARNING: Apps Script Web Apps may redirect; do not log credentials.
  */
 const TABS = Object.freeze({
- users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History"
+ users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History",settings:"Project_Settings",members:"Project_Members"
 });
 const HEADERS = Object.freeze({
  Gen3_Users:["user_id","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","username"],
@@ -14,7 +14,9 @@ const HEADERS = Object.freeze({
  Auth_Sessions:["session_id","user_id","session_token_hash","created_at","expires_at","last_seen_at","revoked_at","revoked_reason"],
  Auth_Audit_Logs:["audit_id","user_id","event_type","result","auth_method","ip_address","user_agent","details","created_at"],
  Project_Requests:["request_id","project_id","user_id","request_type","request_status","reviewed_by","created_at","reviewed_at","project_name","project_description"],
- Project_Review_History:["history_id","request_id","actor_user_id","event_type","from_status","to_status","note","created_at"]
+ Project_Review_History:["history_id","request_id","actor_user_id","event_type","from_status","to_status","note","created_at"],
+ Project_Settings:["request_id","purpose","theme","sound","mode","updated_at"],
+ Project_Members:["request_id","member_user_id","member_role","created_at"]
 });
 function respond(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON)}
 function sheet(name) {
@@ -138,6 +140,21 @@ function execute(action,p) {
    const actor=String(p.actor_user_id||"").trim(),d=p.draft||{};
    const name=String(d.project_name||"").trim(),description=String(d.project_description||"").trim();
    const id=String(d.request_id||"").trim();
+   const cfg=d.settings||{},members=Array.isArray(d.members)?d.members:[];
+   const purpose=String(cfg.purpose||"").trim(),theme=String(cfg.theme||"").trim(),sound=String(cfg.sound||"").trim(),mode=String(cfg.mode||"").trim();
+   if(!["tools","shared_box","consumables","parts","medicine","custom"].includes(mode)||purpose.length>2000||theme.length>60||sound.length>60||members.length>50)throw Error("INVALID_PROJECT_SETTINGS");
+   const ids=new Set();
+   for(const m of members){const uid=String(m.user_id||"").trim(),role=String(m.role||"").trim();if(!/^[a-zA-Z0-9_-]{1,100}$/.test(uid)||!["member","manager","viewer"].includes(role)||ids.has(uid))throw Error("INVALID_PROJECT_MEMBER");ids.add(uid)}
+   sheet(TABS.settings);sheet(TABS.members);
+   const persist=(rid)=>{
+     const now=new Date().toISOString(),v={request_id:rid,purpose,theme,sound,mode,updated_at:now};
+     const old=rows(TABS.settings).find(x=>x.value.request_id===rid);
+     if(old)overwrite(TABS.settings,old.index,v);else append(TABS.settings,v);
+     const tab=sheet(TABS.members);
+     const existing=rows(TABS.members).filter(x=>x.value.request_id===rid);
+     for(const row of existing.slice().reverse())tab.deleteRow(row.index);
+     for(const m of members)append(TABS.members,{request_id:rid,member_user_id:String(m.user_id).trim(),member_role:String(m.role),created_at:now});
+   };
    if(!actor||!rows(TABS.users).some(r=>r.value.user_id===actor&&r.value.account_status==="active"))throw Error("ACTOR_NOT_ACTIVE");
    if(!name||name.length>100||description.length>2000||(id&&!/^[a-zA-Z0-9_-]{1,100}$/.test(id)))throw Error("INVALID_PROJECT_DRAFT");
    const existing=id?rows(TABS.requests).find(r=>r.value.request_id===id):null;
@@ -147,17 +164,19 @@ function execute(action,p) {
     if(existing.value.request_status!=="draft")throw Error("REQUEST_NOT_EDITABLE");
     existing.value.project_name=name;existing.value.project_description=description;
     overwrite(TABS.requests,existing.index,existing.value);
+    persist(id);
     return {request_id:id,request_status:"draft"};
    }
    const requestId=Utilities.getUuid(),now=new Date().toISOString();
    append(TABS.requests,{request_id:requestId,project_id:"",user_id:actor,request_type:"create",request_status:"draft",reviewed_by:"",created_at:now,reviewed_at:"",project_name:name,project_description:description});
+   persist(requestId);
    append(TABS.history,{history_id:Utilities.getUuid(),request_id:requestId,actor_user_id:actor,event_type:"draft_created",from_status:"",to_status:"draft",note:"",created_at:now});
    return {request_id:requestId,request_status:"draft"};
   });
   case "projectRequestsMine":return (()=>{
    const actor=String(p.actor_user_id||"");
    if(!actor)throw Error("INVALID_ACTOR");
-   return rows(TABS.requests).filter(r=>r.value.user_id===actor).map(r=>r.value);
+   const settings=rows(TABS.settings),members=rows(TABS.members);return rows(TABS.requests).filter(r=>r.value.user_id===actor).map(r=>({...r.value,settings:settings.find(s=>s.value.request_id===r.value.request_id)?.value||null,members:members.filter(m=>m.value.request_id===r.value.request_id).map(m=>m.value)}));
   })();
   case "projectRequestSubmit":return locked(()=>{
    const actor=String(p.actor_user_id||""),id=String(p.request_id||"");
