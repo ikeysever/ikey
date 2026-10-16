@@ -9,7 +9,7 @@
     const createButton = document.getElementById("ikeyProjectCreateButton");
     if (createButton) createButton.addEventListener("click", () => {
       // Standalone full-page flow; never open the legacy collapsible preview.
-      window.location.assign("./gen3-create-project.html");
+      window.location.assign("/projects/create");
     });
     document.querySelectorAll("[data-ikey-hub-go]").forEach(button => {
       button.addEventListener("click", () => {
