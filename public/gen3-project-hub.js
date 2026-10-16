@@ -8,16 +8,8 @@
 
     const createButton = document.getElementById("ikeyProjectCreateButton");
     if (createButton) createButton.addEventListener("click", () => {
-      const application = document.querySelector('.sidebar-nav button[data-page="project-apply"]');
-      if (application) application.click();
-      else {
-        document.querySelectorAll(".content-page").forEach(page => { page.hidden = true; });
-        const page = document.getElementById("ikeyPage-project-apply");
-        if (page) page.hidden = false;
-      }
-      const previewButton = document.getElementById("ikeyHubOpenCreatePreview");
-      const previewPanel = document.getElementById("ikeyHubCreatePreview");
-      if (previewButton && previewPanel && previewPanel.hidden) previewButton.click();
+      // Standalone full-page flow; never open the legacy collapsible preview.
+      window.location.assign("./gen3-create-project.html");
     });
     document.querySelectorAll("[data-ikey-hub-go]").forEach(button => {
       button.addEventListener("click", () => {
