@@ -28,3 +28,13 @@
 - 草案含新一至新四歷程、規格、授權、Render 查核、LOG-0001～LOG-0003；內容中的「已核准／待核准／歷史」依原文保留。
 - 草案記載「不重新開發」，但本次使用者已另外確認「程式允許重建」；兩者視為不同時間的決策，不擅自覆寫，後續以最新明確授權範圍執行。
 - 僅匯入整理分支；未修改 main、Render、Apps Script、資料庫或硬體。
+
+## 2026-10-16 — 網頁式封存策略與高價值分支審核
+- 使用者不願安裝 Git／使用 PowerShell；改採 GitHub 網頁下載 ZIP、保留重要遠端分支，確認後才刪除。
+- 使用者表示已下載 main 快照及五個高風險分支 ZIP；尚未驗證 ZIP 內容及完整 Git 歷史。
+- compare(main...feature/gen3-auth-registration)：ahead 60；包含 Gen3 登入、註冊、測試、Apps Script。
+- compare(main...feat/ibox-data-model-foundation)：ahead 34；包含資料模型、工作流程、歡迎動畫素材。
+- compare(main...feat/integrate-padlock-welcome-20261009)：ahead 22；包含歡迎動畫、音效、整合檔案。
+- compare(main...remove/google-oauth-login)：ahead 20；包含登入流程與 OAuth 相關變更。
+- 以上分支均暫不刪除；ZIP 只能保留檔案快照，不能保證完整 Git 歷史。
+- 已確認 ahead 0 的 feat/status-notification-resources、fix/sidebar-left-right-chevron-20261009 可列為刪除候選；尚未執行刪除。
