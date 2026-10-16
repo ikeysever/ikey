@@ -30,7 +30,12 @@ function createSheetsStore() {
    findSessionByHash:async hash=>call("findSessionByHash",{hash}),
    touchSession:async(session_id,expires_at,last_seen_at)=>call("touchSession",{session_id,expires_at,last_seen_at}),
    revokeSession:async(session_id,reason)=>call("revokeSession",{session_id,reason}),
-   audit:async event=>call("audit",{event})
+   audit:async event=>call("audit",{event}),
+   // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
+   projectCall:async(action,payload)=>{
+     if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
+     return call(action,payload);
+   }
  };
 }
 module.exports={createSheetsStore};
