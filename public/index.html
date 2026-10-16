@@ -124,13 +124,7 @@
           <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁</span></button>
           <button class="sidebar-item" type="button" data-page="project-center-home"><span class="sidebar-icon">▦</span><span>專案中心</span></button>
           
-          <div class="sidebar-group" id="ikeyTerminalNavGroup" hidden>
-            <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-terminal" data-sidebar-toggle="terminal"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>系統終端機</span></button>
-            <div class="ikey-nav-children" id="ikey-nav-terminal" inert>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="terminal">即時訊息監看／遠端指令</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="terminal-help">詳細說明</button>
-            </div>
-          </div>
+          
           
         </nav>
 
@@ -315,10 +309,7 @@
 
         
 
-        <section id="ikeyPage-terminal-help" class="content-page" hidden data-ikey-placeholder>
-          <div class="ikey-project-hero"><p class="ikey-project-kicker">iKey · 網頁介面規劃</p><h2>系統終端機 · 詳細說明</h2><p>即時事件、遠端指令與安全限制</p></div>
-          <div class="ikey-project-detail"><h3>功能建置中</h3><p>目前僅完成頁面與側欄導覽，尚未開放資料修改、申請送出或遠端設備操作。正式功能將在權限驗證與操作日誌完成後逐步啟用。</p></div>
-        </section>
+        
 
         
 
@@ -503,20 +494,7 @@
              系統終端機
              ================================== -->
 
-        <section id="terminalPage" class="content-page" hidden>
-          <div class="terminal-panel">
-            <div class="terminal-header"><div class="terminal-title">系統終端機</div><span class="terminal-status">SUPER ADMIN</span></div>
-            <div class="ikey-terminal-tabs" role="group" aria-label="終端機頁面">
-              <button type="button" id="ikeyTerminalMonitorTab" aria-pressed="true">即時訊息監看</button>
-              <button type="button" id="ikeyTerminalCommandTab" aria-pressed="false">指令控制</button>
-            </div>
-            <div id="ikeyTerminalMonitorView"><p>最新事件排列在最上方；目前僅顯示伺服器實際收集到的事件。</p><div id="terminalOutput" class="terminal-output" aria-live="polite"></div></div>
-            <div id="ikeyTerminalCommandView" hidden><p>指令功能尚未啟用。遠端重啟、設定修改及韌體更新需要另外驗證權限與設備回覆。</p>
-              <form id="ikeyTerminalCommandForm"><label for="ikeyTerminalCommandInput">輸入指令</label><input id="ikeyTerminalCommandInput" autocomplete="off" placeholder="指令尚未啟用" disabled><button type="submit" disabled>送出</button></form>
-            </div>
-            <details><summary>詳細說明</summary><p>監看資料目前只保留於 Render 程序記憶體，重新部署會清空。LINE、TalkBack、登入登出等事件必須完成後端事件接入後才會顯示，不能將未收到的事件當成已記錄。</p></details>
-          </div>
-        </section>
+        
 
       </section>
 
@@ -842,7 +820,6 @@
        ======================================== -->
   <script src="./project-center.js"></script>
   <script src="./gen3-project-hub.js"></script>
-  <script src="./admin-operations.js"></script>
   <script src="./status-notifications.js"></script>
   <script src="./welcome-padlock.js"></script>
   <script src="./gen3-entry.js" defer></script>
