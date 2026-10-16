@@ -157,6 +157,12 @@ app.get("/api/auth/status",async(req,res)=>{
   res.json({enabled:r.storage,registration:r.registration,reason:r.reason});
 });
 if(gen3Store){
+  const {createProjectRouter}=require("./gen3-auth/project-routes");
+  app.use("/api/projects",async(req,res,next)=>{
+    const r=await checkGen3();
+    if(!r.storage)return res.status(503).json({success:false,code:"GEN3_NOT_READY"});
+    next();
+  },createProjectRouter(gen3Store));
   const {createRouter}=require("./gen3-auth/routes");
   app.use("/api/auth",async(req,res,next)=>{
     const r=await checkGen3();
