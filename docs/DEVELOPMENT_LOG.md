@@ -11,3 +11,13 @@
 
 ## 每次修改必填
 日期｜目的｜修改檔案｜原因｜風險｜測試結果｜Commit｜待辦。
+
+## 2026-10-16 — 歷史分支初步比較
+- 已建立 main 快照備份：backup/main-before-purge-20261016。
+- compare(main...handoff/notification-audio-20261012)：ahead 0、behind 46，可列入候選清理。
+- compare(main...backup-pre-cleanup-20261007)：ahead 0、behind 94，可列入候選清理。
+- compare(main...feat/approved-welcome-animation)：ahead 0、behind 131，可列入候選清理。
+- compare(main...handoff/welcome-padlock-20261009)：ahead 6、behind 80，含動畫素材，暫時保留。
+- compare(main...feat/gen3-auth-mailapp-activation)：ahead 21、behind 60，含帳號功能差異，暫時保留。
+- 以上 ahead=0 只代表沒有獨有提交，不等於已完成刪除或已檢查所有檔案。
+- GitHub 連接工具目前未提供刪除遠端分支的操作；尚未刪除任何分支。
