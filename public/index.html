@@ -260,7 +260,15 @@
               <div class="ikey-hub-step"><strong>04</strong>風格模式</div>
               <div class="ikey-hub-step"><strong>05</strong>提交申請</div>
             </div>
-            <a class="ikey-hub-button" href="./gen3-create-project-preview.html" style="display:inline-flex;align-items:center;text-decoration:none">開始建立專案 · 互動預覽 →</a>
+            <button class="ikey-hub-button" type="button" id="ikeyHubOpenCreatePreview" aria-controls="ikeyHubCreatePreview" aria-expanded="false">開始建立專案 · 互動預覽 →</button>
+            <div id="ikeyHubCreatePreview" hidden style="margin-top:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+                <strong>建立專案 · 五步驟互動預覽</strong>
+                <a href="./gen3-create-project-preview.html" target="_blank" rel="noopener" style="color:#79e2c9">在新分頁開啟 ↗</a>
+              </div>
+              <iframe title="iKey 建立專案五步驟互動預覽" loading="lazy" src="./gen3-create-project-preview.html" style="display:block;width:100%;height:min(78vh,850px);min-height:530px;border:1px solid #40576f;border-radius:12px;background:#0b1220"></iframe>
+              <p style="font-size:13px;opacity:.8">目前為前端模擬，不會建立正式專案、儲存申請或修改權限。</p>
+            </div>
             <div class="ikey-hub-callout">可進入五步驟互動預覽，試填基本資料、成員與風格；目前不會儲存或送出正式申請。</div>
           </section>
           <section id="ikeyHubPanelJoin" class="ikey-hub-panel" role="tabpanel" aria-labelledby="ikeyHubTabJoin" data-ikey-hub-panel="join" hidden>
