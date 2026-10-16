@@ -122,13 +122,7 @@
 
         <nav class="sidebar-nav" aria-label="主選單">
           <button class="sidebar-item active" type="button" data-page="dashboard"><span class="sidebar-icon">⌂</span><span>首頁</span></button>
-          <div class="sidebar-group">
-            <button class="sidebar-item ikey-nav-toggle" type="button" data-page="project-center-home" aria-expanded="false" aria-controls="ikey-nav-project-center" data-sidebar-toggle="project-center"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>專案中心</span></button>
-            <div class="ikey-nav-children" id="ikey-nav-project-center" inert>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="project-apply">專案申請</button>
-            <button class="sidebar-item ikey-subnav" type="button" data-page="my-projects">我的專案</button>
-            </div>
-          </div>
+          <button class="sidebar-item" type="button" data-page="project-center-home"><span class="sidebar-icon">▦</span><span>專案中心</span></button>
           <div class="sidebar-group" id="ikeyAdminNavGroup" hidden>
             <button class="sidebar-item ikey-nav-toggle" type="button" aria-expanded="false" aria-controls="ikey-nav-admin-console" data-sidebar-toggle="admin-console"><span class="sidebar-icon ikey-nav-triangle" aria-hidden="true">▶</span><span>管理員控制台</span></button>
             <div class="ikey-nav-children" id="ikey-nav-admin-console" inert>
@@ -209,33 +203,14 @@
              首頁 Dashboard
              ================================== -->
 
-        <!-- Gen3 project center: navigation prototype; no project API or device actions. -->
         <section id="ikeyPage-project-center-home" class="content-page ikey-hub" hidden data-ikey-placeholder aria-labelledby="ikeyHubTitle">
-          <div class="ikey-hub-hero">
-            <div>
-              <p class="ikey-hub-eyebrow">iKey · GENERATION 3 / PROJECT CENTER</p>
-              <h2 id="ikeyHubTitle">iKey 專案中心</h2>
-              <p>從一個地方開始，建立專案、加入團隊，並管理每個專案所屬的 iBox 與成員。</p>
-            </div>
-            <div class="ikey-hub-orbit" aria-hidden="true">iKey</div>
+          <div class="ikey-hub-hero" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <div><p class="ikey-hub-eyebrow">PROJECT MANAGEMENT</p><h2 id="ikeyHubTitle">專案管理</h2><p>管理你已加入的專案與申請紀錄。</p></div>
+            <button type="button" id="ikeyProjectCreateButton" class="ikey-hub-button" aria-label="建立專案" title="建立專案" style="font-size:26px;min-width:48px">＋</button>
           </div>
-          <p class="ikey-hub-note">選擇你要進行的工作。此版本先提供網頁介面預覽，尚未連接專案資料與設備操作。</p>
-          <div class="ikey-hub-grid">
-            <article class="ikey-hub-tile">
-              <span class="ikey-hub-tile-icon" aria-hidden="true">✦</span>
-              <h3>專案申請</h3>
-              <p>建立專案、加入專案、追蹤申請紀錄。讓每個新的管理空間從這裡開始。</p>
-              <button type="button" class="ikey-hub-button" data-ikey-hub-go="project-apply">前往專案申請 <span aria-hidden="true">→</span></button>
-            </article>
-            <article class="ikey-hub-tile">
-              <span class="ikey-hub-tile-icon" aria-hidden="true">▦</span>
-              <h3>我的專案</h3>
-              <p>選擇參與的專案，進入專案總覽、iBox、成員、設定、審核及操作歷程。</p>
-              <button type="button" class="ikey-hub-button" data-ikey-hub-go="my-projects">前往我的專案 <span aria-hidden="true">→</span></button>
-            </article>
-          </div>
+          <div id="ikeyProjectManagementStatus" class="ikey-hub-empty" role="status">專案清單服務尚未啟用。</div>
+          <div id="ikeyProjectManagementList" class="ikey-hub-grid" aria-label="我的專案"></div>
         </section>
-
         <section id="ikeyPage-project-apply" class="content-page ikey-hub" hidden data-ikey-placeholder aria-labelledby="ikeyHubApplyTitle">
           <div class="ikey-hub-hero">
             <div>
