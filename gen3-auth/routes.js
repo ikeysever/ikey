@@ -41,35 +41,6 @@ function createRouter(store) {
   });
   const ready=Boolean(store && ["registerAtomic","findByLogin","recordLoginFailureAtomic","recordLoginSuccessAtomic","createSession","findSessionByHash","findById","touchSession","revokeSession","audit","throttleAtomic"].every(k=>typeof store[k]==="function"));
   router.use((req,res,next)=>ready?next():res.status(503).json({success:false,code:"REGISTRATION_NOT_CONFIGURED",message:"註冊登入服務尚未完成安全資料庫串接"}));
-  // One-time owner bootstrap: requires a separate server-side secret and an atomic DB uniqueness check.
-  router.post("/bootstrap",async(req,res)=>{
-    try {
-      const secret=process.env.GEN3_BOOTSTRAP_SECRET;
-      if(!secret || secret.length<32 || typeof store.bootstrapSuperAdminAtomic!=="function")
-        return res.status(503).json({success:false,message:"初始化尚未開放"});
-      if(!throttle("bootstrap:"+req.ip,3,15*60000))
-        return res.status(429).json({success:false,message:"請稍後再試"});
-      const supplied=String(req.body?.setup_secret||"");
-      const a=Buffer.from(supplied),b=Buffer.from(secret);
-      if(a.length!==b.length || !crypto.timingSafeEqual(a,b))
-        return res.status(403).json({success:false,message:"初始化驗證失敗"});
-      const pwd=String(req.body?.password||"");
-      if(pwd.length<16 || pwd.length>128)
-        return res.status(400).json({success:false,message:"請設定 16 至 128 字元的新密碼"});
-      const now=new Date().toISOString();
-      const user={user_id:crypto.randomUUID(),username:"ikey",display_name:"iKey 超級管理員",
-        password_hash:passwordHash(pwd),global_role:"super_admin",account_status:"active",
-        failed_login_attempts:0,locked_until:"",created_at:now,updated_at:now};
-      const result=await store.bootstrapSuperAdminAtomic(user);
-      if(!result)return res.status(409).json({success:false,message:"超級管理員已存在"});
-      await store.audit({user_id:user.user_id,event_type:"super_admin_bootstrap",result:"success",auth_method:"setup_secret"});
-      return res.status(201).json({success:true,message:"超級管理員已建立，請立即移除 Render 的 GEN3_BOOTSTRAP_SECRET"});
-    }catch(err){
-      if(err.message==="SUPER_ADMIN_ALREADY_EXISTS")return res.status(409).json({success:false,message:"超級管理員已存在，無法再次初始化"});
-      console.error("Gen3 bootstrap error",err.code||err.message);
-      return res.status(503).json({success:false,message:"初始化未完成，請檢查後端設定"});
-    }
-  });
   router.post("/register",async(req,res)=>{
     try{
       if(!throttle("register:"+req.ip,5)||!(await store.throttleAtomic(rateKey("register",req.ip),5,15*60000)))
@@ -77,7 +48,7 @@ function createRouter(store) {
       const display_name=String(req.body?.display_name||"").trim();
       if(!display_name||display_name.length>MAX_NAME)return res.status(400).json({success:false,message:"顯示名稱不符合規定"});
       const username=String(req.body?.username||"").trim().toLowerCase();
-      if(username==="ikey" || !/^[a-z][a-z0-9_]{3,23}$/.test(username))
+      if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))
         return res.status(400).json({success:false,message:"帳號須為 4 至 24 字元英數字或底線，並以字母開頭"});
       const password_hash=passwordHash(req.body?.password);
       const now=new Date().toISOString();
