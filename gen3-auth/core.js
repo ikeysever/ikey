@@ -32,7 +32,7 @@ function safeUser(user) {
 function active(user, at = Date.now()) {
   if (!user || user.account_status === "disabled" || user.account_status === "pending_deletion") return false;
   if (user.account_status === "temporarily_locked" && Date.parse(user.locked_until || "") > at) return false;
-  return user.account_status === "active" || user.account_status === "pending_verification" ||
+  return user.account_status === "active" ||
     (user.account_status === "temporarily_locked" && Date.parse(user.locked_until || "") <= at);
 }
 function newSession(userId, at=Date.now()) {
