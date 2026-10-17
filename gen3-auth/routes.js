@@ -53,7 +53,7 @@ function createRouter(store) {
       const password_hash=passwordHash(req.body?.password);
       const now=new Date().toISOString();
       const user={user_id:crypto.randomUUID(),username,password_hash,display_name,
-        global_role:"user",account_status:"active",failed_login_attempts:0,
+        global_role:"user",account_status:"pending_review",failed_login_attempts:0,
         locked_until:"",created_at:now,updated_at:now};
       const inserted=await store.registerAtomic(user);
       if(!inserted)return res.status(409).json({success:false,message:"此帳號已被使用"});
