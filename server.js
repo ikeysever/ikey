@@ -1,5 +1,6 @@
 'use strict';
 const express = require('express');
+const path = require('node:path');
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '16kb' }));
@@ -13,6 +14,7 @@ for (const route of ['/api/auth/register', '/api/auth/login']) {
   app.post(route, (_req, res) => res.status(501).json({ ok: false, code: 'NOT_IMPLEMENTED', message: '帳號功能尚未啟用' }));
 }
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
+app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
 
 if (require.main === module) {
