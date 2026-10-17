@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>iKey 3.1｜登入與註冊</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel" aria-labelledby="brand">
+      <header class="brand">
+        <span class="brand-icon" aria-hidden="true">⚿</span>
+        <h1 id="brand">iKey <span>3.1</span></h1>
+        <p>智慧鑰匙管理系統</p>
+      </header>
+      <div class="tabs" role="tablist" aria-label="帳號操作">
+        <button id="tab-login" type="button" role="tab" aria-selected="true" aria-controls="auth-form">登入</button>
+        <button id="tab-register" type="button" role="tab" aria-selected="false" aria-controls="auth-form">註冊</button>
+      </div>
+      <form id="auth-form" novalidate>
+        <label for="account">帳號</label>
+        <input id="account" name="account" type="text" autocomplete="username" maxlength="128" required placeholder="請輸入帳號">
+        <label for="password">密碼</label>
+        <div class="password-row">
+          <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="請輸入密碼">
+          <button type="button" id="toggle-password" aria-label="顯示密碼">顯示</button>
+        </div>
+        <p id="register-note" class="hint" hidden>建立帳號功能尚未開放，註冊規則將依第三代正式規格實作。</p>
+        <button id="submit" class="submit" type="submit">登入系統</button>
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+      </form>
+      <footer>iKey 3.1 · 帳號系統建置中</footer>
+    </section>
+  </main>
+</body>
+</html>
