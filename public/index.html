@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1220">
-  <title>iKey 3.1｜登入與註冊</title>
+  <title>iKey｜登入與註冊</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
@@ -12,8 +13,8 @@
   <main class="shell">
     <section class="panel" aria-labelledby="brand">
       <header class="brand">
-        <span class="brand-icon" aria-hidden="true">⚿</span>
-        <h1 id="brand">iKey <span>3.1</span></h1>
+        <img class="brand-logo" src="/assets/brand/ikey-nextgen.svg" alt="iKey 標誌" width="74" height="74">
+        <h1 id="brand">iKey</h1>
         <p>智慧鑰匙管理系統</p>
       </header>
       <div class="tabs" role="tablist" aria-label="帳號操作">
@@ -26,13 +27,13 @@
         <label for="password">密碼</label>
         <div class="password-row">
           <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="請輸入密碼">
-          <button type="button" id="toggle-password" aria-label="顯示密碼">顯示</button>
+          <button type="button" id="toggle-password" aria-label="顯示密碼" aria-pressed="false" title="顯示密碼"><svg id="eye-open" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg id="eye-closed" hidden viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A11 11 0 0 1 12 5c6.4 0 10 7 10 7a15 15 0 0 1-3.3 3.9M6.2 6.2C3.5 8.1 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.5 4.5-1.2"/><path d="M10 10a3 3 0 0 0 4 4"/></svg></button>
         </div>
         <p id="register-note" class="hint" hidden>建立帳號功能尚未開放，註冊規則將依第三代正式規格實作。</p>
         <button id="submit" class="submit" type="submit">登入系統</button>
         <p id="message" class="message" role="status" aria-live="polite"></p>
       </form>
-      <footer>iKey 3.1 · 帳號系統建置中</footer>
+      <footer>iKey · 帳號系統建置中</footer>
     </section>
   </main>
 </body>
