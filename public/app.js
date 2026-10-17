@@ -79,7 +79,7 @@ form.addEventListener('submit', async event => {
     const payload = registering ? { username, display_name: displayName.value.trim(), password: password.value } : { identifier: username, password: password.value };
     const response = await fetch('/api/auth/' + (registering ? 'register' : 'login'), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const result = await response.json();
-    if (!response.ok || !result.ok) return setMessage(result.message || '目前無法完成操作。', true);
+    if (!response.ok || !result.success) return setMessage(result.message || '目前無法完成操作。', true);
     password.value = '';
     confirmPassword.value = '';
     setMessage(registering ? '帳號建立成功，請返回登入頁。' : '登入成功。');
