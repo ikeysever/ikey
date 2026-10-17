@@ -57,9 +57,20 @@ function locked(fn) {
 }
 function execute(action,p) {
  switch(action) {
+  case "bootstrapSuperAdminAtomic":return locked(()=>{
+   const u=p.user||{};
+   if(u.username!=="ikey"||u.global_role!=="super_admin"||u.account_status!=="active"||
+      !u.user_id||!/^scrypt:v1:/.test(String(u.password_hash||""))||!u.display_name)
+      throw Error("INVALID_BOOTSTRAP");
+   const users=rows(TABS.users);
+   if(users.some(r=>r.value.global_role==="super_admin"||r.value.username.toLowerCase()==="ikey"))
+      throw Error("SUPER_ADMIN_ALREADY_EXISTS");
+   append(TABS.users,u);
+   return {user_id:u.user_id};
+  });
   case "registerAtomic":return locked(()=>{
    const u=p.user||{},username=String(u.username||"").trim().toLowerCase();
-   if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))throw Error("INVALID_USERNAME");
+   if(!/^[a-z][a-z0-9_]{3,23}$/.test(username)||username==="ikey")throw Error("INVALID_USERNAME");
    if(!u.user_id||!/^scrypt:v1:/.test(String(u.password_hash||""))||
       !String(u.display_name||"").trim()||String(u.display_name).length>80||
       u.global_role!=="user"||u.account_status!=="active"||u.username!==username)
