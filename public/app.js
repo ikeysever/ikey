@@ -23,7 +23,10 @@ registerTab.addEventListener('click', () => setMode('register'));
 document.getElementById('toggle-password').addEventListener('click', (event) => {
   const show = password.type === 'password';
   password.type = show ? 'text' : 'password';
-  event.currentTarget.textContent = show ? '隱藏' : '顯示';
+  document.getElementById('eye-open').hidden = show;
+  document.getElementById('eye-closed').hidden = !show;
+  event.currentTarget.setAttribute('aria-pressed', String(show));
+  event.currentTarget.title = show ? '隱藏密碼' : '顯示密碼';
   event.currentTarget.setAttribute('aria-label', show ? '隱藏密碼' : '顯示密碼');
 });
 form.addEventListener('submit', async (event) => {
