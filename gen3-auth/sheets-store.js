@@ -21,6 +21,7 @@ function createSheetsStore() {
  return {
    health:async()=>call("health"),
    registerAtomic:async user=>call("registerAtomic",{user}),
+   bootstrapSuperAdminAtomic:async user=>call("bootstrapSuperAdminAtomic",{user}),
    throttleAtomic:async(key,limit,window_ms)=>call("throttleAtomic",{key,limit,window_ms}),
    findByLogin:async identifier=>call("findByLogin",{identifier}),
    findById:async user_id=>call("findById",{user_id}),
