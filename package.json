@@ -1,0 +1,17 @@
+{
+  "name": "ikey-3-1",
+  "version": "0.1.0",
+  "private": true,
+  "description": "iKey 3.1 backend foundation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
