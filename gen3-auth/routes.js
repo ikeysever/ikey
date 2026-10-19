@@ -109,18 +109,26 @@ function createRouter(store) {
         return res.status(401).json({success:false,message:"帳號或密碼錯誤，或帳號暫時無法登入"});
       }
       if(!active(user)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
-      // Must recheck account status inside atomic adapter operation.
-      const updated=await store.recordLoginSuccessAtomic(user.user_id);
-      console.info("Gen3 login status ms",Date.now()-started);
-      if(!updated || !active(updated)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
-      const s=newSession(user.user_id);
-      // Both operations must succeed before setting the session cookie or reporting success.
-      await Promise.all([
-        store.createSession(s.record),
-        store.audit({user_id:user.user_id,event_type:"login",result:"success",auth_method:"password"})
-      ]);
+      // Fast path is opt-in only after the matching Apps Script action is deployed.
+      // Preserve the established flow until the backend version is verified.
+      const fastLogin=process.env.GEN3_FAST_LOGIN==="1" && typeof store.completeLoginAtomic==="function";
+      const session=newSession(user.user_id);
+      let updated;
+      if(fastLogin) {
+        updated=await store.completeLoginAtomic(user.user_id,session.record);
+        console.info("Gen3 login consolidated status ms",Date.now()-started);
+        if(!updated || !active(updated)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
+      } else {
+        updated=await store.recordLoginSuccessAtomic(user.user_id);
+        console.info("Gen3 login status ms",Date.now()-started);
+        if(!updated || !active(updated)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
+        await Promise.all([
+          store.createSession(session.record),
+          store.audit({user_id:user.user_id,event_type:"login",result:"success",auth_method:"password"})
+        ]);
+      }
       console.info("Gen3 login complete ms",Date.now()-started);
-      res.cookie(COOKIE,s.raw,cookieOptions(req));
+      res.cookie(COOKIE,session.raw,cookieOptions(req));
       return res.json({success:true,user:safeUser(updated)});
     } catch(err) {
       console.error("Gen3 login error",err.code||err.name||err.message);
