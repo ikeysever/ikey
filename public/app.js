@@ -8,7 +8,6 @@ const displayName = document.getElementById('display-name');
 const confirmPassword = document.getElementById('confirm');
 const submit = document.getElementById('submit');
 const message = document.getElementById('message');
-const loginProgress = document.getElementById('login-progress');
 const registerNote = document.getElementById('register-note');
 let mode = 'login';
 let authStatus = null;
@@ -16,7 +15,7 @@ let authStatus = null;
 function setMessage(text, error = false) {
   message.textContent = text;
   message.className = error ? 'message error' : 'message';
-  loginProgress.hidden = true;
+
 }
 function updateAvailability() {
   const available = mode === 'login' ? authStatus?.enabled === true : authStatus?.registration === true;
@@ -90,7 +89,7 @@ form.addEventListener('submit', async event => {
   // Do not block a valid login merely because the separate health probe timed out.
   submit.disabled = true;
   setMessage(registering ? '處理中…' : '登入中…');
-  loginProgress.hidden = registering;
+  message.classList.toggle('loading', !registering);
   try {
     const payload = registering ? { username, display_name: displayName.value.trim(), password: password.value } : { identifier: username, password: password.value };
     const response = await fetch('/api/auth/' + (registering ? 'register' : 'login'), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
