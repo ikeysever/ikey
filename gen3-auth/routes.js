@@ -97,7 +97,7 @@ function createRouter(store) {
       res.cookie(COOKIE,s.raw,cookieOptions(req));
       return res.json({success:true,user:safeUser(updated)});
     } catch(err) {
-      console.error("Gen3 login error",err.code||err.message);
+      console.error("Gen3 login error",err.code||err.name||err.message);
       return res.status(503).json({success:false,message:"登入服務暫時無法使用"});
     }
   });
