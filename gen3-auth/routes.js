@@ -65,16 +65,40 @@ function createRouter(store) {
       return res.status(503).json({success:false,message:"暫時無法註冊，請稍後再試"});
     }
   });
+  // Short-lived server-only prefetch. Never send account existence or hashes to the browser.
+  const prefetchCache=new Map();
+  const prefetchThrottle=new Map();
+  const PREFETCH_TTL=20000;
+  const prefetchKey=(req,id)=>rateKey("prefetch",req.ip,id);
+  router.post("/prefetch",async(req,res)=>{
+    const identifier=String(req.body?.identifier||"").trim().toLowerCase();
+    if(!/^[a-z][a-z0-9_]{3,23}$/.test(identifier))return res.status(204).end();
+    const key=prefetchKey(req,identifier),now=Date.now();
+    const previous=prefetchThrottle.get(key)||0;
+    if(now-previous<10000)return res.status(204).end();
+    prefetchThrottle.set(key,now);
+    if(prefetchThrottle.size>2000)for(const [k,t] of prefetchThrottle)if(now-t>60000)prefetchThrottle.delete(k);
+    if(prefetchCache.size>1000)for(const [k,v] of prefetchCache)if(now-v.at>PREFETCH_TTL)prefetchCache.delete(k);
+    try {
+      const user=await store.findByLogin(identifier);
+      prefetchCache.set(key,{user,at:Date.now()});
+    } catch(err) {console.warn("Gen3 prefetch unavailable",err.name||"error");}
+    return res.status(204).end();
+  });
   router.post("/login",async(req,res)=>{
     try {
       const identifier=String(req.body?.identifier||"").trim().toLowerCase();
       if(!/^[a-z][a-z0-9_]{3,23}$/.test(identifier))return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
       if(!throttle("login:"+req.ip+":"+identifier,10)) return res.status(429).json({success:false,message:"請稍後再試"});
       // Independent reads run together; do not reveal or verify credentials before rate-limit approval.
+      const started=Date.now();
+      const cached=prefetchCache.get(prefetchKey(req,identifier));
+      prefetchCache.delete(prefetchKey(req,identifier));
       const [allowed,user]=await Promise.all([
         store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000),
-        store.findByLogin(identifier)
+        cached && Date.now()-cached.at<PREFETCH_TTL ? Promise.resolve(cached.user) : store.findByLogin(identifier)
       ]);
+      console.info("Gen3 login lookup ms",Date.now()-started);
       if(!allowed) return res.status(429).json({success:false,message:"請稍後再試"});
       // Use a dummy hash to reduce timing differences for nonexistent users.
       const dummy="scrypt:v1:AAAAAAAAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -87,6 +111,7 @@ function createRouter(store) {
       if(!active(user)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
       // Must recheck account status inside atomic adapter operation.
       const updated=await store.recordLoginSuccessAtomic(user.user_id);
+      console.info("Gen3 login status ms",Date.now()-started);
       if(!updated || !active(updated)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
       const s=newSession(user.user_id);
       // Both operations must succeed before setting the session cookie or reporting success.
@@ -94,6 +119,7 @@ function createRouter(store) {
         store.createSession(s.record),
         store.audit({user_id:user.user_id,event_type:"login",result:"success",auth_method:"password"})
       ]);
+      console.info("Gen3 login complete ms",Date.now()-started);
       res.cookie(COOKIE,s.raw,cookieOptions(req));
       return res.json({success:true,user:safeUser(updated)});
     } catch(err) {
