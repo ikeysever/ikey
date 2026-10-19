@@ -19,7 +19,7 @@ function setMessage(text, error = false) {
 function updateAvailability() {
   const available = mode === 'login' ? authStatus?.enabled === true : authStatus?.registration === true;
   submit.disabled = !available;
-  if (!available) setMessage('帳號服務尚未完成後端與資料庫連線，暫時無法' + (mode === 'login' ? '登入。' : '註冊。'));
+  if (!available) setMessage(authStatus?.reason === 'CONFIG_MISSING' ? '帳號服務尚未設定完成。' : '正在確認帳號服務狀態，若持續無法操作請稍後重試。');
 }
 function setMode(next) {
   mode = next;
@@ -72,7 +72,8 @@ form.addEventListener('submit', async event => {
   if (!username || !password.value) return setMessage('請輸入帳號與密碼。', true);
   if (registering && (password.value.length < 8 || password.value.length > 128)) return setMessage('密碼長度須為 8–128 字元。', true);
   if (registering && password.value !== confirmPassword.value) return setMessage('兩次密碼不一致。', true);
-  if (!(registering ? authStatus?.registration : authStatus?.enabled)) return updateAvailability();
+  // Availability checks are advisory; the server performs all authentication and authorization.
+  // Do not block a valid login merely because the separate health probe timed out.
   submit.disabled = true;
   setMessage('處理中…');
   try {
