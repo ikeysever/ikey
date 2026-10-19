@@ -75,7 +75,8 @@ form.addEventListener('submit', async event => {
   // Availability checks are advisory; the server performs all authentication and authorization.
   // Do not block a valid login merely because the separate health probe timed out.
   submit.disabled = true;
-  setMessage('處理中…');
+  setMessage(registering ? '處理中…' : '登入中…');
+  message.classList.toggle('loading', !registering);
   try {
     const payload = registering ? { username, display_name: displayName.value.trim(), password: password.value } : { identifier: username, password: password.value };
     const response = await fetch('/api/auth/' + (registering ? 'register' : 'login'), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
