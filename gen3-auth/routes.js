@@ -69,8 +69,13 @@ function createRouter(store) {
     try {
       const identifier=String(req.body?.identifier||"").trim().toLowerCase();
       if(!/^[a-z][a-z0-9_]{3,23}$/.test(identifier))return res.status(401).json({success:false,message:"帳號或密碼錯誤"});
-      if(!throttle("login:"+req.ip+":"+identifier,10)||!(await store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000))) return res.status(429).json({success:false,message:"請稍後再試"});
-      const user=await store.findByLogin(identifier);
+      if(!throttle("login:"+req.ip+":"+identifier,10)) return res.status(429).json({success:false,message:"請稍後再試"});
+      // Independent reads run together; do not reveal or verify credentials before rate-limit approval.
+      const [allowed,user]=await Promise.all([
+        store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000),
+        store.findByLogin(identifier)
+      ]);
+      if(!allowed) return res.status(429).json({success:false,message:"請稍後再試"});
       // Use a dummy hash to reduce timing differences for nonexistent users.
       const dummy="scrypt:v1:AAAAAAAAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
       const matches=passwordVerify(req.body?.password,user?.password_hash||dummy);
@@ -84,8 +89,11 @@ function createRouter(store) {
       const updated=await store.recordLoginSuccessAtomic(user.user_id);
       if(!updated || !active(updated)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
       const s=newSession(user.user_id);
-      await store.createSession(s.record);
-      await store.audit({user_id:user.user_id,event_type:"login",result:"success",auth_method:"password"});
+      // Both operations must succeed before setting the session cookie or reporting success.
+      await Promise.all([
+        store.createSession(s.record),
+        store.audit({user_id:user.user_id,event_type:"login",result:"success",auth_method:"password"})
+      ]);
       res.cookie(COOKIE,s.raw,cookieOptions(req));
       return res.json({success:true,user:safeUser(updated)});
     } catch(err) {
