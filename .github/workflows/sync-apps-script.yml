@@ -1,0 +1,50 @@
+name: Sync iKey Apps Script source
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.IKEY_CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Set IKEY_CLASPRC_JSON as a GitHub Actions secret first."
+            exit 1
+          fi
+      - name: Install clasp
+        run: npm install --global @google/clasp@2.5.0
+      - name: Prepare private credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.IKEY_CLASPRC_JSON }}
+        run: |
+          umask 077
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          node -e "JSON.parse(require('fs').readFileSync(process.env.HOME+'/.clasprc.json','utf8'))"
+      - name: Pull existing project and replace only Code.gs
+        run: |
+          mkdir -p /tmp/ikey-script
+          cd /tmp/ikey-script
+          printf '%s\n' '{"scriptId":"16Oa3hrtSP7YMGWMoS1gW_RBFFV_CKIRN0Hp_OTIZ6IFkliNZl5AclFBy"}' > .clasp.json
+          clasp pull
+          if [ ! -f Code.js ] && [ ! -f Code.gs ]; then
+            echo "::error::Expected Code.gs/Code.js missing in remote project. Refusing to overwrite other files."
+            exit 1
+          fi
+          cp "$GITHUB_WORKSPACE/gen3-auth/Code.gs" Code.js
+          rm -f Code.gs
+          clasp push --force
+      - name: Clear local credentials
+        if: always()
+        run: rm -f "$HOME/.clasprc.json"
