@@ -7,6 +7,7 @@ function createSheetsStore() {
    throw Error("GEN3_STORAGE_NOT_CONFIGURED");
  async function call(action,payload={}) {
    const controller=new AbortController();
+   const started=Date.now();
    const timer=setTimeout(()=>controller.abort(),15000);
    try {
      const response=await fetch(url,{method:"POST",redirect:"follow",signal:controller.signal,
@@ -16,7 +17,8 @@ function createSheetsStore() {
      const data=await response.json();
      if(!data.ok)throw Error("GEN3_STORAGE_"+String(data.error||"FAILED"));
      return data.result;
-   }finally{clearTimeout(timer)}
+   }catch(err){console.warn("Gen3 storage action failed",action,"ms",Date.now()-started,"error",err.name||"unknown");throw err;
+   }finally{clearTimeout(timer);console.info("Gen3 storage action ms",action,Date.now()-started)}
  }
  return {
    health:async()=>call("health"),
