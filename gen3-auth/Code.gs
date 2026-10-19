@@ -111,6 +111,26 @@ function execute(action,p) {
    u.failed_login_attempts="0";u.updated_at=new Date().toISOString();
    overwrite(TABS.users,r.index,u);return u;
   });
+  case "completeLoginAtomic":return locked(()=>{
+   const userId=String(p.user_id||""),session=p.session||{};
+   if(!userId||session.user_id!==userId||!session.session_id||!session.session_token_hash||!session.expires_at)throw Error("INVALID_LOGIN_COMPLETION");
+   const r=rows(TABS.users).find(x=>x.value.user_id===userId);
+   if(!r)return null;
+   const u=r.value;
+   if(u.account_status==="disabled"||u.account_status==="pending_deletion")return null;
+   if(u.account_status==="temporarily_locked"){
+     if(Date.parse(u.locked_until||"")>Date.now())return null;
+     u.account_status="active";u.locked_until="";
+   }
+   if(u.account_status!=="active")return null;
+   // Complete all security-critical writes under one Apps Script lock.
+   // The session is appended last so no successful session exists without an audit record.
+   u.failed_login_attempts="0";u.updated_at=new Date().toISOString();
+   overwrite(TABS.users,r.index,u);
+   append(TABS.audit,{audit_id:Utilities.getUuid(),user_id:userId,event_type:"login",result:"success",auth_method:"password",ip_address:"",user_agent:"",details:"",created_at:new Date().toISOString()});
+   append(TABS.sessions,session);
+   return u;
+  });
   case "createSession":return locked(()=>{
    const u=rows(TABS.users).find(x=>x.value.user_id===p.session.user_id)?.value;
    if(!u || u.account_status!=="active")throw Error("ACCOUNT_UNAVAILABLE");
