@@ -11,7 +11,7 @@ app.use('/api', (req, res, next) => {
   res.on('finish', () => {
     const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
     const minute = Math.floor(Date.now() / 60000);
-    const key = minute + ':' + req.method + ':' + req.path.replace(/\\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:id');
+    const key = minute + ':' + req.method + ':' + req.path;
     const stat = requestMinuteStats.get(key) || { count: 0, totalMs: 0, maxMs: 0, errors: 0 };
     stat.count++;
     stat.totalMs += elapsedMs;
