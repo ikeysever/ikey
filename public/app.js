@@ -18,8 +18,9 @@ function setMessage(text, error = false) {
 }
 function updateAvailability() {
   const available = mode === 'login' ? authStatus?.enabled === true : authStatus?.registration === true;
-  submit.disabled = !available;
-  if (!available) setMessage(authStatus?.reason === 'CONFIG_MISSING' ? '帳號服務尚未設定完成。' : '正在確認帳號服務狀態，若持續無法操作請稍後重試。');
+  submit.disabled = authStatus?.reason === 'CONFIG_MISSING';
+  if (!available && authStatus?.reason === 'CONFIG_MISSING') setMessage('帳號服務尚未設定完成。');
+  else if (!available && !message.classList.contains('error')) setMessage('帳號服務狀態尚未確認，仍可嘗試登入。');
 }
 function setMode(next) {
   mode = next;
