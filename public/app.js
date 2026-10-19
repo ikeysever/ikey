@@ -19,8 +19,7 @@ function setMessage(text, error = false) {
 function updateAvailability() {
   const available = mode === 'login' ? authStatus?.enabled === true : authStatus?.registration === true;
   submit.disabled = authStatus?.reason === 'CONFIG_MISSING';
-  if (!available && authStatus?.reason === 'CONFIG_MISSING') setMessage('帳號服務尚未設定完成。');
-  else if (!available && !message.classList.contains('error')) setMessage('帳號服務狀態尚未確認，仍可嘗試登入。');
+  // Keep transient health-check failures out of the login form's status text.
 }
 function setMode(next) {
   mode = next;
