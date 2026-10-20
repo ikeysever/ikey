@@ -6,8 +6,10 @@
   <meta name="theme-color" content="#0b1220">
   <title>iKey｜登入與註冊</title>
   <link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
-  <link rel="stylesheet" href="/style.css?v=20261019-6">
-  <script src="/app.js?v=20261019-6" defer></script>
+  <link rel="stylesheet" href="/style.css?v=20261020-8">
+  <link rel="stylesheet" href="/welcome.css?v=20261020-1">
+  <script src="/welcome.js?v=20261020-1" defer></script>
+  <script src="/app.js?v=20261020-8" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -38,5 +40,12 @@
       <footer>iKey · 帳號系統建置中</footer>
     </section>
   </main>
+  <section id="animationRoot" hidden aria-label="iKey 歡迎動畫">
+    <div class="welcome-stage"><canvas id="welcomeCanvas" role="img" aria-label="iKey 智慧鑰匙管理系統歡迎動畫"></canvas></div>
+    <div id="welcomeStatus" class="welcome-status" aria-live="polite">
+      <div class="welcome-status-icon"><div id="welcomeSpinner" class="welcome-spinner"></div><svg id="welcomeCheck" class="welcome-check" hidden viewBox="0 0 42 42" aria-hidden="true"><path d="M10 21 L17 28 L30 13"/></svg></div>
+      <strong id="welcomeStatusText">登入成功</strong><span id="welcomeStatusSub">載入中…</span>
+    </div>
+  </section>
 </body>
 </html>
