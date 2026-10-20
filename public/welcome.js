@@ -8,7 +8,7 @@ const connectionLines=document.createElement('canvas'),connectionContext=connect
 function prepareConnections(){connectionContext.clearRect(0,0,1254,1254);connectionContext.drawImage(logo,0,0);connectionContext.globalCompositeOperation='destination-in';connectionContext.beginPath();connectionContext.arc(627,627,610,0,Math.PI*2);connectionContext.arc(627,627,555,0,Math.PI*2,true);connectionContext.clip('evenodd');connectionContext.globalCompositeOperation='source-over';}
 const wordmark=document.createElement('canvas'),wordmarkContext=wordmark.getContext('2d');wordmark.width=576;wordmark.height=248;
 function prepareWordmark(){wordmarkContext.clearRect(0,0,576,248);wordmarkContext.drawImage(logo,351,895,576,248,0,0,576,248);const pixels=wordmarkContext.getImageData(0,0,576,248),data=pixels.data;for(let i=0;i<data.length;i+=4){const alpha=Math.max(0,Math.min(1,(190-Math.max(data[i],data[i+1],data[i+2]))/90));data[i+3]=Math.round(data[i+3]*alpha);if(alpha>.01)for(let c=0;c<3;c++)data[i+c]=Math.max(0,Math.min(255,(data[i+c]-250*(1-alpha))/alpha));}wordmarkContext.putImageData(pixels,0,0);}
-logo.src='/welcome-source.html';
+logo.src='/assets/brand/ikey-nextgen.svg';
 const logoSize=1254,scale=432/logoSize,left=144,top=32;
 let time=0,frame=0,origin=0,ready=false,successAt=null,finishing=false;
 const clamp=v=>Math.max(0,Math.min(1,v)),progress=(t,s,d)=>clamp((t-s)/d),ease=x=>1-(1-x)**3,enter=(t,s,d)=>ease(progress(t,s,d)),mix=(a,b,v)=>a+(b-a)*v;
