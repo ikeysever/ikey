@@ -9,9 +9,40 @@ const confirmPassword = document.getElementById('confirm');
 const submit = document.getElementById('submit');
 const message = document.getElementById('message');
 const registerNote = document.getElementById('register-note');
+const animationRoot = document.getElementById('animationRoot');
+const welcomeVideo = document.getElementById('welcomeVideo');
 let mode = 'login';
 let authStatus = null;
 
+async function prepareHomeAfterLogin() {
+  const response = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' });
+  const data = response.ok ? await response.json() : null;
+  if (!data?.authenticated) throw new Error('HOME_NOT_READY');
+  return data;
+}
+async function playWelcomeAndEnterHome() {
+  // The approved MP4 contains its success state at 8.3s, so verify the real session/home prerequisite first.
+  // This prevents the fixed preview from displaying a false success state on a failed home preload.
+  await prepareHomeAfterLogin();
+  animationRoot.hidden = false;
+  document.body.classList.add('welcome-playing');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    window.location.assign('/home.html');
+    return;
+  }
+  welcomeVideo.currentTime = 0;
+  await new Promise((resolve, reject) => {
+    const done = () => { cleanup(); resolve(); };
+    const failed = () => { cleanup(); reject(new Error('WELCOME_PLAYBACK_FAILED')); };
+    const cleanup = () => { welcomeVideo.removeEventListener('ended', done); welcomeVideo.removeEventListener('error', failed); };
+    welcomeVideo.addEventListener('ended', done, { once: true });
+    welcomeVideo.addEventListener('error', failed, { once: true });
+    const p = welcomeVideo.play();
+    if (p && typeof p.catch === 'function') p.catch(() => { welcomeVideo.muted = true; welcomeVideo.play().catch(failed); });
+  });
+  window.location.assign('/home.html');
+}
 function setMessage(text, error = false) {
   message.textContent = text;
   message.className = error ? 'message error' : 'message';
@@ -98,7 +129,11 @@ form.addEventListener('submit', async event => {
     password.value = '';
     confirmPassword.value = '';
     if (registering) setMessage('帳號建立成功，請返回登入頁。');
-    else { setMessage('登入成功。'); window.location.assign('/home.html'); }
+    else {
+      setMessage('登入成功，正在準備首頁…');
+      try { await playWelcomeAndEnterHome(); }
+      catch { animationRoot.hidden = true; document.body.classList.remove('welcome-playing'); setMessage('首頁準備失敗，請重新登入或稍後再試。', true); }
+    }
   } catch { setMessage('無法連線至伺服器，請稍後再試。', true); }
   finally { updateAvailability(); }
 });
