@@ -1,0 +1,11 @@
+<div id="ikey-welcome-production-source">
+<div class="ikey-stage"><canvas></canvas></div>
+<script>
+(()=>{
+const root=document.getElementById('ikey-welcome-production-source'),q=s=>root.querySelector(s),canvas=q('canvas'),ctx=canvas.getContext('2d'),logo=new Image();
+const fingerprint=document.createElement('canvas'),fingerprintContext=fingerprint.getContext('2d'),highlight=document.createElement('canvas'),highlightContext=highlight.getContext('2d');fingerprint.width=highlight.width=215;fingerprint.height=highlight.height=244;
+function prepareFingerprint(){fingerprintContext.drawImage(logo,520,65,215,244,0,0,215,244);const pixels=fingerprintContext.getImageData(0,0,215,244);for(let i=0;i<pixels.data.length;i+=4){const r=pixels.data[i],g=pixels.data[i+1],b=pixels.data[i+2],chroma=Math.max(r,g,b)-Math.min(r,g,b),coverage=Math.max(0,Math.min(1,(chroma-10)/26));pixels.data[i+3]=Math.round(pixels.data[i+3]*coverage);}fingerprintContext.putImageData(pixels,0,0);}
+logo.src='data:image/webp;base64,PLACEHOLDER';
+logo.onload=prepareFingerprint;
+})();
+</script></div>
