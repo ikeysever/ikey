@@ -11,7 +11,6 @@ const message = document.getElementById('message');
 const registerNote = document.getElementById('register-note');
 let mode = 'login';
 let authStatus = null;
-async function prepareHome(){const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=r.ok?await r.json():null;if(!data?.authenticated)throw new Error('HOME_NOT_READY');return data;}
 
 function setMessage(text, error = false) {
   message.textContent = text;
@@ -99,7 +98,7 @@ form.addEventListener('submit', async event => {
     password.value = '';
     confirmPassword.value = '';
     if (registering) setMessage('帳號建立成功，請返回登入頁。');
-    else { setMessage('登入成功，正在載入…'); const homeReady=prepareHome(); if(window.iKeyWelcome) await window.iKeyWelcome.play(homeReady); else { await homeReady; window.location.assign('/home.html'); } }
+    else { setMessage('登入成功。'); window.location.assign('/home.html'); }
   } catch { setMessage('無法連線至伺服器，請稍後再試。', true); }
   finally { updateAvailability(); }
 });
