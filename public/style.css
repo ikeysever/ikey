@@ -8,9 +8,3 @@
 .message.loading::before{content:"";display:inline-block;width:14px;height:14px;margin-right:9px;border:2px solid rgba(121,213,233,.3);border-top-color:#79d5e9;border-radius:50%;vertical-align:-3px;animation:ikey-login-spin .75s linear infinite}
 @keyframes ikey-login-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.message.loading::before{animation-duration:2s}}
-
-/* Final approved 9.7s Welcome handoff integration. Shared viewport background remains visible. */
-.welcome-stage{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);overflow:hidden}
-.welcome-stage[hidden]{display:none}.welcome-video{display:block;width:100vw;height:100vh;object-fit:contain;background:transparent}
-body.welcome-playing{overflow:hidden}body.welcome-playing .shell{visibility:hidden}
-@media(prefers-reduced-motion:reduce){.welcome-video{display:none}.welcome-stage::after{content:"歡迎使用 iKey";font-size:clamp(28px,5vw,54px);color:#f8fafc}}
