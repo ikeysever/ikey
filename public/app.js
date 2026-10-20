@@ -97,7 +97,8 @@ form.addEventListener('submit', async event => {
     if (!response.ok || !result.success) return setMessage(result.message || '目前無法完成操作。', true);
     password.value = '';
     confirmPassword.value = '';
-    setMessage(registering ? '帳號建立成功，請返回登入頁。' : '登入成功。');
+    if (registering) setMessage('帳號建立成功，請返回登入頁。');
+    else { setMessage('登入成功。'); window.location.assign('/home.html'); }
   } catch { setMessage('無法連線至伺服器，請稍後再試。', true); }
   finally { updateAvailability(); }
 });
