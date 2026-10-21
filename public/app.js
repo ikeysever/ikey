@@ -12,6 +12,67 @@ const registerNote = document.getElementById('register-note');
 let mode = 'login';
 let authStatus = null;
 
+// Unlock Web Audio during the actual login gesture. Keep the welcome animation
+// in this same document so mobile browsers do not lose audio activation on navigation.
+let welcomeAudioContext=null,welcomeAudioBuffer=null,welcomeAudioSource=null;
+let welcomeStarted=false,welcomeCompleted=false,welcomeFrame=null;
+const welcomeAudioReady=(async()=>{
+  try{
+    const response=await fetch('/assets/welcome-3-0/welcome.wav',{cache:'force-cache'});
+    if(!response.ok)throw Error('WELCOME_AUDIO_FETCH');
+    const bytes=await response.arrayBuffer();
+    // Decode only after an AudioContext exists (created by the submit gesture).
+    return bytes;
+  }catch{return null;}
+})();
+function unlockWelcomeAudio(){
+  try{
+    if(!welcomeAudioContext)welcomeAudioContext=new (window.AudioContext||window.webkitAudioContext)();
+    welcomeAudioContext.resume().catch(()=>{});
+  }catch{/* Sound may be restricted by the browser. */}
+}
+async function prepareWelcomeAudio(){
+  if(!welcomeAudioContext)return;
+  try{
+    const bytes=await welcomeAudioReady;
+    if(bytes&&!welcomeAudioBuffer)welcomeAudioBuffer=await welcomeAudioContext.decodeAudioData(bytes.slice(0));
+  }catch{/* Animation must continue if audio is unavailable. */}
+}
+function beginWelcome(){
+  document.body.style.overflow='hidden';
+  const overlay=document.createElement('div');
+  overlay.id='welcome-overlay';
+  Object.assign(overlay.style,{position:'fixed',inset:'0',zIndex:'9999',background:'#070c16'});
+  welcomeFrame=document.createElement('iframe');
+  welcomeFrame.title='iKey 歡迎動畫';
+  welcomeFrame.setAttribute('data-parent-audio','');
+  welcomeFrame.allow='autoplay';
+  Object.assign(welcomeFrame.style,{width:'100%',height:'100%',border:'0',display:'block'});
+  overlay.appendChild(welcomeFrame);
+  document.body.appendChild(overlay);
+  // The iframe's real animation completion, not a guessed 9.8s timer,
+  // is the only successful route to the home page.
+  welcomeFrame.src='/welcome-3-0-production.html?v=20261021-synced-welcome1';
+}
+window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.source!==welcomeFrame?.contentWindow)return;
+  if(event.data?.type==='ikey-welcome-start'&&!welcomeStarted){
+    welcomeStarted=true;
+    if(welcomeAudioContext&&welcomeAudioBuffer){
+      try{
+        welcomeAudioSource=welcomeAudioContext.createBufferSource();
+        welcomeAudioSource.buffer=welcomeAudioBuffer;
+        welcomeAudioSource.connect(welcomeAudioContext.destination);
+        welcomeAudioSource.start(0);
+      }catch{/* Keep the animation running if playback is blocked. */}
+    }
+  }
+  if(event.data?.type==='ikey-welcome-complete'&&welcomeStarted&&!welcomeCompleted){
+    welcomeCompleted=true;
+    window.location.replace('/home.html');
+  }
+});
+
 function setMessage(text, error = false) {
   message.textContent = text;
   message.className = error ? 'message error' : 'message';
@@ -67,6 +128,7 @@ async function refreshStatus() {
 }
 form.addEventListener('submit', async event => {
   event.preventDefault();
+  if(mode==='login')unlockWelcomeAudio();
   const registering = mode === 'register';
   const username = account.value.trim();
   if (registering && !/^[a-z][a-z0-9_]{3,23}$/.test(username)) return setMessage('帳號須以小寫英文字母開頭，長度 4–24 字元，只能包含小寫英文、數字及底線。', true);
@@ -89,7 +151,8 @@ form.addEventListener('submit', async event => {
     if (registering) setMessage('帳號建立成功，請返回登入頁。');
     else {
       setMessage('登入成功。');
-      window.location.assign('/welcome-3-0.html');
+      await prepareWelcomeAudio();
+      beginWelcome();
     }
   } catch { setMessage('無法連線至伺服器，請稍後再試。', true); }
   finally { updateAvailability(); }
