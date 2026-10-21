@@ -26,15 +26,6 @@
   function setView(next){view=next;for(const type of ['list','grid']){const button=get('projects-view-'+type);const selected=type===next;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));}render();}
   get('projects-view-list').addEventListener('click',()=>setView('list'));
   get('projects-view-grid').addEventListener('click',()=>setView('grid'));
-  const createPanel=get('projects-create-panel');
-  function toggleForm(open){createPanel.hidden=!open;get('projects-form-error').textContent='';if(open)get('projects-name').focus();else get('projects-create-form').reset();}
-  get('projects-create').addEventListener('click',()=>toggleForm(true));
-  get('projects-cancel').addEventListener('click',()=>toggleForm(false));
-  get('projects-create-form').addEventListener('submit',event=>{
-    event.preventDefault();const name=get('projects-name').value.trim();
-    if(!name||name.length>40){get('projects-form-error').textContent='請輸入 1～40 字的專案名稱。';return;}
-    if(projects.length>=8){get('projects-form-error').textContent='介面測試最多建立 8 個專案。';return;}
-    projects.push(name);render();toggleForm(false);
-  });
+  get('projects-create').addEventListener('click',()=>{location.assign('/project-create.html');});
   render();
 })();
