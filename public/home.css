@@ -84,3 +84,11 @@ body.menu-open{overflow:hidden}
 .side nav .project-nav-heading .project-nav-link.active{background:rgba(121,213,233,.12);color:var(--cyan);font-weight:700}
 .side nav .project-nav-heading .project-menu-toggle:focus-visible,.side nav .project-nav-heading .project-nav-link:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 @media(max-width:760px){.side nav .project-nav-heading .project-menu-toggle{flex:0 0 42px;width:42px;text-align:center;padding:0;margin:0}.side nav .project-nav-heading .project-nav-link{text-align:left;margin:0;padding:10px 12px 10px 4px}}
+
+/* Compact chevron hit area and visibly indented nested project labels. */
+.side nav .project-nav-heading .project-menu-toggle{flex:0 0 22px;width:22px;min-height:44px;margin:0 0 0 8px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;cursor:pointer}
+.side nav .project-nav-heading .project-menu-toggle:hover{background:transparent;color:var(--cyan)}
+.side nav .project-nav-heading .project-nav-link{padding-left:10px}
+.side nav .project-menu-content{margin:0 8px 6px 34px;padding:4px 0 4px 13px;border-left:1px solid var(--line)}
+.side nav .project-menu-content .project-menu-empty{margin:8px 0;padding-left:8px}
+@media(max-width:760px){.side nav .project-nav-heading .project-menu-toggle{flex:0 0 22px;width:22px;margin:0 0 0 8px;padding:0}.side nav .project-nav-heading .project-nav-link{padding-left:10px}}
