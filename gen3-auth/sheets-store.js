@@ -31,6 +31,8 @@ function createSheetsStore() {
    createSession:async session=>call("createSession",{session}),
    completeLoginAtomic:async(user_id,session)=>call("completeLoginAtomic",{user_id,session}),
    findSessionByHash:async hash=>call("findSessionByHash",{hash}),
+   resolveSession:async hash=>call("resolveSession",{hash}),
+   revokeSessionByHash:async hash=>call("revokeSessionByHash",{hash}),
    touchSession:async(session_id,expires_at,last_seen_at)=>call("touchSession",{session_id,expires_at,last_seen_at}),
    revokeSession:async(session_id,reason)=>call("revokeSession",{session_id,reason}),
    audit:async event=>call("audit",{event}),
