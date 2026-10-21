@@ -32,3 +32,5 @@ body.menu-open{overflow:hidden}
 .account-details dd{margin:0;overflow-wrap:anywhere}
 .account-note{color:var(--muted);font-size:13px;line-height:1.7;margin:18px 0 0}
 @media(max-width:500px){.account-details>div{grid-template-columns:1fr;gap:6px}}
+
+.account-edit-link{display:inline-flex;align-items:center;justify-content:center;margin-top:20px;min-height:44px;padding:10px 18px;border:1px solid rgba(121,213,233,.45);border-radius:11px;background:rgba(121,213,233,.12);color:var(--cyan);text-decoration:none;font-weight:600}.account-edit-link:hover{background:rgba(121,213,233,.22)}.account-edit-link:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
