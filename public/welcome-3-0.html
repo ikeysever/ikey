@@ -7,24 +7,25 @@
 #error{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:#070c16f2;text-align:center;padding:30px}
 #error button{margin:12px;border:1px solid #456080;border-radius:8px;background:#142034;color:white;padding:12px 20px}
 </style></head><body>
-<iframe id="scene" title="iKey 3.0 正式歡迎動畫" src="/welcome-3-0-production.html?v=20261021-audio-default3"></iframe>
+<iframe id="scene" title="iKey 3.0 正式歡迎動畫" src="/welcome-3-0-production.html?v=20261021-synced-welcome1"></iframe>
 <div id="error"><div><h2>登入狀態驗證失敗</h2><p>請重新登入，或稍後再試。</p><button id="retry" type="button">重新驗證</button><button id="back" type="button">返回登入頁</button></div></div>
 <script>
 'use strict';
 const frame=document.getElementById('scene'),error=document.getElementById('error');
-let loaded=false,authorized=false,elapsed=false,failed=false,started=0;
-function finish(){if(loaded&&authorized&&elapsed&&!failed){setTimeout(()=>location.replace('/home.html'),450);}}
+let loaded=false,authorized=false,elapsed=false,failed=false,redirecting=false;
+function finish(){if(loaded&&authorized&&elapsed&&!failed&&!redirecting){redirecting=true;location.replace('/home.html');}}
 function failure(){failed=true;error.style.display='flex';}
 async function verify(){try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'}),d=await r.json();if(!r.ok||!d.authenticated)throw Error('SESSION_INVALID');authorized=true;finish();}catch{failure();}}
 frame.addEventListener('load',()=>{
   try{
     const doc=frame.contentDocument;
 
-    loaded=true;started=performance.now();
-    setTimeout(()=>{elapsed=true;finish();},9800);
+    loaded=true;
+    // Wait for the actual animation-complete event; iframe load is not playback start.
   }catch{failure();}
 });
 frame.addEventListener('error',failure);
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==frame.contentWindow)return;if(event.data?.type==='ikey-welcome-complete'){elapsed=true;finish();}});
 document.getElementById('retry').onclick=()=>location.reload();
 document.getElementById('back').onclick=()=>location.replace('/');
 verify();
