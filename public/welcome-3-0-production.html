@@ -36,9 +36,9 @@ if(mobile){line([[270-80*ease(divider),300],[270+80*ease(divider),300]],1,'#ffff
 else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff',divider*.42);ctx.textAlign='left';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='38px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',515,247+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='25px ProjectTitle,system-ui,sans-serif';ctx.fillText('自動多場景智慧鎖',515,293+8*(1-sub))}
 const status=document.getElementById('status');status.classList.toggle('done',time>=8.8);status.textContent=time>=8.8?'載入成功　歡迎使用':'登入成功　載入中…';}
 function stop(){playing=false;cancelAnimationFrame(raf);audio.pause()}
-function tick(now){if(!playing)return;t=Math.min(duration,(now-origin)/1000);draw(t);if(t>=duration){stop();return}raf=requestAnimationFrame(tick)}
-function syncAudio(){audio.pause();audio.currentTime=t;if(playing){audio.play().catch(()=>{/* Browser autoplay policy may block sound; no on-screen audio control by design. */})}}
-function play(){stop();if(t>=duration)t=0;playing=true;origin=performance.now()-t*1000;syncAudio();raf=requestAnimationFrame(tick)}
+function tick(now){if(!playing)return;t=Math.min(duration,(now-origin)/1000);draw(t);if(t>=duration){stop();window.parent.postMessage({type:'ikey-welcome-complete'},location.origin);return}raf=requestAnimationFrame(tick)}
+function syncAudio(){audio.pause();audio.currentTime=t;if(playing&&!window.frameElement?.hasAttribute('data-parent-audio')){audio.play().catch(()=>{/* Browser autoplay policy may block sound. */})}}
+function play(){stop();if(t>=duration)t=0;playing=true;origin=performance.now()-t*1000;window.parent.postMessage({type:'ikey-welcome-start'},location.origin);syncAudio();raf=requestAnimationFrame(tick)}
 window.addEventListener('resize',()=>draw(t));
 document.fonts.ready.then(()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches){t=duration;draw(t)}else play()});
 </script></body></html>
