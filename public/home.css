@@ -16,3 +16,19 @@ main{margin:0 auto;padding-top:88px}
 body.menu-open{overflow:hidden}
 @media(max-width:760px){main{padding:82px 22px 22px}.hero h1{font-size:28px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}.project-row{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.side nav{display:block;margin-top:0}.side nav a,.side nav button{text-align:left;padding:13px 14px;margin:7px 0}}
 @media(prefers-reduced-motion:reduce){.side,.menu-toggle,.menu-toggle span{transition:none}}
+
+.side{display:flex;flex-direction:column}
+.side nav{flex:0 0 auto}
+.side-bottom{margin-top:auto;display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:8px;padding-top:24px}
+.side-bottom .account-link,.side-bottom .logout-button{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px;border:1px solid var(--line);border-radius:11px;text-decoration:none;font:inherit;font-size:14px;color:#e8f4ff;background:rgba(255,255,255,.045);cursor:pointer}
+.side-bottom .account-link.active{border-color:rgba(121,213,233,.45);color:var(--cyan)}
+.side-bottom .logout-button{border-color:rgba(255,167,167,.28);color:#ffc7c7}
+.side-bottom .account-link:hover,.side-bottom .logout-button:hover{background:rgba(121,213,233,.12)}
+.side-bottom .logout-button:disabled{opacity:.6;cursor:wait}
+.account-panel{max-width:760px;margin-top:30px}
+.account-details{margin:0}
+.account-details>div{display:grid;grid-template-columns:135px minmax(0,1fr);gap:12px;padding:17px 4px;border-top:1px solid var(--line)}
+.account-details dt{color:var(--muted)}
+.account-details dd{margin:0;overflow-wrap:anywhere}
+.account-note{color:var(--muted);font-size:13px;line-height:1.7;margin:18px 0 0}
+@media(max-width:500px){.account-details>div{grid-template-columns:1fr;gap:6px}}
