@@ -14,7 +14,10 @@ function setMenu(open){
 menuToggle.addEventListener('click',()=>setMenu(!sidebar.classList.contains('open')));
 backdrop.addEventListener('click',()=>setMenu(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false);});
-sidebar.querySelectorAll('a,button').forEach(el=>el.addEventListener('click',()=>{if(innerWidth<=760)setMenu(false);}));
+// Keep the sidebar open when toggling the nested project list on mobile.
+sidebar.querySelectorAll('a,button').forEach(el=>el.addEventListener('click',()=>{if(el.id==='project-menu-toggle')return;if(innerWidth<=760)setMenu(false);}));
+const projectMenuToggle=byId('project-menu-toggle'),projectMenuContent=byId('project-menu-content');
+if(projectMenuToggle&&projectMenuContent){projectMenuToggle.addEventListener('click',()=>{const open=projectMenuToggle.getAttribute('aria-expanded')!=='true';projectMenuToggle.setAttribute('aria-expanded',String(open));projectMenuContent.hidden=!open;});}
 function showDashboard(user){
   if(byId('account-empty-page')){byId('loading').hidden=true;byId('account-empty-page').hidden=false;return;}
   if(byId('account-panel')){
