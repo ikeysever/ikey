@@ -19,6 +19,7 @@ sidebar.querySelectorAll('a,button').forEach(el=>el.addEventListener('click',()=
 const projectMenuToggle=byId('project-menu-toggle'),projectMenuContent=byId('project-menu-content');
 if(projectMenuToggle&&projectMenuContent){projectMenuToggle.addEventListener('click',()=>{const open=projectMenuToggle.getAttribute('aria-expanded')!=='true';projectMenuToggle.setAttribute('aria-expanded',String(open));projectMenuContent.hidden=!open;});}
 function showDashboard(user){
+  if(byId('projects-panel')){byId('loading').hidden=true;byId('projects-panel').hidden=false;return;}
   if(byId('account-empty-page')){byId('loading').hidden=true;byId('account-empty-page').hidden=false;return;}
   if(byId('account-panel')){
     byId('account-display-name').textContent=user?.display_name||'—';
