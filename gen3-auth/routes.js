@@ -94,10 +94,17 @@ function createRouter(store) {
       const started=Date.now();
       const cached=prefetchCache.get(prefetchKey(req,identifier));
       prefetchCache.delete(prefetchKey(req,identifier));
-      const [allowed,user]=await Promise.all([
-        store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000),
-        cached && Date.now()-cached.at<PREFETCH_TTL ? Promise.resolve(cached.user) : store.findByLogin(identifier)
-      ]);
+      let allowed,user;
+      if(process.env.GEN3_FAST_LOOKUP==="1" && typeof store.loginLookupAtomic==="function") {
+        const result=await store.loginLookupAtomic(identifier,rateKey("login",req.ip,identifier),10,15*60000);
+        allowed=result?.allowed===true;
+        user=result?.user||null;
+      } else {
+        [allowed,user]=await Promise.all([
+          store.throttleAtomic(rateKey("login",req.ip,identifier),10,15*60000),
+          cached && Date.now()-cached.at<PREFETCH_TTL ? Promise.resolve(cached.user) : store.findByLogin(identifier)
+        ]);
+      }
       console.info("Gen3 login lookup ms",Date.now()-started);
       if(!allowed) return res.status(429).json({success:false,message:"請稍後再試"});
       // Use a dummy hash to reduce timing differences for nonexistent users.
