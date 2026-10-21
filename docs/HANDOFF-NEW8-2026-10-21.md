@@ -105,3 +105,6 @@
 
 ## 13. 新7Log0202｜歡迎動畫音效與提前跳轉修正（2026-10-21）
 使用者實測回報「動畫沒有聲音」、「動畫還沒播完就進首頁」。已修正：登入頁 `public/app.js` 在使用者提交登入的手勢中建立／resume AudioContext，預先取得 WAV 並在成功登入後於**同一登入文件內**以全螢幕 iframe 播放動畫；音效由父頁 AudioBufferSource 在子頁發出 `ikey-welcome-start` 時開始播放。子頁 `public/welcome-3-0-production.html` 以 `postMessage` 回報實際播放開始與結束；父頁**只在收到 `ikey-welcome-complete` 後才跳轉 `/home.html`**。子頁在帶 `data-parent-audio` iframe 時不重複播放自己的音檔。獨立 `/welcome-3-0.html` 也改成等真實完成訊號，而非 iframe 載入後固定 9800ms 的計時器。更新 `public/index.html` 版本參數。仍受瀏覽器音訊政策、裝置靜音設定等影響，**尚待實機驗收**；不得宣稱100%保證有聲。無聲音控制按鈕的使用者要求維持。
+
+## 14. 新7Log0203｜歡迎動畫音量提升25%（2026-10-21）
+使用者要求歡迎動畫再大聲25%。已在 `public/app.js` 的 Web Audio BufferSource 和 AudioContext.destination 之間新增 GainNode，`gain.value=1.25`（振幅倍率+25%，不等同人耳感知響度+25%），並更新 `public/index.html` 的 app.js 快取版本。此修改針對**登入成功後在原登入頁播放的正式歡迎動畫**；獨立預覽網址仍使用 HTMLAudioElement 的原音量，未變更 WAV 檔。音訊可能發生削波，需實際聽測；未改動畫畫面、音效控制按鈕或跳轉條件。
