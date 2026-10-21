@@ -7,7 +7,9 @@
   <title>iKey｜登入與註冊</title>
   <link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
   <link rel="stylesheet" href="/style.css?v=20261020-8">
-  <script src="/app.js?v=20261021-2" defer></script>
+  <link rel="stylesheet" href="/welcome.css?v=20261021-1">
+  <script src="/welcome.js?v=20261021-1" defer></script>
+  <script src="/app.js?v=20261021-3" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -38,5 +40,14 @@
       <footer>iKey · 帳號系統建置中</footer>
     </section>
   </main>
+  <section id="animationRoot" hidden aria-label="iKey 登入歡迎動畫">
+    <div class="welcome-stage"><canvas id="welcomeCanvas" role="img" aria-label="iKey 歡迎動畫"></canvas></div>
+    <div id="welcomeStatus" class="welcome-status" role="status" aria-live="polite">
+      <span id="welcomeSpinner" class="welcome-spinner" aria-hidden="true"></span>
+      <div><strong id="welcomeStatusText">登入成功</strong><br><span id="welcomeStatusSub">載入中…</span></div>
+      <svg id="welcomeCheck" class="welcome-check" viewBox="0 0 40 40" hidden aria-hidden="true"><path d="M7 21L16 30L34 10"/></svg>
+    </div>
+    <button id="welcomeRetry" type="button" hidden>重新載入</button>
+  </section>
 </body>
 </html>
