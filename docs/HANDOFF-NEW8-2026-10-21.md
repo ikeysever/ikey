@@ -102,3 +102,6 @@
 
 ## 12. 新7Log0201｜漢堡旋轉規格更新（2026-10-21）
 使用者要求：「漢堡側欄開啟反轉180，關閉反之」。正式行為更新為**開啟時整個三線圖示旋轉至180°並維持；關閉時沿反方向旋回0°**，不是原先每次360°。圖示仍是三條橫線，不變叉叉、不加外框。已在 `public/home.js` 將 `.is-open` 與側欄狀態同步，在 `public/home.css` 設定狀態式 transform 與 transition；首頁、帳號管理、帳號編輯空頁的快取版本同步更新。舊文件所述「360°」已由本節取代；實際操作需在手機及電腦確認。
+
+## 13. 新7Log0202｜歡迎動畫音效與提前跳轉修正（2026-10-21）
+使用者實測回報「動畫沒有聲音」、「動畫還沒播完就進首頁」。已修正：登入頁 `public/app.js` 在使用者提交登入的手勢中建立／resume AudioContext，預先取得 WAV 並在成功登入後於**同一登入文件內**以全螢幕 iframe 播放動畫；音效由父頁 AudioBufferSource 在子頁發出 `ikey-welcome-start` 時開始播放。子頁 `public/welcome-3-0-production.html` 以 `postMessage` 回報實際播放開始與結束；父頁**只在收到 `ikey-welcome-complete` 後才跳轉 `/home.html`**。子頁在帶 `data-parent-audio` iframe 時不重複播放自己的音檔。獨立 `/welcome-3-0.html` 也改成等真實完成訊號，而非 iframe 載入後固定 9800ms 的計時器。更新 `public/index.html` 版本參數。仍受瀏覽器音訊政策、裝置靜音設定等影響，**尚待實機驗收**；不得宣稱100%保證有聲。無聲音控制按鈕的使用者要求維持。
