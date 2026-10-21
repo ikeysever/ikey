@@ -2,21 +2,14 @@
 const byId=id=>document.getElementById(id);
 const menuToggle=byId('menu-toggle'), sidebar=byId('sidebar'), backdrop=byId('sidebar-backdrop');
 function setMenu(open){
-  const changed=sidebar.classList.contains('open')!==open;
   sidebar.classList.toggle('open',open);
+  menuToggle.classList.toggle('is-open',open);
   document.body.classList.toggle('menu-open',open);
   menuToggle.setAttribute('aria-expanded',String(open));
   menuToggle.setAttribute('aria-label',open?'關閉選單':'開啟選單');
   backdrop.hidden=!open;
-  if(changed&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-    // Open: clockwise 180°; close: reverse counterclockwise 180°.
-    // Three strokes stay unchanged; the button itself rotates.
-    menuToggle.getAnimations().forEach(animation=>animation.cancel());
-    menuToggle.animate(
-      [{transform:open?'rotate(0deg)':'rotate(180deg)'},{transform:open?'rotate(180deg)':'rotate(0deg)'}],
-      {duration:420,easing:'cubic-bezier(.2,.75,.25,1)'}
-    );
-  }
+  // Rotation is state-driven in CSS: open +180°, close back to 0°.
+
 }
 menuToggle.addEventListener('click',()=>setMenu(!sidebar.classList.contains('open')));
 backdrop.addEventListener('click',()=>setMenu(false));
