@@ -139,9 +139,10 @@ function createRouter(store) {
     try {
       const raw=getCookie(req,COOKIE);
       if(!raw || raw.length>256) return res.status(401).json({authenticated:false});
-      const s=await store.findSessionByHash(hashToken(raw));
-      if(!s || s.revoked_at || Date.parse(s.expires_at)<=Date.now()) return res.status(401).json({authenticated:false});
-      const user=await store.findById(s.user_id);
+      const resolved=await store.resolveSession(hashToken(raw));
+      if(!resolved)return res.status(401).json({authenticated:false});
+      const {session:s,user}=resolved;
+      if(s.revoked_at || Date.parse(s.expires_at)<=Date.now()) return res.status(401).json({authenticated:false});
       if(!active(user)) return res.status(401).json({authenticated:false});
       const expiry=new Date(Date.now()+SESSION_MS).toISOString();
       if(Date.parse(s.expires_at)-Date.now()<SESSION_MS-60*60*1000){
@@ -155,7 +156,7 @@ function createRouter(store) {
   router.post("/logout",async(req,res)=>{
     try {
       const raw=getCookie(req,COOKIE);
-      if(raw){const s=await store.findSessionByHash(hashToken(raw));if(s) await store.revokeSession(s.session_id,"logout");}
+      if(raw) await store.revokeSessionByHash(hashToken(raw));
       res.clearCookie(COOKIE,{httpOnly:true,secure:cookieOptions(req).secure,sameSite:"lax",path:"/"});
       return res.json({success:true});
     } catch(err){return res.status(503).json({success:false,message:"登出暫時無法完成"})}
