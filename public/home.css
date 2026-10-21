@@ -46,3 +46,6 @@ body.menu-open{overflow:hidden}
 
 /* Project management collapsible navigation — empty state until project APIs are defined. */
 .project-nav{margin:7px 0}.project-menu-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:0}.project-menu-chevron{display:inline-block;width:9px;height:9px;flex:none;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s ease}.project-menu-toggle[aria-expanded="true"] .project-menu-chevron{transform:rotate(45deg)}.project-menu-content{margin:0 8px 6px;padding:4px 12px;border-left:1px solid var(--line)}.project-menu-content[hidden]{display:none}.project-menu-empty{margin:8px 0;color:var(--muted);font-size:13px;line-height:1.6}@media(prefers-reduced-motion:reduce){.project-menu-chevron{transition:none}}
+
+/* Solid project chevron positioned before label. */
+.project-menu-toggle{justify-content:flex-start;gap:9px}.project-menu-chevron{width:12px;height:auto;border:0;font-size:11px;line-height:1;transform:rotate(0deg);transition:transform .2s ease}.project-menu-toggle[aria-expanded="true"] .project-menu-chevron{transform:rotate(90deg)}
