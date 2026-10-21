@@ -52,18 +52,7 @@ function attachEye(id, field, openEye, closedEye) {
     if (closedEye) document.getElementById(closedEye).hidden = !show;
   });
 }
-// Debounced account prefetch. Passwords and password hashes never leave their normal secure paths.
-let prefetchTimer;
-account.addEventListener('input', () => {
-  clearTimeout(prefetchTimer);
-  if (mode !== 'login') return;
-  const identifier=account.value.trim().toLowerCase();
-  if (!/^[a-z][a-z0-9_]{3,23}$/.test(identifier)) return;
-  prefetchTimer=setTimeout(()=>{
-    fetch('/api/auth/prefetch',{method:'POST',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier})}).catch(()=>{});
-  },500);
-});
+// Avoid speculative Apps Script lookups; login performs authoritative checks on submit.
 loginTab.addEventListener('click', () => setMode('login'));
 registerTab.addEventListener('click', () => setMode('register'));
 attachEye('toggle-password', password, 'eye-open', 'eye-closed');
@@ -103,4 +92,4 @@ form.addEventListener('submit', async event => {
   finally { updateAvailability(); }
 });
 setMode('login');
-refreshStatus();
+// Skip automatic remote health probe; login/register endpoints validate availability.
