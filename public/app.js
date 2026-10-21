@@ -89,14 +89,7 @@ form.addEventListener('submit', async event => {
     if (registering) setMessage('帳號建立成功，請返回登入頁。');
     else {
       setMessage('登入成功。');
-      const homeReady = fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' })
-        .then(async response => {
-          const session = await response.json();
-          if (!response.ok || !session.authenticated) throw new Error('登入狀態驗證失敗');
-          return session;
-        });
-      if (window.iKeyWelcome?.play) window.iKeyWelcome.play(homeReady);
-      else window.addEventListener('ikeywelcome:ready', () => window.iKeyWelcome.play(homeReady), { once: true });
+      window.location.assign('/welcome-3-0.html');
     }
   } catch { setMessage('無法連線至伺服器，請稍後再試。', true); }
   finally { updateAvailability(); }
