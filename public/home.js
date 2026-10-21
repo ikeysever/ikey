@@ -1,7 +1,18 @@
 'use strict';
 const byId=id=>document.getElementById(id);
 const menuToggle=byId('menu-toggle'), sidebar=byId('sidebar'), backdrop=byId('sidebar-backdrop');
-function setMenu(open){sidebar.classList.toggle('open',open);document.body.classList.toggle('menu-open',open);menuToggle.setAttribute('aria-expanded',String(open));menuToggle.setAttribute('aria-label',open?'關閉選單':'開啟選單');backdrop.hidden=!open;}
+function setMenu(open){
+  const changed=sidebar.classList.contains('open')!==open;
+  sidebar.classList.toggle('open',open);
+  document.body.classList.toggle('menu-open',open);
+  menuToggle.setAttribute('aria-expanded',String(open));
+  menuToggle.setAttribute('aria-label',open?'關閉選單':'開啟選單');
+  backdrop.hidden=!open;
+  if(changed&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    menuToggle.getAnimations().forEach(animation=>animation.cancel());
+    menuToggle.animate([{transform:'rotate(0deg)'},{transform:'rotate(360deg)'}],{duration:520,easing:'cubic-bezier(.2,.75,.25,1)'});
+  }
+}
 menuToggle.addEventListener('click',()=>setMenu(!sidebar.classList.contains('open')));
 backdrop.addEventListener('click',()=>setMenu(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false);});
