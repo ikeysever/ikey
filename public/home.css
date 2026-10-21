@@ -38,3 +38,8 @@ body.menu-open{overflow:hidden}
 /* Borderless hamburger: only the three strokes are visible. */
 .menu-toggle{border:0;border-radius:0;background:transparent;box-shadow:none;padding:12px}
 .menu-toggle:hover{background:transparent;border-color:transparent}
+
+/* Stateful hamburger rotation: open 180deg, close reverse to 0deg. */
+.menu-toggle{transform:rotate(0deg);transition:transform .42s cubic-bezier(.2,.75,.25,1)}
+.menu-toggle.is-open{transform:rotate(180deg)}
+@media(prefers-reduced-motion:reduce){.menu-toggle{transition:none}}
