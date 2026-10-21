@@ -18,6 +18,7 @@ backdrop.addEventListener('click',()=>setMenu(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false);});
 sidebar.querySelectorAll('a,button').forEach(el=>el.addEventListener('click',()=>{if(innerWidth<=760)setMenu(false);}));
 function showDashboard(user){
+  if(byId('account-empty-page')){byId('loading').hidden=true;byId('account-empty-page').hidden=false;return;}
   if(byId('account-panel')){
     byId('account-display-name').textContent=user?.display_name||'—';
     byId('account-username').textContent=user?.username||'—';
