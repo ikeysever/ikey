@@ -62,7 +62,11 @@ window.addEventListener('message',event=>{
       try{
         welcomeAudioSource=welcomeAudioContext.createBufferSource();
         welcomeAudioSource.buffer=welcomeAudioBuffer;
-        welcomeAudioSource.connect(welcomeAudioContext.destination);
+        // +25% amplitude gain (1.25x); device output and clipping may limit loudness.
+        const welcomeGain=welcomeAudioContext.createGain();
+        welcomeGain.gain.value=1.25;
+        welcomeAudioSource.connect(welcomeGain);
+        welcomeGain.connect(welcomeAudioContext.destination);
         welcomeAudioSource.start(0);
       }catch{/* Keep the animation running if playback is blocked. */}
     }
