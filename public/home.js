@@ -9,8 +9,13 @@ function setMenu(open){
   menuToggle.setAttribute('aria-label',open?'關閉選單':'開啟選單');
   backdrop.hidden=!open;
   if(changed&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    // Open: clockwise 180°; close: reverse counterclockwise 180°.
+    // Three strokes stay unchanged; the button itself rotates.
     menuToggle.getAnimations().forEach(animation=>animation.cancel());
-    menuToggle.animate([{transform:'rotate(0deg)'},{transform:'rotate(360deg)'}],{duration:520,easing:'cubic-bezier(.2,.75,.25,1)'});
+    menuToggle.animate(
+      [{transform:open?'rotate(0deg)':'rotate(180deg)'},{transform:open?'rotate(180deg)':'rotate(0deg)'}],
+      {duration:420,easing:'cubic-bezier(.2,.75,.25,1)'}
+    );
   }
 }
 menuToggle.addEventListener('click',()=>setMenu(!sidebar.classList.contains('open')));
