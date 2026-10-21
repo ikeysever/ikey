@@ -25,6 +25,7 @@ function createSheetsStore() {
    registerAtomic:async user=>call("registerAtomic",{user}),
    throttleAtomic:async(key,limit,window_ms)=>call("throttleAtomic",{key,limit,window_ms}),
    findByLogin:async identifier=>call("findByLogin",{identifier}),
+   loginLookupAtomic:async(identifier,key,limit,window_ms)=>call("loginLookupAtomic",{identifier,key,limit,window_ms}),
    findById:async user_id=>call("findById",{user_id}),
    recordLoginFailureAtomic:async user_id=>call("recordLoginFailureAtomic",{user_id}),
    recordLoginSuccessAtomic:async user_id=>call("recordLoginSuccessAtomic",{user_id}),
