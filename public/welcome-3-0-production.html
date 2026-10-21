@@ -2,7 +2,7 @@
 @font-face{font-family:Welcome;src:url('/welcome-assets/welcome-text-subset.ttf')}
 @font-face{font-family:ProjectTitle;src:url('/welcome-assets/project-title-subset.ttf')}
 *{box-sizing:border-box}body{margin:0;background:#070c16;color:#f8fafc;font:14px system-ui,"Microsoft JhengHei",sans-serif}main{width:100vw;height:100vh;margin:0;padding:0}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 20% 0%,#1b3150 0%,#0b1220 42%,#070c16 100%);height:100vh;min-height:0}canvas{display:block;width:100%;height:100%}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:16px}button{border:1px solid #3b556c;border-radius:9px;padding:10px 16px;color:#f8fafc;background:#142034;font:inherit;cursor:pointer}button:hover{background:#20334d}button:focus-visible,input:focus-visible{outline:2px solid #67e8f9;outline-offset:3px}.time{margin-left:auto;color:#a6b2c5;font-variant-numeric:tabular-nums}input{width:100%;accent-color:#67e8f9;margin:15px 0 6px}.note{color:#a6b2c5;font-size:13px;line-height:1.6}#status{position:absolute;right:20px;top:18px;font-size:13px;color:#dce6f1}#status::before{content:'';display:inline-block;margin-right:8px;width:10px;height:10px;border:1px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}#status.done::before{content:'✓';border:0;animation:none;width:auto;height:auto;color:#99f6e4}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:640px){main{padding:0}.stage{height:100vh;min-height:0}.controls{gap:8px}button{padding:10px 12px}.time{font-size:12px}#status{font-size:11px;right:14px;top:14px}}@media(prefers-reduced-motion:reduce){#status::before{animation:none}}
-</style></head><body><main><div class="stage"><canvas id="scene" aria-label="iKey 鑰匙生成、插入掛鎖、解鎖與歡迎動畫"></canvas><div id="status" role="status">登入成功　載入中…</div></div></main><button id="enable-sound" hidden type="button" style="position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:5;padding:12px 18px;background:#142034;color:white;border:1px solid #67e8f9;border-radius:10px">點一下開啟動畫聲音</button><script>
+</style></head><body><main><div class="stage"><canvas id="scene" aria-label="iKey 鑰匙生成、插入掛鎖、解鎖與歡迎動畫"></canvas><div id="status" role="status">登入成功　載入中…</div></div></main><script>
 const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const audio=new Audio('/assets/welcome-3-0/welcome.wav');audio.preload='auto';
 const duration=9.8,C='#67e8f9',G='#7de2b1';let t=0,playing=false,origin=0,raf=0;audio.muted=false;audio.volume=1;
@@ -37,9 +37,8 @@ else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff'
 const status=document.getElementById('status');status.classList.toggle('done',time>=8.8);status.textContent=time>=8.8?'載入成功　歡迎使用':'登入成功　載入中…';}
 function stop(){playing=false;cancelAnimationFrame(raf);audio.pause()}
 function tick(now){if(!playing)return;t=Math.min(duration,(now-origin)/1000);draw(t);if(t>=duration){stop();return}raf=requestAnimationFrame(tick)}
-function syncAudio(){audio.pause();audio.currentTime=t;if(playing){audio.play().then(()=>{const b=document.getElementById('enable-sound');if(b)b.hidden=true;}).catch(()=>{const b=document.getElementById('enable-sound');if(b)b.hidden=false;})}}
+function syncAudio(){audio.pause();audio.currentTime=t;if(playing){audio.play().catch(()=>{/* Browser autoplay policy may block sound; no on-screen audio control by design. */})}}
 function play(){stop();if(t>=duration)t=0;playing=true;origin=performance.now()-t*1000;syncAudio();raf=requestAnimationFrame(tick)}
-document.getElementById('enable-sound').addEventListener('click',()=>{const b=document.getElementById('enable-sound');b.hidden=true;t=0;play();});
 window.addEventListener('resize',()=>draw(t));
 document.fonts.ready.then(()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches){t=duration;draw(t)}else play()});
 </script></body></html>
