@@ -35,5 +35,16 @@ function showDashboard(user){
   byId('dashboard').hidden=false;
 }
 async function load(){try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){location.replace('/');return;}showDashboard(data.user);}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
-byId('logout').addEventListener('click',async()=>{const button=byId('logout');if(button.disabled)return;button.disabled=true;const original=button.textContent;button.textContent='正在安全登出…';try{const response=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});const result=await response.json();if(!response.ok||!result.success)throw Error('LOGOUT_FAILED');location.replace('/');}catch{button.disabled=false;button.textContent=original;byId('loading').hidden=false;byId('loading').textContent='登出未完成，請稍後重試。';}});
+function playLogoutLockAnimation(){
+ return new Promise(resolve=>{
+  const style=document.createElement('style');
+  style.textContent=`#ikey-logout-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);color:#eefaff}#ikey-logout-overlay svg{width:min(210px,50vw);height:auto;overflow:visible}#ikey-logout-overlay .shackle{transform-origin:80px 87px;animation:ikey-lock-close 1s cubic-bezier(.2,.8,.2,1) forwards}#ikey-logout-overlay .lock-glow{opacity:0;animation:ikey-lock-glow .65s ease 1s forwards}@keyframes ikey-lock-close{0%{transform:translateY(-28px)}75%,100%{transform:translateY(0)}}@keyframes ikey-lock-glow{0%{opacity:0}40%{opacity:1}100%{opacity:.35}}@media(prefers-reduced-motion:reduce){#ikey-logout-overlay .shackle,#ikey-logout-overlay .lock-glow{animation:none}#ikey-logout-overlay .lock-glow{opacity:.3}}`;
+  document.head.append(style);
+  const overlay=document.createElement('div');overlay.id='ikey-logout-overlay';overlay.setAttribute('role','status');overlay.setAttribute('aria-label','已安全登出');
+  overlay.innerHTML='<svg viewBox="0 0 160 185" aria-hidden="true"><circle class="lock-glow" cx="80" cy="92" r="70" fill="none" stroke="#64e4c2" stroke-width="3"/><g class="shackle"><path d="M48 88V59a32 32 0 0 1 64 0v29" fill="none" stroke="#a4f4e2" stroke-width="13" stroke-linecap="round"/></g><rect x="32" y="80" width="96" height="76" rx="17" fill="#18374d" stroke="#79d9e8" stroke-width="3"/><circle cx="80" cy="111" r="9" fill="#b5fff0"/><path d="M80 118v17" stroke="#b5fff0" stroke-width="7" stroke-linecap="round"/></svg>';
+  document.body.append(overlay);
+  window.setTimeout(resolve,window.matchMedia('(prefers-reduced-motion: reduce)').matches?350:1800);
+ });
+}
+byId('logout').addEventListener('click',async()=>{const button=byId('logout');if(button.disabled)return;button.disabled=true;const original=button.textContent;button.textContent='正在安全登出…';try{const response=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});const result=await response.json();if(!response.ok||!result.success)throw Error('LOGOUT_FAILED');await playLogoutLockAnimation();location.replace('/');}catch{button.disabled=false;button.textContent=original;byId('loading').hidden=false;byId('loading').textContent='登出未完成，請稍後重試。';}});
 load();
