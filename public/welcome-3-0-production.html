@@ -34,9 +34,11 @@ if(morph>0)padlock(finalX+28,finalY-29,.85,0,morph);
 const divider=p(time,6.85,.55);const copy=p(time,7.55,.6),sub=p(time,8.15,.6);
 if(mobile){line([[270-80*ease(divider),300],[270+80*ease(divider),300]],1,'#ffffff',divider*.42);ctx.textAlign='center';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='32px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',270,365+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='22px ProjectTitle,system-ui,sans-serif';ctx.fillText('自動多場景智慧鎖',270,410+8*(1-sub))}
 else{const hh=210*ease(divider);line([[465,255-hh/2],[465,255+hh/2]],1,'#ffffff',divider*.42);ctx.textAlign='left';ctx.fillStyle=`rgba(248,250,252,${copy})`;ctx.font='38px Welcome,system-ui,sans-serif';ctx.fillText('歡迎使用 iKey',515,247+10*(1-copy));ctx.fillStyle=`rgba(166,178,197,${sub})`;ctx.font='25px ProjectTitle,system-ui,sans-serif';ctx.fillText('自動多場景智慧鎖',515,293+8*(1-sub))}
-const status=document.getElementById('status');status.classList.toggle('done',time>=8.8);status.textContent=time>=8.8?'載入成功　歡迎使用':'登入成功　載入中…';}
+const status=document.getElementById('status');const complete=time>=8.8&&pagesReady;status.classList.toggle('done',complete);status.textContent=pagesFailed?'載入失敗　請重新登入':complete?'載入成功　歡迎使用':time>=8.8?'正在確認頁面載入…':'登入成功　載入中…';}
+let pagesReady=false,pagesFailed=false;
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==window.parent)return;if(event.data?.type==='ikey-pages-ready'){pagesReady=true;pagesFailed=false;}if(event.data?.type==='ikey-pages-error'){pagesFailed=true;pagesReady=false;}});
 function stop(){playing=false;cancelAnimationFrame(raf);audio.pause()}
-function tick(now){if(!playing)return;t=Math.min(duration,(now-origin)/1000);draw(t);if(t>=duration){stop();window.parent.postMessage({type:'ikey-welcome-complete'},location.origin);return}raf=requestAnimationFrame(tick)}
+function tick(now){if(!playing)return;t=Math.min(duration,(now-origin)/1000);draw(t);if(t>=duration&&pagesReady){stop();window.parent.postMessage({type:'ikey-welcome-complete'},location.origin);return}raf=requestAnimationFrame(tick)}
 function syncAudio(){audio.pause();audio.currentTime=t;if(playing&&!window.frameElement?.hasAttribute('data-parent-audio')){audio.play().catch(()=>{/* Browser autoplay policy may block sound. */})}}
 function play(){stop();if(t>=duration)t=0;playing=true;origin=performance.now()-t*1000;window.parent.postMessage({type:'ikey-welcome-start'},location.origin);syncAudio();raf=requestAnimationFrame(tick)}
 window.addEventListener('resize',()=>draw(t));
