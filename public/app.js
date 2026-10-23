@@ -16,6 +16,7 @@ let authStatus = null;
 // in this same document so mobile browsers do not lose audio activation on navigation.
 let welcomeAudioContext=null,welcomeAudioBuffer=null,welcomeAudioSource=null;
 let welcomeStarted=false,welcomeCompleted=false,welcomeFrame=null;
+let welcomeAssetsReady=false;
 const welcomeAudioReady=(async()=>{
   try{
     const response=await fetch('/assets/welcome-3-0/welcome.wav',{cache:'force-cache'});
@@ -38,6 +39,19 @@ async function prepareWelcomeAudio(){
     if(bytes&&!welcomeAudioBuffer)welcomeAudioBuffer=await welcomeAudioContext.decodeAudioData(bytes.slice(0));
   }catch{/* Animation must continue if audio is unavailable. */}
 }
+async function verifyWelcomeReadiness(){
+  try{
+    const urls=['/api/auth/me','/home.html','/home.css','/home.js','/projects.html','/projects.js','/account.html','/account-edit.html','/project-create.html','/project-create.css','/project-create.js'];
+    const responses=await Promise.all(urls.map(url=>fetch(url,{credentials:'same-origin',cache:'no-store'})));
+    if(responses.some(response=>!response.ok))throw Error('PAGE_LOAD_FAILED');
+    const auth=await responses[0].json();
+    if(!auth.authenticated)throw Error('SESSION_INVALID');
+    welcomeAssetsReady=true;
+    welcomeFrame?.contentWindow?.postMessage({type:'ikey-pages-ready'},location.origin);
+  }catch{
+    welcomeFrame?.contentWindow?.postMessage({type:'ikey-pages-error'},location.origin);
+  }
+}
 function beginWelcome(){
   document.body.style.overflow='hidden';
   const overlay=document.createElement('div');
@@ -52,7 +66,9 @@ function beginWelcome(){
   document.body.appendChild(overlay);
   // The iframe's real animation completion, not a guessed 9.8s timer,
   // is the only successful route to the home page.
-  welcomeFrame.src='/welcome-3-0-production.html?v=20261021-synced-welcome1';
+  welcomeFrame.addEventListener('load',()=>{if(welcomeAssetsReady)welcomeFrame.contentWindow?.postMessage({type:'ikey-pages-ready'},location.origin);});
+  welcomeFrame.src='/welcome-3-0-production.html?v=20261023-readiness';
+  verifyWelcomeReadiness();
 }
 window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==welcomeFrame?.contentWindow)return;
