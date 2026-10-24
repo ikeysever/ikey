@@ -4,6 +4,10 @@
   const panel=get('projects-panel');
   if(!panel)return;
   const projects=[];
+  // Warm the child page as soon as the parent page is initialized.
+  for(const href of ['/project-create.html','/project-create.css','/project-create.js']){
+    const link=document.createElement('link');link.rel='prefetch';link.href=href;document.head.appendChild(link);
+  }
   let view='list';
   const list=get('projects-results');
   function render(){
