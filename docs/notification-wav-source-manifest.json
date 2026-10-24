@@ -1,0 +1,663 @@
+{
+  "schema": "ikey.notification.audio-source.v1",
+  "sourceFolder": "https://drive.google.com/drive/folders/1fbToRILUnfxhTmDWYLnlsutsXLHUHzmf?usp=sharing",
+  "sourceType": "original WAV files in Google Drive",
+  "status": "source catalog only; files are not yet hosted on iKey",
+  "packs": {
+    "鋼片琴": "pulse",
+    "水晶鈴音": "crystal",
+    "鋼琴": "air",
+    "木琴": "wood",
+    "長笛": "future",
+    "豎琴": "click"
+  },
+  "events": {
+    "上傳中": "uploading",
+    "上傳成功": "upload_success",
+    "上傳失敗": "upload_error",
+    "連線異常": "connection_error",
+    "綁定中": "binding",
+    "綁定成功": "binding_success",
+    "綁定失敗": "binding_error",
+    "擴充功能警示": "extension_warning",
+    "櫃內溫度濕度異常": "environment_warning",
+    "櫃門開啟": "door_open",
+    "櫃門關閉": "door_closed",
+    "櫃門異常開啟": "door_abnormal",
+    "授權成功": "authorization_success",
+    "授權失敗": "authorization_error",
+    "低電量警示": "low_battery_warning"
+  },
+  "entries": [
+    {
+      "pack": "air",
+      "event": "authorization_error",
+      "filename": "鋼琴_授權失敗.wav",
+      "driveFileId": "1GkcCs3U3tFOns3SVfbihtIgYM0x1m9Rb",
+      "sizeBytes": 241964
+    },
+    {
+      "pack": "air",
+      "event": "authorization_success",
+      "filename": "鋼琴_授權成功.wav",
+      "driveFileId": "1SalEwb6QO_Ch1PYMiXIIZOVmvgWaQJZ2",
+      "sizeBytes": 224684
+    },
+    {
+      "pack": "air",
+      "event": "binding",
+      "filename": "鋼琴_綁定中.wav",
+      "driveFileId": "1hzn47sdevxUqGkRB9VGkA9ZzSNfc4-Fq",
+      "sizeBytes": 207404
+    },
+    {
+      "pack": "air",
+      "event": "binding_error",
+      "filename": "鋼琴_綁定失敗.wav",
+      "driveFileId": "1eOiB9YJF069ksNJ8uGa1F7P_FbcrTmaa",
+      "sizeBytes": 238124
+    },
+    {
+      "pack": "air",
+      "event": "binding_success",
+      "filename": "鋼琴_綁定成功.wav",
+      "driveFileId": "18jTnJeD4MMIPXaNC6oiuCPO4TXMO7_CS",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "air",
+      "event": "connection_error",
+      "filename": "鋼琴_連線異常.wav",
+      "driveFileId": "1FO_Hmp25mgOK_7zpRGqZo3-SJ2q21ISW",
+      "sizeBytes": 193964
+    },
+    {
+      "pack": "air",
+      "event": "door_abnormal",
+      "filename": "鋼琴_櫃門異常開啟.wav",
+      "driveFileId": "1g_7RBUOKa4d-7086Jj1l2UtvXwEB3z2B",
+      "sizeBytes": 232364
+    },
+    {
+      "pack": "air",
+      "event": "door_closed",
+      "filename": "鋼琴_櫃門關閉.wav",
+      "driveFileId": "1ryqMVNBf9mkq-qkwrVE0c690IRyn5SEc",
+      "sizeBytes": 176684
+    },
+    {
+      "pack": "air",
+      "event": "door_open",
+      "filename": "鋼琴_櫃門開啟.wav",
+      "driveFileId": "1Q_hHjRIOZUXIkxpjg7z2ljhu1kV94kz8",
+      "sizeBytes": 205484
+    },
+    {
+      "pack": "air",
+      "event": "environment_warning",
+      "filename": "鋼琴_櫃內溫度濕度異常.wav",
+      "driveFileId": "1FOE-5bmg3E4UtOL0wilwemnIEOCPdML-",
+      "sizeBytes": 249644
+    },
+    {
+      "pack": "air",
+      "event": "extension_warning",
+      "filename": "鋼琴_擴充功能警示.wav",
+      "driveFileId": "1E_W0MOzBeG-nB220U_bN-nCqOEufvtpk",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "air",
+      "event": "low_battery_warning",
+      "filename": "鋼琴_低電量警示.wav",
+      "driveFileId": "1rNbOjIAHmsiBb5VXui1rM2e1uY82hWLk",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "air",
+      "event": "upload_error",
+      "filename": "鋼琴_上傳失敗.wav",
+      "driveFileId": "1pXxcwW3lvEh3VHV2oVh8Riyqe6Xk0NUS",
+      "sizeBytes": 217004
+    },
+    {
+      "pack": "air",
+      "event": "upload_success",
+      "filename": "鋼琴_上傳成功.wav",
+      "driveFileId": "17Ds57KP7UHzS823aW47cfkK4TIq3Wnih",
+      "sizeBytes": 230444
+    },
+    {
+      "pack": "air",
+      "event": "uploading",
+      "filename": "鋼琴_上傳中.wav",
+      "driveFileId": "16A2bgzSeE2cUtv3f88WCqlYGCgojY5JR",
+      "sizeBytes": 170924
+    },
+    {
+      "pack": "click",
+      "event": "authorization_error",
+      "filename": "豎琴_授權失敗.wav",
+      "driveFileId": "1cePE8i68Y6OneffRRmz8HzFlOnHQaAvr",
+      "sizeBytes": 241964
+    },
+    {
+      "pack": "click",
+      "event": "authorization_success",
+      "filename": "豎琴_授權成功.wav",
+      "driveFileId": "1alKTVeAa2E10TvRp-s0e4jRcY3DupD7g",
+      "sizeBytes": 224684
+    },
+    {
+      "pack": "click",
+      "event": "binding",
+      "filename": "豎琴_綁定中.wav",
+      "driveFileId": "1vD3YuZ-pTwgoOdlg13jd0ZJBUFu031bz",
+      "sizeBytes": 207404
+    },
+    {
+      "pack": "click",
+      "event": "binding_error",
+      "filename": "豎琴_綁定失敗.wav",
+      "driveFileId": "1hNnm8dIJu5rLaNh_rj9Y3Q_kJIdjig8e",
+      "sizeBytes": 238124
+    },
+    {
+      "pack": "click",
+      "event": "binding_success",
+      "filename": "豎琴_綁定成功.wav",
+      "driveFileId": "1N3mZ3XI3NxJg3MZH2Y21qBhNuexTpH5x",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "click",
+      "event": "connection_error",
+      "filename": "豎琴_連線異常.wav",
+      "driveFileId": "1E7WVtOg8WjtGGSLb8GofMJUeeTUEcKbX",
+      "sizeBytes": 193964
+    },
+    {
+      "pack": "click",
+      "event": "door_abnormal",
+      "filename": "豎琴_櫃門異常開啟.wav",
+      "driveFileId": "1FdATBGt6vM1gGFCI2HlMKGoJgrg6XyAq",
+      "sizeBytes": 232364
+    },
+    {
+      "pack": "click",
+      "event": "door_closed",
+      "filename": "豎琴_櫃門關閉.wav",
+      "driveFileId": "1x5KzrH5S-dg3UjlYSR-K4-b9Y21bXfdW",
+      "sizeBytes": 176684
+    },
+    {
+      "pack": "click",
+      "event": "door_open",
+      "filename": "豎琴_櫃門開啟.wav",
+      "driveFileId": "1YINoLhwm3_9F_5LZfmif8gUkLQ6avaxp",
+      "sizeBytes": 205484
+    },
+    {
+      "pack": "click",
+      "event": "environment_warning",
+      "filename": "豎琴_櫃內溫度濕度異常.wav",
+      "driveFileId": "1E7U7Hjy-dMPA030ijWtc5aF1r2FOKXEq",
+      "sizeBytes": 249644
+    },
+    {
+      "pack": "click",
+      "event": "extension_warning",
+      "filename": "豎琴_擴充功能警示.wav",
+      "driveFileId": "1nMZvUqHjSNeU8QIRX8kbcVU8OS0_hz8Y",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "click",
+      "event": "low_battery_warning",
+      "filename": "豎琴_低電量警示.wav",
+      "driveFileId": "13NUh4hdsnKthl01fIFe-6dRP9TXFBFiX",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "click",
+      "event": "upload_error",
+      "filename": "豎琴_上傳失敗.wav",
+      "driveFileId": "1GMJU1uak40lr5idDesfTBJZ1yzeZNVbL",
+      "sizeBytes": 217004
+    },
+    {
+      "pack": "click",
+      "event": "upload_success",
+      "filename": "豎琴_上傳成功.wav",
+      "driveFileId": "1qKSr9FHRlfiCUFe3KC3v5l-FFnJw4l97",
+      "sizeBytes": 230444
+    },
+    {
+      "pack": "click",
+      "event": "uploading",
+      "filename": "豎琴_上傳中.wav",
+      "driveFileId": "1JrctyiIWjgmbSVRsNIdTKxniema_pURQ",
+      "sizeBytes": 170924
+    },
+    {
+      "pack": "crystal",
+      "event": "authorization_error",
+      "filename": "水晶鈴音_授權失敗.wav",
+      "driveFileId": "1eu3HB6i1pdw7n946b61-GB7WPjiI1-uB",
+      "sizeBytes": 241964
+    },
+    {
+      "pack": "crystal",
+      "event": "authorization_success",
+      "filename": "水晶鈴音_授權成功.wav",
+      "driveFileId": "1pUJD2jTmYv1_226JPpOWDATdLWBTACKa",
+      "sizeBytes": 224684
+    },
+    {
+      "pack": "crystal",
+      "event": "binding",
+      "filename": "水晶鈴音_綁定中.wav",
+      "driveFileId": "1K5Gz6EnjP19i_BlGFTByyPDiIqc32YeE",
+      "sizeBytes": 207404
+    },
+    {
+      "pack": "crystal",
+      "event": "binding_error",
+      "filename": "水晶鈴音_綁定失敗.wav",
+      "driveFileId": "1u1qX9ETkmb0X8cVDr8vNHVbnO2OMttV-",
+      "sizeBytes": 238124
+    },
+    {
+      "pack": "crystal",
+      "event": "binding_success",
+      "filename": "水晶鈴音_綁定成功.wav",
+      "driveFileId": "16RYRrJUDoaY_bDk7Sh-U9C0xGYCFR7UO",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "crystal",
+      "event": "connection_error",
+      "filename": "水晶鈴音_連線異常.wav",
+      "driveFileId": "1mj-pMUwPag0hPqUmdVgY9Yhe0o_7-5U5",
+      "sizeBytes": 193964
+    },
+    {
+      "pack": "crystal",
+      "event": "door_abnormal",
+      "filename": "水晶鈴音_櫃門異常開啟.wav",
+      "driveFileId": "1Oj8uPLImExn-dP2WbdU0QY-QTdrE4fXU",
+      "sizeBytes": 232364
+    },
+    {
+      "pack": "crystal",
+      "event": "door_closed",
+      "filename": "水晶鈴音_櫃門關閉.wav",
+      "driveFileId": "1Dle8Ek9-pm5qMWyacFmTiQ8ZuE5KwMtv",
+      "sizeBytes": 176684
+    },
+    {
+      "pack": "crystal",
+      "event": "door_open",
+      "filename": "水晶鈴音_櫃門開啟.wav",
+      "driveFileId": "1UGCJRgPhnW5ONyQ34_hELpbdpg9jN_72",
+      "sizeBytes": 205484
+    },
+    {
+      "pack": "crystal",
+      "event": "environment_warning",
+      "filename": "水晶鈴音_櫃內溫度濕度異常.wav",
+      "driveFileId": "1kVs5R_QWB93zB6sge775te5YQPXMIkU4",
+      "sizeBytes": 249644
+    },
+    {
+      "pack": "crystal",
+      "event": "extension_warning",
+      "filename": "水晶鈴音_擴充功能警示.wav",
+      "driveFileId": "1FF7v6lfqJ5fmZmegPNbLYeLXpK-JcYtV",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "crystal",
+      "event": "low_battery_warning",
+      "filename": "水晶鈴音_低電量警示.wav",
+      "driveFileId": "1W_j7IF5wfngyf_ptxVTNN0c9HTvfvuRt",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "crystal",
+      "event": "upload_error",
+      "filename": "水晶鈴音_上傳失敗.wav",
+      "driveFileId": "1STKx1OQggoB3HR8iotvavTc9Ws8LJb6V",
+      "sizeBytes": 217004
+    },
+    {
+      "pack": "crystal",
+      "event": "upload_success",
+      "filename": "水晶鈴音_上傳成功.wav",
+      "driveFileId": "1yj1rUQzAOeP5WSvs3E10P1IzoO3TPO2T",
+      "sizeBytes": 230444
+    },
+    {
+      "pack": "crystal",
+      "event": "uploading",
+      "filename": "水晶鈴音_上傳中.wav",
+      "driveFileId": "1zGPJEXIpYRiiOIllFY7apU9FSDlRm_EC",
+      "sizeBytes": 170924
+    },
+    {
+      "pack": "future",
+      "event": "authorization_error",
+      "filename": "長笛_授權失敗.wav",
+      "driveFileId": "1wqzkJyzEh8vwGDaUDhCYgvJs9eXvIyUs",
+      "sizeBytes": 241964
+    },
+    {
+      "pack": "future",
+      "event": "authorization_success",
+      "filename": "長笛_授權成功.wav",
+      "driveFileId": "1W5arOeUDaXc-A_eoX2Ig34uteg1cKfDZ",
+      "sizeBytes": 224684
+    },
+    {
+      "pack": "future",
+      "event": "binding",
+      "filename": "長笛_綁定中.wav",
+      "driveFileId": "1vwA3lAcda2SEQOxZKvzQNwbUnALmrqDk",
+      "sizeBytes": 207404
+    },
+    {
+      "pack": "future",
+      "event": "binding_error",
+      "filename": "長笛_綁定失敗.wav",
+      "driveFileId": "1lnT3fw97B-uZAJlG0Ox8za6VniR3NOAL",
+      "sizeBytes": 238124
+    },
+    {
+      "pack": "future",
+      "event": "binding_success",
+      "filename": "長笛_綁定成功.wav",
+      "driveFileId": "1y_k1XGKTuq83-MWp9-yr12El0Pjdl1Rb",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "future",
+      "event": "connection_error",
+      "filename": "長笛_連線異常.wav",
+      "driveFileId": "1-1Nqf_iZBw6DxgAOIc1Fk9bKP80pRjz8",
+      "sizeBytes": 193964
+    },
+    {
+      "pack": "future",
+      "event": "door_abnormal",
+      "filename": "長笛_櫃門異常開啟.wav",
+      "driveFileId": "1A7jpfNfRbtdYADUdCsxYRZD3KQE47xDz",
+      "sizeBytes": 232364
+    },
+    {
+      "pack": "future",
+      "event": "door_closed",
+      "filename": "長笛_櫃門關閉.wav",
+      "driveFileId": "1oB4rse6hXqHodm3PGQL9sacnFZc90eH9",
+      "sizeBytes": 176684
+    },
+    {
+      "pack": "future",
+      "event": "door_open",
+      "filename": "長笛_櫃門開啟.wav",
+      "driveFileId": "14jfqFAWxO02i_zdK6JYBHVkjSirqnfwn",
+      "sizeBytes": 205484
+    },
+    {
+      "pack": "future",
+      "event": "environment_warning",
+      "filename": "長笛_櫃內溫度濕度異常.wav",
+      "driveFileId": "12kkKv9xWzmF7roANN00_hO06uvVphqn6",
+      "sizeBytes": 249644
+    },
+    {
+      "pack": "future",
+      "event": "extension_warning",
+      "filename": "長笛_擴充功能警示.wav",
+      "driveFileId": "1T9DUlVGkLA-q8Tf7f_XxUygg5t8_3mpv",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "future",
+      "event": "low_battery_warning",
+      "filename": "長笛_低電量警示.wav",
+      "driveFileId": "1ljOSQrL8VvsCu4nzyEeRqpkrJLK86oPO",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "future",
+      "event": "upload_error",
+      "filename": "長笛_上傳失敗.wav",
+      "driveFileId": "18RLTbX_uC-48oA8zOSexP7RN7iXXA9db",
+      "sizeBytes": 217004
+    },
+    {
+      "pack": "future",
+      "event": "upload_success",
+      "filename": "長笛_上傳成功.wav",
+      "driveFileId": "1_6LH8jOlRALkSoppI83disuLG-KV57qW",
+      "sizeBytes": 230444
+    },
+    {
+      "pack": "future",
+      "event": "uploading",
+      "filename": "長笛_上傳中.wav",
+      "driveFileId": "1uwBHICkqSHxeodX1yOff50bAOg9i9zcp",
+      "sizeBytes": 170924
+    },
+    {
+      "pack": "pulse",
+      "event": "authorization_error",
+      "filename": "鋼片琴_授權失敗.wav",
+      "driveFileId": "1rxbRqkH-CzoXVkUJhBwiWKdP4JvgE8lz",
+      "sizeBytes": 241964
+    },
+    {
+      "pack": "pulse",
+      "event": "authorization_success",
+      "filename": "鋼片琴_授權成功.wav",
+      "driveFileId": "1WFpqxNfiMfU3IUJGUO-Cp1IVVzkTQJ3s",
+      "sizeBytes": 224684
+    },
+    {
+      "pack": "pulse",
+      "event": "binding",
+      "filename": "鋼片琴_綁定中.wav",
+      "driveFileId": "1VfM-_OGATssT57eWA5v6DGjTXkDZyNKc",
+      "sizeBytes": 207404
+    },
+    {
+      "pack": "pulse",
+      "event": "binding_error",
+      "filename": "鋼片琴_綁定失敗.wav",
+      "driveFileId": "1JgtFASL5ev6GGVlWfWL29i8WhDK2XNt5",
+      "sizeBytes": 238124
+    },
+    {
+      "pack": "pulse",
+      "event": "binding_success",
+      "filename": "鋼片琴_綁定成功.wav",
+      "driveFileId": "1FEQYzdPjkyVAK9yieuZzwTs6aDWquLdN",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "pulse",
+      "event": "connection_error",
+      "filename": "鋼片琴_連線異常.wav",
+      "driveFileId": "158ODFW5D4FAIEbtfxs1Lhn0d-8FubYpf",
+      "sizeBytes": 193964
+    },
+    {
+      "pack": "pulse",
+      "event": "door_abnormal",
+      "filename": "鋼片琴_櫃門異常開啟.wav",
+      "driveFileId": "1h9JbvIRC3pv6a8EzccpXeiFQOXJeMFhT",
+      "sizeBytes": 232364
+    },
+    {
+      "pack": "pulse",
+      "event": "door_closed",
+      "filename": "鋼片琴_櫃門關閉.wav",
+      "driveFileId": "1PoXPujXAiyiOPHBac3ygib5xd5BAryBe",
+      "sizeBytes": 176684
+    },
+    {
+      "pack": "pulse",
+      "event": "door_open",
+      "filename": "鋼片琴_櫃門開啟.wav",
+      "driveFileId": "1oJ0A1GOiXxlKzxwcConI2RJ8KLpJLAw6",
+      "sizeBytes": 205484
+    },
+    {
+      "pack": "pulse",
+      "event": "environment_warning",
+      "filename": "鋼片琴_櫃內溫度濕度異常.wav",
+      "driveFileId": "1cO1iZzheYcibAU_Y--zvFLKEFBIGngTn",
+      "sizeBytes": 249644
+    },
+    {
+      "pack": "pulse",
+      "event": "extension_warning",
+      "filename": "鋼片琴_擴充功能警示.wav",
+      "driveFileId": "1NSO9ls2oomn-e-OjPoXw4B2omMTq5-LM",
+      "sizeBytes": 226604
+    },
+    {
+      "pack": "pulse",
+      "event": "low_battery_warning",
+      "filename": "鋼片琴_低電量警示.wav",
+      "driveFileId": "1vgULEb4ofgZZXUy97gBu46MGgdqpxu4l",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "pulse",
+      "event": "upload_error",
+      "filename": "鋼片琴_上傳失敗.wav",
+      "driveFileId": "1SvfilQ3Xkibn_US8ePp09Pmunu45h4sS",
+      "sizeBytes": 217004
+    },
+    {
+      "pack": "pulse",
+      "event": "upload_success",
+      "filename": "鋼片琴_上傳成功.wav",
+      "driveFileId": "1ubk8B928KCbnzPlHypOsz9TFaDWLdCSO",
+      "sizeBytes": 230444
+    },
+    {
+      "pack": "pulse",
+      "event": "uploading",
+      "filename": "鋼片琴_上傳中.wav",
+      "driveFileId": "1duYS3pvUo-7PqCs7tfh70AaYa4pW3VGs",
+      "sizeBytes": 170924
+    },
+    {
+      "pack": "wood",
+      "event": "authorization_error",
+      "filename": "木琴_授權失敗.wav",
+      "driveFileId": "1iohvtQWqtg-_rAvAZm5BX2Znuowaah2q",
+      "sizeBytes": 265004
+    },
+    {
+      "pack": "wood",
+      "event": "authorization_success",
+      "filename": "木琴_授權成功.wav",
+      "driveFileId": "1FI4j3_RkwftCdZ6aeRwFfURhCTmD4OFi",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "wood",
+      "event": "binding",
+      "filename": "木琴_綁定中.wav",
+      "driveFileId": "1wzNOPSRKw8Df-y1UfeCrFlV-_1CGxiWG",
+      "sizeBytes": 261164
+    },
+    {
+      "pack": "wood",
+      "event": "binding_error",
+      "filename": "木琴_綁定失敗.wav",
+      "driveFileId": "1g26_NsH6gXaUFUQfywtfXPQUgUNaTFGc",
+      "sizeBytes": 272684
+    },
+    {
+      "pack": "wood",
+      "event": "binding_success",
+      "filename": "木琴_綁定成功.wav",
+      "driveFileId": "1jUdp2HxV1oTvJ9-PIf9vYgU995yPXu3H",
+      "sizeBytes": 265004
+    },
+    {
+      "pack": "wood",
+      "event": "connection_error",
+      "filename": "木琴_連線異常.wav",
+      "driveFileId": "1CnCDckfLBiLRevf6F1dGbLnRR2hOf42i",
+      "sizeBytes": 240044
+    },
+    {
+      "pack": "wood",
+      "event": "door_abnormal",
+      "filename": "木琴_櫃門異常開啟.wav",
+      "driveFileId": "19Sysu62fZxRdmsuZR_rHvCPLNQlg9N46",
+      "sizeBytes": 268844
+    },
+    {
+      "pack": "wood",
+      "event": "door_closed",
+      "filename": "木琴_櫃門關閉.wav",
+      "driveFileId": "1Da1t9aIcMaiSEx2rP31-0EopdxoM-h_C",
+      "sizeBytes": 224684
+    },
+    {
+      "pack": "wood",
+      "event": "door_open",
+      "filename": "木琴_櫃門開啟.wav",
+      "driveFileId": "1JUxGMJKjnfuqtd1F7hrn2Yc6UQJwlxab",
+      "sizeBytes": 236204
+    },
+    {
+      "pack": "wood",
+      "event": "environment_warning",
+      "filename": "木琴_櫃內溫度濕度異常.wav",
+      "driveFileId": "1BG-Zi_RwvEncpkhbfh8VhgDWZS0FMNRi",
+      "sizeBytes": 288044
+    },
+    {
+      "pack": "wood",
+      "event": "extension_warning",
+      "filename": "木琴_擴充功能警示.wav",
+      "driveFileId": "1C3-LkMQNvZkbhHonsrp4mf9-n9BBdJl0",
+      "sizeBytes": 268844
+    },
+    {
+      "pack": "wood",
+      "event": "low_battery_warning",
+      "filename": "木琴_低電量警示.wav",
+      "driveFileId": "12yOllRQxz-2FPGcGUr7xEV0lFFg5qyqJ",
+      "sizeBytes": 289964
+    },
+    {
+      "pack": "wood",
+      "event": "upload_error",
+      "filename": "木琴_上傳失敗.wav",
+      "driveFileId": "1PMcOtgXD1fMoP-w56A0XtHNpqpQ-DiSo",
+      "sizeBytes": 240044
+    },
+    {
+      "pack": "wood",
+      "event": "upload_success",
+      "filename": "木琴_上傳成功.wav",
+      "driveFileId": "1lOD_ZyCEqUkZQQIBukfDVGb3mQn6oqDm",
+      "sizeBytes": 266924
+    },
+    {
+      "pack": "wood",
+      "event": "uploading",
+      "filename": "木琴_上傳中.wav",
+      "driveFileId": "1Wa2K1prymho8p9BxkqPR3V_ekOf31WaR",
+      "sizeBytes": 228524
+    }
+  ]
+}
