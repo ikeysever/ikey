@@ -3,3 +3,21 @@
 
 /* Project creation step 2: two authorization questions only. */
 .create-step2[hidden],.create-section form[hidden]{display:none!important}.create-step2 h2{font-size:22px;margin:0 0 20px}.create-step2 fieldset{border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin:0 0 22px;min-width:0}.create-step2 legend{padding:0 7px;font-weight:700}.create-section .create-choice{display:flex;align-items:flex-start;gap:13px;font-size:16px;font-weight:500;margin:14px 0;cursor:pointer}.create-section .create-choice input[type=radio]{width:20px;height:20px;min-height:20px;flex:none;margin:2px 0 0;padding:0;accent-color:var(--cyan)}.create-choice span{display:block}.create-choice small{display:block;color:var(--muted);font-size:13px;font-weight:400;margin-top:5px;line-height:1.5}.create-confirm #create-confirm-authorization,.create-confirm #create-confirm-schedule{display:inline;font-size:inherit;margin:0;color:var(--text)}
+
+/* Successful creation transition: animated confirmation, concurrent list refresh. */
+.create-success-overlay[hidden]{display:none!important}
+.create-success-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 0%,#1b3150 0%,#0b1220 42%,#070c16 100%);animation:create-success-enter .32s ease both}
+.create-success-panel{text-align:center;max-width:440px;color:#f3f8ff}
+.create-success-ring{width:112px;height:112px;margin:0 auto 22px}
+.create-success-ring svg{width:100%;height:100%;overflow:visible}
+.create-success-circle{fill:rgba(51,209,145,.08);stroke:#34d399;stroke-width:3;stroke-dasharray:264;stroke-dashoffset:264;animation:create-success-draw .6s ease .12s forwards}
+.create-success-check{fill:none;stroke:#b8ffe0;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:75;stroke-dashoffset:75;animation:create-success-draw .42s ease .62s forwards}
+.create-success-panel h2{font-size:30px;margin:0 0 10px;animation:create-success-rise .5s ease .5s both}
+#create-success-name{font-size:17px;color:#a9c8df;overflow-wrap:anywhere;animation:create-success-rise .5s ease .7s both}
+.create-success-loading{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:26px;color:#a7bcd4;font-size:14px}
+.create-success-spinner{width:15px;height:15px;border:2px solid #45647d;border-top-color:#a3e6ed;border-radius:50%;animation:create-success-spin .8s linear infinite}
+@keyframes create-success-draw{to{stroke-dashoffset:0}}
+@keyframes create-success-enter{from{opacity:0}to{opacity:1}}
+@keyframes create-success-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes create-success-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.create-success-overlay,.create-success-circle,.create-success-check,.create-success-panel h2,#create-success-name{animation:none;opacity:1;stroke-dashoffset:0}.create-success-spinner{animation:none}}

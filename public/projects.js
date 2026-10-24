@@ -31,6 +31,10 @@
   get('projects-view-list').addEventListener('click',()=>setView('list'));
   get('projects-view-grid').addEventListener('click',()=>setView('grid'));
   get('projects-create').addEventListener('click',()=>{location.assign('/project-create.html');});
+  try{
+    const cached=sessionStorage.getItem('ikey-projects-refresh');
+    if(cached){sessionStorage.removeItem('ikey-projects-refresh');projects=JSON.parse(cached).filter(project=>project.project_id&&project.created_at&&project.updated_at&&['active','inactive'].includes(project.status));}
+  }catch{sessionStorage.removeItem('ikey-projects-refresh');}
   render();
   (async()=>{
    try{
