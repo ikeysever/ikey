@@ -42,5 +42,5 @@ function tick(now){if(!playing)return;t=Math.min(duration,(now-origin)/1000);dra
 function syncAudio(){audio.pause();audio.currentTime=t;if(playing&&!window.frameElement?.hasAttribute('data-parent-audio')){audio.play().catch(()=>{/* Browser autoplay policy may block sound. */})}}
 function play(){stop();if(t>=duration)t=0;playing=true;origin=performance.now()-t*1000;window.parent.postMessage({type:'ikey-welcome-start'},location.origin);syncAudio();raf=requestAnimationFrame(tick)}
 window.addEventListener('resize',()=>draw(t));
-document.fonts.ready.then(()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches){t=duration;draw(t)}else play()});
+document.fonts.ready.then(()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches){t=duration;draw(t);play()}else play()});
 </script></body></html>
