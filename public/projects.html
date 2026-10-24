@@ -15,12 +15,12 @@
 <div id="projects-advanced" class="projects-advanced" hidden>
  <div class="projects-filter-grid">
  <label>專案狀態<select id="projects-status"><option value="all">全部</option><option value="active">啟用中</option><option value="inactive">已停用</option></select></label>
- <label>邀請狀態<select id="projects-invitation"><option value="all">全部</option><option value="pending">待接受邀請</option></select></label>
+ <label>邀請狀態<select id="projects-invitation"><option value="all">全部</option><option value="pending" disabled>待接受邀請（待權限資料串接）</option></select></label>
  <label>授權方式<select id="projects-auth"><option value="all">全部</option><option value="application">申請授權</option><option value="self_registration">自行登記</option></select></label>
  <label>排程授權<select id="projects-schedule"><option value="all">全部</option><option value="true">有排程</option><option value="false">無排程</option></select></label>
  <label>建立日期（起）<input id="projects-date-start" type="date"></label>
  <label>建立日期（迄）<input id="projects-date-end" type="date"></label>
- <label>建立者<select id="projects-creator"><option value="all">全部</option><option value="mine">我建立的</option><option value="name">指定建立者名稱</option></select></label>
+ <label>建立者<select id="projects-creator"><option value="all">全部</option><option value="mine">我建立的</option><option value="name" disabled>指定建立者名稱（待使用者資料串接）</option></select></label>
  <label id="projects-creator-name-wrap">指定建立者<input id="projects-creator-name" type="search" placeholder="建立者顯示名稱" hidden></label>
  <label>排序方式<select id="projects-sort"><option value="created:desc">建立時間：最新</option><option value="created:asc">建立時間：最早</option><option value="updated:desc">更新時間：最新</option><option value="updated:asc">更新時間：最早</option><option value="name:asc">名稱：A → Z</option><option value="name:desc">名稱：Z → A</option></select></label>
  </div><div class="projects-filter-footer"><small>篩選條件即時套用，條件之間採 AND。</small><button id="projects-clear" type="button">清除全部條件</button></div>
