@@ -35,7 +35,33 @@ function showDashboard(user){
   byId('dashboard').hidden=false;
 }
 async function load(){try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){location.replace('/');return;}showDashboard(data.user);}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
-function playLogoutLockAnimation(){
+// Synthesize a short metallic latch click; no external audio asset required.
+function createLogoutLatchSound(){
+ try{
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return ()=>{};
+  // Construct and resume in the user click handler to satisfy autoplay policies.
+  const audioContext=new AudioContextClass();
+  audioContext.resume().catch(()=>{});
+  return ()=>{
+   try{
+    const now=audioContext.currentTime;
+    const gain=audioContext.createGain();
+    gain.gain.setValueAtTime(0.0001,now);
+    gain.gain.exponentialRampToValueAtTime(0.18,now+0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001,now+0.14);
+    gain.connect(audioContext.destination);
+    const tone=audioContext.createOscillator();
+    tone.type='triangle';
+    tone.frequency.setValueAtTime(780,now);
+    tone.frequency.exponentialRampToValueAtTime(230,now+0.105);
+    tone.connect(gain);tone.start(now);tone.stop(now+0.15);
+    tone.onended=()=>{audioContext.close().catch(()=>{});};
+   }catch{audioContext.close().catch(()=>{});}
+  };
+ }catch{return ()=>{};}
+}
+function playLogoutLockAnimation(playLatchSound){
  return new Promise(resolve=>{
   const style=document.createElement('style');
   style.textContent=`#ikey-logout-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:radial-gradient(circle at 20% 0%,#1b3150 0,#0b1220 42%,#070c16 100%);color:#eefaff}#ikey-logout-overlay svg{width:min(330px,76vw);height:auto;overflow:visible}#ikey-logout-overlay .shackle{transform-origin:80px 87px;animation:ikey-lock-close 1s cubic-bezier(.2,.8,.2,1) forwards}#ikey-logout-overlay .lock-glow{opacity:0;animation:ikey-lock-glow .65s ease 1s forwards}@keyframes ikey-lock-close{0%{transform:translateY(-28px)}75%,100%{transform:translateY(0)}}@keyframes ikey-lock-glow{0%{opacity:0}40%{opacity:1}100%{opacity:.35}}@media(prefers-reduced-motion:reduce){#ikey-logout-overlay .shackle,#ikey-logout-overlay .lock-glow{animation:none}#ikey-logout-overlay .lock-glow{opacity:.3}}`;
@@ -43,6 +69,10 @@ function playLogoutLockAnimation(){
   const overlay=document.createElement('div');overlay.id='ikey-logout-overlay';overlay.setAttribute('role','status');overlay.setAttribute('aria-label','已安全登出');
   overlay.innerHTML='<svg viewBox="0 0 160 185" aria-hidden="true"><circle class="lock-glow" cx="80" cy="92" r="79" fill="none" stroke="#64e4c2" stroke-width="4"/><g class="shackle"><path d="M48 88V59a32 32 0 0 1 64 0v29" fill="none" stroke="#a4f4e2" stroke-width="13" stroke-linecap="round"/></g><rect x="32" y="80" width="96" height="76" rx="17" fill="#18374d" stroke="#79d9e8" stroke-width="3"/><circle cx="80" cy="111" r="9" fill="#b5fff0"/><path d="M80 118v17" stroke="#b5fff0" stroke-width="7" stroke-linecap="round"/></svg>';
   document.body.append(overlay);
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+   const shackle=overlay.querySelector('.shackle');
+   shackle.addEventListener('animationend',event=>{if(event.animationName==='ikey-lock-close')playLatchSound();},{once:true});
+  }else playLatchSound();
   window.setTimeout(resolve,window.matchMedia('(prefers-reduced-motion: reduce)').matches?350:1800);
  });
 }
@@ -51,7 +81,8 @@ byId('logout').addEventListener('click',async()=>{
  button.disabled=true;
  const original=button.textContent;
  // Start the lock animation on the first click, while the logout request runs.
- const animation=playLogoutLockAnimation();
+ const playLatchSound=createLogoutLatchSound();
+ const animation=playLogoutLockAnimation(playLatchSound);
  try{
   const response=await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});
   const result=await response.json();
