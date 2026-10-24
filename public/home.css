@@ -145,3 +145,15 @@ body.menu-open{overflow:hidden}
 /* Sidebar project names follow the unfiltered project list. */
 .side nav .project-menu-content .project-menu-entry{padding:7px 8px;margin:2px 0;color:#c9d8e8;font-size:13px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:7px}
 .side nav .project-menu-content .project-menu-entry:hover{background:rgba(121,213,233,.07)}
+
+/* iKey 3.1 project navigation: sidebar and main list. */
+.side nav .project-menu-entry{display:block;text-decoration:none;color:#d5e8f6;padding:10px 12px;margin:4px 0 4px 18px;border:1px solid transparent;border-radius:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;transition:background .15s,border-color .15s}
+.side nav .project-menu-entry:hover,.side nav .project-menu-entry:focus-visible{background:#1b3150;border-color:#456b86;color:#fff;outline:none}
+.projects-row,.projects-tile{cursor:pointer;transition:background .15s,border-color .15s}
+.projects-row:hover,.projects-tile:hover,.projects-row:focus-visible,.projects-tile:focus-visible{background:rgba(39,68,98,.6);outline:2px solid #79d5e9;outline-offset:2px}
+.projects-enter{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:40px;margin-left:auto;padding:8px 14px;border:1px solid #608ba7;border-radius:9px;background:#1b3651;color:#e8f8ff;text-decoration:none;font-size:13px;font-weight:650;white-space:nowrap}
+.projects-enter:hover,.projects-enter:focus-visible{background:#275474;border-color:#79d5e9}
+.projects-tile{flex-wrap:wrap}.projects-tile .projects-enter{width:100%;margin:6px 0 0}
+.project-detail{max-width:850px;background:rgba(20,31,52,.78);border:1px solid #3a526a;border-radius:15px;padding:24px;margin-top:25px}
+.project-detail[hidden]{display:none}.project-detail h2{margin:0 0 20px;font-size:22px}.project-detail dl{margin:0;display:grid;gap:12px}.project-detail dl>div{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px;padding:12px 0;border-bottom:1px solid #34465c}.project-detail dt{color:#9cb8ce}.project-detail dd{margin:0;overflow-wrap:anywhere}.project-detail-actions{display:flex;align-items:center;gap:16px;margin-top:24px;flex-wrap:wrap}.project-detail-actions a{padding:11px 16px;background:#1b3651;color:#e8f8ff;border:1px solid #608ba7;border-radius:9px;text-decoration:none}.project-settings-pending{color:#92a7b9;font-size:13px}
+@media(max-width:600px){.projects-row{flex-wrap:wrap}.projects-row .projects-enter{margin:8px 0 0;width:100%}.project-detail dl>div{grid-template-columns:1fr;gap:5px}.project-detail{padding:17px}}
