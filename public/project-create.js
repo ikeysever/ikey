@@ -1,22 +1,35 @@
 'use strict';
-(async()=>{
+(()=>{
  const get=id=>document.getElementById(id);
- // The form contains no privileged data: show it immediately, validate the session in parallel.
- get('create-loading').hidden=true;
- get('create-content').hidden=false;
- get('create-project-form').addEventListener('submit',event=>{
-  event.preventDefault();const name=get('create-project-name').value.trim();const description=get('create-project-description').value.trim();
+ const stepLabel=get('create-step-label');
+ const basic=get('create-project-form'),settings=get('create-step2'),confirm=get('create-confirm');
+ function show(step){basic.hidden=step!==1;settings.hidden=step!==2;confirm.hidden=step!==3;stepLabel.textContent=step===1?'步驟 1 · 專案基本資料':step===2?'步驟 2 · 借還模式設定':'步驟 3 · 確認設定';}
+ // No sensitive project data is exposed; the server session is checked in parallel.
+ get('create-loading').hidden=true;get('create-content').hidden=false;show(1);
+ basic.addEventListener('submit',event=>{
+  event.preventDefault();const name=get('create-project-name').value.trim();
   if(!name||name.length>80){get('create-error').textContent='請輸入 1～80 字的專案名稱。';return;}
-  get('create-error').textContent='';get('create-confirm-name').textContent=name;get('create-confirm-description').textContent=description||'未填寫';
-  get('create-project-form').hidden=true;get('create-confirm').hidden=false;
+  get('create-error').textContent='';show(2);
  });
- get('create-back').addEventListener('click',()=>{get('create-confirm').hidden=true;get('create-project-form').hidden=false;get('create-project-name').focus();});
- try{
+ get('create-step2-back').addEventListener('click',()=>show(1));
+ get('create-settings-form').addEventListener('submit',event=>{
+  event.preventDefault();const form=new FormData(event.currentTarget);
+  const auth=form.get('authorization_method'),schedule=form.get('scheduled_authorization');
+  if(!['application','self_registration'].includes(auth)||!['yes','no'].includes(schedule)){
+   get('create-settings-error').textContent='請完成 Q1 與 Q2。';return;
+  }
+  get('create-settings-error').textContent='';
+  get('create-confirm-name').textContent=get('create-project-name').value.trim();
+  get('create-confirm-description').textContent=get('create-project-description').value.trim()||'未填寫';
+  get('create-confirm-authorization').textContent=auth==='application'?'申請授權':'使用者自行登記';
+  get('create-confirm-schedule').textContent=schedule==='yes'?'是':'否';
+  show(3);
+ });
+ get('create-back').addEventListener('click',()=>show(2));
+ (async()=>{try{
   const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
   if(response.status===401){location.replace('/');return;}
   if(!response.ok)throw Error('AUTH_UNAVAILABLE');
-  const data=await response.json();
-  if(!data.authenticated){location.replace('/');return;}
-  get('create-loading').hidden=true;get('create-content').hidden=false;
- }catch{get('create-loading').hidden=false;get('create-loading').textContent='無法驗證登入狀態，請稍後重新整理。';get('create-content').hidden=true;return;}
+  const data=await response.json();if(!data.authenticated){location.replace('/');return;}
+ }catch{get('create-loading').hidden=false;get('create-loading').textContent='無法驗證登入狀態，請稍後重新整理。';get('create-content').hidden=true;}})();
 })();
