@@ -141,3 +141,7 @@ body.menu-open{overflow:hidden}
  .projects-toolbar .projects-search-row{gap:7px}
  .projects-toolbar .projects-search-row button{padding-left:10px;padding-right:10px;font-size:13px}
 }
+
+/* Sidebar project names follow the unfiltered project list. */
+.side nav .project-menu-content .project-menu-entry{padding:7px 8px;margin:2px 0;color:#c9d8e8;font-size:13px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:7px}
+.side nav .project-menu-content .project-menu-entry:hover{background:rgba(121,213,233,.07)}
