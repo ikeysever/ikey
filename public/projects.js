@@ -3,7 +3,7 @@
   const get=id=>document.getElementById(id);
   const panel=get('projects-panel');
   if(!panel)return;
-  const projects=[];
+  let projects=[];
   // Warm the child page as soon as the parent page is initialized.
   for(const href of ['/project-create.html','/project-create.css','/project-create.js']){
     const link=document.createElement('link');link.rel='prefetch';link.href=href;document.head.appendChild(link);
@@ -14,15 +14,15 @@
     list.replaceChildren();
     get('projects-count').textContent='('+projects.length+')';
     const menuEmpty=document.querySelector('.project-menu-empty');
-    if(menuEmpty)menuEmpty.textContent=projects.length?'測試專案：'+projects.length+' 個':'目前沒有專案';
+    if(menuEmpty)menuEmpty.textContent=projects.length?'我的專案：'+projects.length+' 個':'目前沒有專案';
     if(!projects.length){const empty=document.createElement('p');empty.className='projects-empty';empty.textContent='目前沒有專案';list.append(empty);return;}
     const container=document.createElement('div');container.className=view==='list'?'projects-rows':'projects-tiles';
-    for(const name of projects){
+    for(const project of projects){
       const item=document.createElement('div');item.className=view==='list'?'projects-row':'projects-tile';
       const icon=document.createElement('span');icon.className='projects-folder';icon.setAttribute('aria-hidden','true');icon.textContent='▣';
       const text=document.createElement('div');text.className='projects-item-text';
-      const title=document.createElement('strong');title.textContent=name;
-      const meta=document.createElement('small');meta.textContent='測試專案';
+      const title=document.createElement('strong');title.textContent=project.project_name||'未命名專案';
+      const meta=document.createElement('small');meta.textContent=project.status||'已建立';
       text.append(title,meta);item.append(icon,text);container.append(item);
     }
     list.append(container);
@@ -32,4 +32,11 @@
   get('projects-view-grid').addEventListener('click',()=>setView('grid'));
   get('projects-create').addEventListener('click',()=>{location.assign('/project-create.html');});
   render();
+  (async()=>{
+   try{
+    const response=await fetch('/api/projects',{credentials:'same-origin',cache:'no-store'});
+    const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'讀取失敗');
+    projects=Array.isArray(data.projects)?data.projects:[];render();
+   }catch(error){const message=document.createElement('p');message.className='projects-empty';message.textContent=error.message||'無法載入專案';list.replaceChildren(message);}
+  })();
 })();

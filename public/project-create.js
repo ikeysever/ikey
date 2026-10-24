@@ -26,6 +26,17 @@
   show(3);
  });
  get('create-back').addEventListener('click',()=>show(2));
+ get('create-save').addEventListener('click',async()=>{
+  const button=get('create-save');if(button.disabled)return;
+  const form=new FormData(get('create-settings-form'));
+  const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes'};
+  button.disabled=true;get('create-save-error').textContent='';button.textContent='正在儲存…';
+  try{
+   const response=await fetch('/api/projects',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+   const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'儲存失敗');
+   location.assign('/projects.html');
+  }catch(error){get('create-save-error').textContent=error.message||'儲存失敗，請重試';button.disabled=false;button.textContent='建立專案';}
+ });
  (async()=>{try{
   const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
   if(response.status===401){location.replace('/');return;}
