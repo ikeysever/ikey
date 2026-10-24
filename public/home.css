@@ -104,3 +104,20 @@ body.menu-open{overflow:hidden}
 
 /* iKey brand is a home navigation link on all sidebar pages. */
 .side .brand-home-link{color:inherit;text-decoration:none;cursor:pointer}.side .brand-home-link:hover strong{color:var(--cyan)}.side .brand-home-link:focus-visible{outline:2px solid var(--cyan);outline-offset:4px;border-radius:8px}
+
+/* Projects loading and approved advanced-search UI. */
+.projects-loading{display:flex;justify-content:center;align-items:center;gap:12px}
+.projects-loading-spinner{display:inline-block;width:20px;height:20px;border:2px solid #446078;border-top-color:#79d5e9;border-radius:50%;animation:projects-spin .75s linear infinite}
+@keyframes projects-spin{to{transform:rotate(360deg)}}
+.projects-search-bar{margin:20px 0 12px}.projects-search-label{display:block;margin-bottom:8px;font-weight:650;font-size:15px}
+.projects-search-row{display:flex;gap:10px;flex-wrap:wrap}
+.projects-search-row input{flex:1;min-width:200px;min-height:44px;padding:10px 14px;border:1px solid #526c86;border-radius:9px;background:#101e32;color:var(--text);font:inherit}
+.projects-search-row button,.projects-filter-footer button{padding:10px 14px;min-height:44px;border:1px solid #526c86;border-radius:9px;background:#1a3149;color:var(--text);font:inherit;cursor:pointer}
+.projects-advanced{padding:20px;margin:10px 0 16px;border:1px solid #3a526a;border-radius:13px;background:rgba(20,31,52,.78)}
+.projects-advanced[hidden]{display:none!important}.projects-filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.projects-filter-grid label{display:flex;flex-direction:column;gap:7px;color:#c6d8e8;font-size:13px}
+.projects-filter-grid select,.projects-filter-grid input{min-height:42px;padding:8px 10px;border:1px solid #536e88;border-radius:8px;background:#101e32;color:#fff;font:inherit}
+.projects-filter-grid input[hidden]{display:none}.projects-filter-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}
+.projects-filter-footer small,.projects-search-note{color:var(--muted);font-size:12px;line-height:1.6}
+.projects-search-note{margin:14px 0 0}.projects-item-text small+small{margin-top:4px}
+@media(prefers-reduced-motion:reduce){.projects-loading-spinner{animation:none}}
