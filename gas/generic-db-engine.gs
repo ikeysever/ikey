@@ -3,7 +3,7 @@
 // IMPORTANT: Do NOT add another doPost(). Existing doPost must dispatch:
 // if (/^db\\./.test(action)) return ikeyDbDispatch_(action, payload);
 // Keep the existing api_key check, existing action routing and existing deployment.
-// Required Script Property: IKEY_DB_SPREADSHEET_ID (existing iKey_Database ID).
+// Uses existing GEN3_SPREADSHEET_ID (no new database ID required).
 //
 // Trust boundary: this engine only accepts authenticated Render-to-GAS requests.
 // Never expose the Apps Script API key to browsers or ESP32 devices.
@@ -38,7 +38,7 @@ function ikeyDbDispatch_(action, payload) {
 }
 
 function ikeyDbSpreadsheet_() {
-  const id = PropertiesService.getScriptProperties().getProperty('IKEY_DB_SPREADSHEET_ID');
+  const id = PropertiesService.getScriptProperties().getProperty('GEN3_SPREADSHEET_ID');
   if (!id) throw Error('DB_NOT_CONFIGURED');
   const ss = SpreadsheetApp.openById(id);
   if (!ss) throw Error('DB_UNAVAILABLE');
