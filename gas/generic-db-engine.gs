@@ -8,8 +8,13 @@
 // Trust boundary: this engine only accepts authenticated Render-to-GAS requests.
 // Never expose the Apps Script API key to browsers or ESP32 devices.
 // A server-side allowlist must restrict table access; the engine also enforces one.
-const IKEY_DB_ALLOWED_TABLES_ = Object.freeze(['Projects']);
-// Expand only after Render authorization policies for the new table are reviewed.
+// Script Property IKEY_DB_ALLOWED_TABLES: comma-separated table names, initially Projects.
+// New approved tables require configuration only, not a GAS code change.
+function ikeyDbAllowedTables_() {
+  const raw=PropertiesService.getScriptProperties().getProperty('IKEY_DB_ALLOWED_TABLES') || 'Projects';
+  return raw.split(',').map(s=>s.trim()).filter(Boolean);
+}
+// Expand configuration only after Render authorization policies for the new table are reviewed.
 // NEVER include Gen3_Users, Auth_Sessions, Auth_Tokens, Auth_Audit_Logs, or Users.
 const IKEY_DB_ALLOWED_ACTIONS_ = Object.freeze(['db.health','db.schema','db.select','db.insert','db.update','db.delete']);
 const IKEY_DB_MAX_ROWS_ = 100;
@@ -40,7 +45,7 @@ function ikeyDbSpreadsheet_() {
   return ss;
 }
 function ikeyDbSheet_(name) {
-  if (typeof name !== 'string' || IKEY_DB_ALLOWED_TABLES_.indexOf(name) < 0) throw Error('DB_TABLE_DENIED');
+  if (typeof name !== 'string' || ikeyDbAllowedTables_().indexOf(name) < 0) throw Error('DB_TABLE_DENIED');
   const sheet = ikeyDbSpreadsheet_().getSheetByName(name);
   if (!sheet) throw Error('DB_TABLE_NOT_FOUND');
   return sheet;
