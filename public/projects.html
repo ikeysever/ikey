@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220">
 <title>iKey 3.1｜我的專案</title><link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
-<link rel="stylesheet" href="/home.css?v=20261024-brand-home1"><script src="/home.js?v=20261024-instant-ui1" defer></script>
+<link rel="stylesheet" href="/home.css?v=20261024-search-loading1"><script src="/home.js?v=20261024-instant-ui1" defer></script>
 </head>
 <body>
 <button id="menu-toggle" class="menu-toggle" type="button" aria-label="開啟選單" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button>
@@ -11,4 +11,20 @@
 <div class="app">
 <aside id="sidebar" class="side"><a class="brand brand-home-link" href="/home.html" aria-label="iKey 首頁"><img src="/assets/brand/ikey-nextgen.svg" alt="" width="52" height="52"><div><strong>iKey</strong><small>智慧鑰匙管理系統</small></div></a>
 <nav aria-label="主要導覽"><a href="/home.html">首頁</a><div class="project-nav"><div class="project-nav-heading"><button id="project-menu-toggle" class="project-menu-toggle" type="button" aria-label="展開我的專案" aria-expanded="true" aria-controls="project-menu-content"><span class="project-menu-chevron" aria-hidden="true">▼</span></button><a class="project-nav-link active" href="/projects.html" aria-current="page">我的專案</a></div><div id="project-menu-content"><p class="project-menu-empty">目前沒有專案</p></div></div></nav><div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
-<main class="projects-page"><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>我的專案</h1><p>管理你建立或加入的專案</p></header><div id="loading" class="loading" role="status">正在驗證登入狀態…</div><section id="projects-panel" hidden><div class="projects-toolbar"><div class="projects-heading">我的專案 <span id="projects-count">(0)</span></div><div class="projects-actions"><button id="projects-create" class="projects-create" type="button"><span class="projects-plus" aria-hidden="true">＋</span>建立專案</button><div class="projects-view-switch" role="group" aria-label="檢視模式"><button id="projects-view-list" type="button" aria-label="列表檢視" aria-pressed="true" class="selected" title="列表檢視">☷</button><button id="projects-view-grid" type="button" aria-label="格狀檢視" aria-pressed="false" title="格狀檢視">▦</button></div></div></div><div id="projects-results" aria-live="polite"><p class="projects-empty">目前沒有專案</p></div></section></main></div><script src="/projects.js?v=20261024-success-refresh1" defer></script></body></html>
+<main class="projects-page"><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>我的專案</h1><p>管理你建立或加入的專案</p></header><div id="loading" class="loading" role="status">正在驗證登入狀態…</div><section id="projects-panel" hidden><div class="projects-toolbar"><div class="projects-heading">我的專案 <span id="projects-count">(0)</span></div><div class="projects-actions"><button id="projects-create" class="projects-create" type="button"><span class="projects-plus" aria-hidden="true">＋</span>建立專案</button><div class="projects-view-switch" role="group" aria-label="檢視模式"><button id="projects-view-list" type="button" aria-label="列表檢視" aria-pressed="true" class="selected" title="列表檢視">☷</button><button id="projects-view-grid" type="button" aria-label="格狀檢視" aria-pressed="false" title="格狀檢視">▦</button></div></div></div><div class="projects-search-bar"><label class="projects-search-label" for="projects-search">搜尋專案</label><div class="projects-search-row"><input id="projects-search" type="search" placeholder="搜尋專案名稱、說明、ID、建立者…" autocomplete="off"><button id="projects-advanced-toggle" type="button" aria-expanded="false" aria-controls="projects-advanced">進階搜尋 ⚙</button></div></div>
+<div id="projects-advanced" class="projects-advanced" hidden>
+ <div class="projects-filter-grid">
+ <label>專案狀態<select id="projects-status"><option value="all">全部</option><option value="active">啟用中</option><option value="inactive">已停用</option></select></label>
+ <label>邀請狀態<select id="projects-invitation"><option value="all">全部</option><option value="pending">待接受邀請</option></select></label>
+ <label>授權方式<select id="projects-auth"><option value="all">全部</option><option value="application">申請授權</option><option value="self_registration">自行登記</option></select></label>
+ <label>排程授權<select id="projects-schedule"><option value="all">全部</option><option value="true">有排程</option><option value="false">無排程</option></select></label>
+ <label>建立日期（起）<input id="projects-date-start" type="date"></label>
+ <label>建立日期（迄）<input id="projects-date-end" type="date"></label>
+ <label>建立者<select id="projects-creator"><option value="all">全部</option><option value="mine">我建立的</option><option value="name">指定建立者名稱</option></select></label>
+ <label id="projects-creator-name-wrap">指定建立者<input id="projects-creator-name" type="search" placeholder="建立者顯示名稱" hidden></label>
+ <label>排序方式<select id="projects-sort"><option value="created:desc">建立時間：最新</option><option value="created:asc">建立時間：最早</option><option value="updated:desc">更新時間：最新</option><option value="updated:asc">更新時間：最早</option><option value="name:asc">名稱：A → Z</option><option value="name:desc">名稱：Z → A</option></select></label>
+ </div><div class="projects-filter-footer"><small>篩選條件即時套用，條件之間採 AND。</small><button id="projects-clear" type="button">清除全部條件</button></div>
+ <p class="projects-search-note">目前搜尋限已串接的本人專案；成員、公開專案、邀請與建立者名稱跨帳號搜尋，須待權限及成員資料模型接入後啟用。</p>
+</div>
+<input id="projects-user-id" type="hidden">
+<div id="projects-results" aria-live="polite"><p class="projects-empty projects-loading" role="status"><span class="projects-loading-spinner" aria-hidden="true"></span>專案載入中，請稍後…</p></div></section></main></div><script src="/projects.js?v=20261024-search-loading1" defer></script></body></html>
