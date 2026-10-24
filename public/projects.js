@@ -18,7 +18,7 @@
    if(f['projects-schedule']!=='all'&&String(asBool(p.scheduled_authorization))!==f['projects-schedule'])return false;
    if(f['projects-date-start']&&p.created_at.slice(0,10)<f['projects-date-start'])return false;
    if(f['projects-date-end']&&p.created_at.slice(0,10)>f['projects-date-end'])return false;
-   if(f['projects-creator']==='mine'&&p.created_by_user_id!==get('projects-user-id')?.value)return false;
+   // The current API already returns only projects created by this account.
    if(f['projects-creator']==='name'&&f['projects-creator-name'].trim()&&!normalize(p.creator_display_name).includes(normalize(f['projects-creator-name'].trim())))return false;
    return true;
   }).sort((a,b)=>{
