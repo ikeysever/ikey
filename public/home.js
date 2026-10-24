@@ -34,7 +34,10 @@ function showDashboard(user){
   byId('loading').hidden=true;
   byId('dashboard').hidden=false;
 }
-async function load(){try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){location.replace('/');return;}showDashboard(data.user);}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
+async function load(){
+ // Paint non-sensitive page chrome immediately using the user verified during welcome.
+ try{const cached=JSON.parse(sessionStorage.getItem('ikey-welcome-user')||'null');if(cached){showDashboard(cached);}}catch{}
+ try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){try{sessionStorage.removeItem('ikey-welcome-user');}catch{}location.replace('/');return;}showDashboard(data.user);}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
 // Synthesize a short metallic latch click; no external audio asset required.
 function createLogoutLatchSound(){
  try{
@@ -88,6 +91,7 @@ byId('logout').addEventListener('click',async()=>{
   const result=await response.json();
   if(!response.ok||!result.success)throw Error('LOGOUT_FAILED');
   await animation;
+  try{sessionStorage.removeItem('ikey-welcome-user');}catch{}
   location.replace('/');
  }catch{
   document.getElementById('ikey-logout-overlay')?.remove();

@@ -17,6 +17,11 @@ let authStatus = null;
 let welcomeAudioContext=null,welcomeAudioBuffer=null,welcomeAudioSource=null;
 let welcomeStarted=false,welcomeCompleted=false,welcomeFrame=null;
 let welcomeAssetsReady=false;
+const welcomePagePreloads=['/home.html','/home.css','/home.js','/projects.html','/projects.js','/account.html','/account-edit.html','/project-create.html','/project-create.css','/project-create.js'];
+function warmWelcomePages(){
+ for(const url of welcomePagePreloads){const link=document.createElement('link');link.rel='prefetch';link.href=url;document.head.appendChild(link);}
+}
+
 const welcomeAudioReady=(async()=>{
   try{
     const response=await fetch('/assets/welcome-3-0/welcome.wav',{cache:'force-cache'});
@@ -52,9 +57,10 @@ async function verifyWelcomeReadiness(){
     if(session.authenticated!==true||!session.user)throw Error('SESSION_INVALID');
     if(health.ok!==true||status.ready!==true||status.enabled!==true)throw Error('BACKEND_NOT_READY');
     // Confirm all currently implemented page entrypoints and their scripts/styles exist.
-    const assets=['/home.html','/home.css','/home.js','/projects.html','/projects.js','/account.html','/account-edit.html','/project-create.html','/project-create.css','/project-create.js'];
+    const assets=welcomePagePreloads;
     const responses=await Promise.all(assets.map(url=>fetch(url,{credentials:'same-origin',cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw Error('PAGE_ASSET_UNAVAILABLE');
+    try{sessionStorage.setItem('ikey-welcome-user',JSON.stringify({display_name:session.user.display_name||'',username:session.user.username||''}));}catch{}
     welcomeAssetsReady=true;
     welcomeFrame?.contentWindow?.postMessage({type:'ikey-pages-ready'},location.origin);
   }catch(error){
@@ -80,6 +86,7 @@ function beginWelcome(){
   // is the only successful route to the home page.
   welcomeFrame.addEventListener('load',()=>{welcomeFrame.contentWindow?.postMessage({type:welcomeAssetsReady?'ikey-pages-ready':'ikey-pages-pending'},location.origin);});
   welcomeFrame.src='/welcome-3-0-production.html?v=20261024-readiness2';
+  warmWelcomePages();
   verifyWelcomeReadiness();
 }
 window.addEventListener('message',event=>{
