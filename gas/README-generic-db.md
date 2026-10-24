@@ -20,7 +20,7 @@ if (typeof action === 'string' && action.indexOf('db.') === 0) {
 }
 ```
 
-3. Script Properties 新增 `IKEY_DB_SPREADSHEET_ID` = 現有 iKey_Database 的 ID；`IKEY_DB_ALLOWED_TABLES` = `Projects`。**不需要更改現有 GEN3_APPS_SCRIPT_KEY**。
+3. 保留既有 Script Property `GEN3_SPREADSHEET_ID`（無須新增或更改）；`IKEY_DB_ALLOWED_TABLES` = `Projects`。**不需要更改現有 GEN3_APPS_SCRIPT_KEY**。
 4. 先在測試部署檢查舊登入 action 仍可運作，然後測試 `db.health`、`db.schema`、`db.insert`、`db.select`。
 5. 驗證通過後再更新既有 GAS Web App 部署版本，然後合併 Render 開發分支，部署 Render。
 6. 瀏覽器登入，測試建立專案 → Sheet 出現資料 → 我的專案顯示；檢查使用者 A 不能讀取使用者 B 的專案。
@@ -42,3 +42,15 @@ if (typeof action === 'string' && action.indexOf('db.') === 0) {
 ## 目前狀態
 
 此分支只含原始碼，**未寫入現有 GAS、未改現有登入系統、未部署 Render、未實測 GAS**。沒有取得目前已部署的 GAS 專案原始碼，因此尚不能保證直接貼入既有 `doPost` 不衝突。請先完成原始碼比對與測試部署。
+
+## 2026-10-24 已取得 V14 診斷候選程式
+
+上傳的 V14 程式（非已確認正式版本）中，`doPost(e)` 在檢查 `GEN3_API_KEY` 後呼叫 `execute(action,data.payload||{})`，並以 `respond({ok:true,result})` 回傳。最小相容修改是在該呼叫處替換為：
+
+```javascript
+const result = action.indexOf('db.') === 0
+  ? ikeyDbDispatch_(action, data.payload || {})
+  : execute(action, data.payload || {});
+```
+
+既有 `execute()`、`TABS`、`HEADERS`、登入流程及 V14 診斷程式完全保留。原程式 Script Property `GEN3_SPREADSHEET_ID` 可直接沿用；新增 `IKEY_DB_ALLOWED_TABLES=Projects`（可選，預設 Projects）。注意：V14 標示需與實際 V13 編輯器程式比對後才可部署。這是原始碼相容性檢查，尚未測試正式 GAS。
