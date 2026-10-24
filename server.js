@@ -99,6 +99,7 @@ app.get('/api/auth/status', async (_req, res) => {
 app.use('/api/auth', createRouter(authStore));
 // Project operations are always scoped to the authenticated account on the server.
 const { hashToken, active } = require('./gen3-auth/core');
+const { randomUUID } = require('node:crypto');
 async function requireProjectUser(req,res,next){
   res.set('Cache-Control','no-store');
   if(!authStore)return res.status(503).json({success:false,message:'專案服務尚未就緒'});
@@ -115,7 +116,7 @@ function sameProjectOrigin(req){
  try{const u=new URL(origin);const proto=req.secure||req.get('x-forwarded-proto')==='https'?'https:':'http:';return u.protocol===proto&&u.host===req.get('host');}catch{return false;}
 }
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
- try{const result=await authStore.projectCall('projectListMine',{user_id:req.projectUser.user_id});return res.json({success:true,projects:Array.isArray(result)?result:(result?.projects||[])});}
+ try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
@@ -126,9 +127,11 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
  const schedule=req.body?.scheduled_authorization;
  if(!name||name.length>80||description.length>1000||!['application','self_registration'].includes(authorization)||typeof schedule!=='boolean')return res.status(400).json({success:false,message:'專案設定資料不正確'});
  try{
-  const result=await authStore.projectCall('projectCreate',{project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:schedule});
-  if(!result?.project_id)return res.status(503).json({success:false,message:'專案尚未成功儲存'});
-  return res.status(201).json({success:true,project:result});
+  const now=new Date().toISOString();
+  const project={project_id:randomUUID(),project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:String(schedule),status:'active',created_at:now,updated_at:now};
+  const result=await authStore.dbCall('db.insert',{table:'Projects',primary_key:'project_id',data:project});
+  if(result?.inserted!==true||result?.record?.project_id!==project.project_id)return res.status(503).json({success:false,message:'專案尚未成功儲存'});
+  return res.status(201).json({success:true,project});
  }catch(err){console.warn('Project creation unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒，未確認建立成功'});}
 });
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
