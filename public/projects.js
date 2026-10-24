@@ -36,7 +36,7 @@
    menuEmpty.textContent=loading?'專案載入中…':projects.length?'我的專案：'+projects.length+' 個':'目前沒有專案';
    if(!loading){
     for(const p of projects){
-     const entry=document.createElement('div');entry.className='project-menu-entry';
+     const entry=document.createElement('a');entry.className='project-menu-entry';entry.href='/project.html?id='+encodeURIComponent(p.project_id);
      entry.textContent=p.project_name||'未命名專案';entry.title=p.project_name||'未命名專案';
      sidebarList.append(entry);
     }
@@ -53,7 +53,7 @@
    const title=document.createElement('strong');title.textContent=p.project_name||'未命名專案';
    const meta=document.createElement('small');meta.textContent=p.status==='active'?'啟用中':'已停用';
    const secondary=document.createElement('small');secondary.textContent=(p.authorization_method==='application'?'申請授權':'自行登記')+' · '+(asBool(p.scheduled_authorization)?'有排程':'無排程');
-   info.append(title,meta,secondary);item.append(icon,info);container.append(item);
+   const enter=document.createElement('a');enter.className='projects-enter';enter.href='/project.html?id='+encodeURIComponent(p.project_id);enter.textContent='進入專案 →';enter.setAttribute('aria-label','進入專案：'+(p.project_name||'未命名專案'));info.append(title,meta,secondary);item.append(icon,info,enter);item.addEventListener('click',event=>{if(event.target.closest('a,button'))return;location.assign(enter.href);});item.tabIndex=0;item.setAttribute('role','link');item.setAttribute('aria-label','進入專案：'+(p.project_name||'未命名專案'));item.addEventListener('keydown',event=>{if(event.target!==item)return;if(event.key==='Enter'||event.key===' '){event.preventDefault();location.assign(enter.href);}});container.append(item);
   }list.append(container);
  }
  function setView(next){view=next;for(const type of ['list','grid']){const button=get('projects-view-'+type);button.classList.toggle('selected',type===next);button.setAttribute('aria-pressed',String(type===next));}render();}
