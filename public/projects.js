@@ -30,7 +30,18 @@
   list.replaceChildren();
   const rows=filtered();count.textContent=loading?'(載入中…)':'('+rows.length+')';
   const menuEmpty=document.querySelector('.project-menu-empty');
-  if(menuEmpty)menuEmpty.textContent=loading?'專案載入中…':projects.length?'我的專案：'+projects.length+' 個':'目前沒有專案';
+  if(menuEmpty){
+   const sidebarList=menuEmpty.parentElement;
+   sidebarList.querySelectorAll('.project-menu-entry').forEach(node=>node.remove());
+   menuEmpty.textContent=loading?'專案載入中…':projects.length?'我的專案：'+projects.length+' 個':'目前沒有專案';
+   if(!loading){
+    for(const p of projects){
+     const entry=document.createElement('div');entry.className='project-menu-entry';
+     entry.textContent=p.project_name||'未命名專案';entry.title=p.project_name||'未命名專案';
+     sidebarList.append(entry);
+    }
+   }
+  }
   if(loading){const p=document.createElement('p');p.className='projects-empty projects-loading';p.setAttribute('role','status');p.innerHTML='<span class="projects-loading-spinner" aria-hidden="true"></span>專案載入中，請稍後…';list.append(p);return;}
   if(error){const p=document.createElement('p');p.className='projects-empty';p.setAttribute('role','alert');p.textContent=error;list.append(p);return;}
   if(!rows.length){const p=document.createElement('p');p.className='projects-empty';p.textContent=projects.length?'沒有符合條件的專案':'目前沒有專案';list.append(p);return;}
