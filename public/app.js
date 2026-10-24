@@ -41,17 +41,29 @@ async function prepareWelcomeAudio(){
 }
 async function verifyWelcomeReadiness(){
   try{
-    const urls=['/api/auth/me','/home.html','/home.css','/home.js','/projects.html','/projects.js','/account.html','/account-edit.html','/project-create.html','/project-create.css','/project-create.js'];
-    const responses=await Promise.all(urls.map(url=>fetch(url,{credentials:'same-origin',cache:'no-store'})));
-    if(responses.some(response=>!response.ok))throw Error('PAGE_LOAD_FAILED');
-    const auth=await responses[0].json();
-    if(!auth.authenticated)throw Error('SESSION_INVALID');
+    // A successful HTTP response alone does not establish backend readiness.
+    const [sessionResponse,healthResponse,authStatusResponse]=await Promise.all([
+      fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'}),
+      fetch('/api/health',{credentials:'same-origin',cache:'no-store'}),
+      fetch('/api/auth/status',{credentials:'same-origin',cache:'no-store'})
+    ]);
+    if(!sessionResponse.ok||!healthResponse.ok||!authStatusResponse.ok)throw Error('API_UNAVAILABLE');
+    const [session,health,status]=await Promise.all([sessionResponse.json(),healthResponse.json(),authStatusResponse.json()]);
+    if(session.authenticated!==true||!session.user)throw Error('SESSION_INVALID');
+    if(health.ok!==true||status.ready!==true||status.enabled!==true)throw Error('BACKEND_NOT_READY');
+    // Confirm all currently implemented page entrypoints and their scripts/styles exist.
+    const assets=['/home.html','/home.css','/home.js','/projects.html','/projects.js','/account.html','/account-edit.html','/project-create.html','/project-create.css','/project-create.js'];
+    const responses=await Promise.all(assets.map(url=>fetch(url,{credentials:'same-origin',cache:'no-store'})));
+    if(responses.some(response=>!response.ok))throw Error('PAGE_ASSET_UNAVAILABLE');
     welcomeAssetsReady=true;
     welcomeFrame?.contentWindow?.postMessage({type:'ikey-pages-ready'},location.origin);
-  }catch{
+  }catch(error){
+    welcomeAssetsReady=false;
     welcomeFrame?.contentWindow?.postMessage({type:'ikey-pages-error'},location.origin);
+    console.warn('Welcome readiness check failed:',error.message);
   }
 }
+
 function beginWelcome(){
   document.body.style.overflow='hidden';
   const overlay=document.createElement('div');
@@ -66,8 +78,8 @@ function beginWelcome(){
   document.body.appendChild(overlay);
   // The iframe's real animation completion, not a guessed 9.8s timer,
   // is the only successful route to the home page.
-  welcomeFrame.addEventListener('load',()=>{if(welcomeAssetsReady)welcomeFrame.contentWindow?.postMessage({type:'ikey-pages-ready'},location.origin);});
-  welcomeFrame.src='/welcome-3-0-production.html?v=20261023-readiness';
+  welcomeFrame.addEventListener('load',()=>{welcomeFrame.contentWindow?.postMessage({type:welcomeAssetsReady?'ikey-pages-ready':'ikey-pages-pending'},location.origin);});
+  welcomeFrame.src='/welcome-3-0-production.html?v=20261024-readiness2';
   verifyWelcomeReadiness();
 }
 window.addEventListener('message',event=>{
@@ -87,7 +99,7 @@ window.addEventListener('message',event=>{
       }catch{/* Keep the animation running if playback is blocked. */}
     }
   }
-  if(event.data?.type==='ikey-welcome-complete'&&welcomeStarted&&!welcomeCompleted){
+  if(event.data?.type==='ikey-welcome-complete'&&welcomeStarted&&welcomeAssetsReady&&!welcomeCompleted){
     welcomeCompleted=true;
     window.location.replace('/home.html');
   }
