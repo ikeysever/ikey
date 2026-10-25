@@ -139,7 +139,7 @@ app.patch('/api/projects/:id',requireProjectUser,async(req,res)=>{
   if(!existing)return res.status(404).json({success:false,message:'找不到專案或無修改權限'});
   updates.updated_at=new Date().toISOString();
   const changed=await authStore.dbCall('db.update',{table:'Projects',where:{project_id:id,created_by_user_id:req.projectUser.user_id},data:updates});
-  if(!changed||changed.updated!==true)return res.status(503).json({success:false,message:'資料庫尚未確認儲存成功'});
+  if(!changed||(changed.updated!==true&&changed.updated!==1&&changed.updated_count!==1&&changed.affected_rows!==1))return res.status(503).json({success:false,message:'資料庫尚未確認儲存成功'});
   return res.json({success:true,project_id:id});
  }catch(err){console.warn('Project settings unavailable',err.message);return res.status(503).json({success:false,message:'設定儲存服務暫時無法使用'});}
 });
