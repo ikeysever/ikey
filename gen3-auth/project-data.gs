@@ -52,7 +52,7 @@ function executeProjectData(action,p){
    !["true","false"].includes(String(v.scheduled_authorization))||
    !["midnight","polar","emerald","copper","violet","graphite"].includes(v.notification_theme)||
    !["pulse","crystal","air","wood","future","click"].includes(v.notification_sound_pack)||
-   !/^(100|[1-9]?\\d)$/.test(String(v.notification_volume))||
+   !/^(100|[1-9]?[0-9])$/.test(String(v.notification_volume))||
    String(v.description||"").length>1000||
    !v.created_at||!v.updated_at||
    Object.keys(v).some(k=>!HEADERS.Projects.includes(k)))throw Error("INVALID_PROJECT");
@@ -70,7 +70,7 @@ function executeProjectData(action,p){
   if("description"in data&&String(data.description).length>1000)throw Error("INVALID_PROJECT_DESCRIPTION");
   if("notification_theme"in data&&!["midnight","polar","emerald","copper","violet","graphite"].includes(data.notification_theme))throw Error("INVALID_THEME");
   if("notification_sound_pack"in data&&!["pulse","crystal","air","wood","future","click"].includes(data.notification_sound_pack))throw Error("INVALID_SOUND_PACK");
-  if("notification_volume"in data&&!/^(100|[1-9]?\\d)$/.test(String(data.notification_volume)))throw Error("INVALID_VOLUME");
+  if("notification_volume"in data&&!/^(100|[1-9]?[0-9])$/.test(String(data.notification_volume)))throw Error("INVALID_VOLUME");
   const r=rows(name).find(r=>r.value.project_id===where.project_id&&r.value.created_by_user_id===where.created_by_user_id&&
    (!where.status||r.value.status===where.status)&&r.value.status!=="deleted");
   if(!r)return {updated:false,updated_count:0};
