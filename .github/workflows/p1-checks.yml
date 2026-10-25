@@ -1,0 +1,36 @@
+name: iKey P1 checks
+on:
+  push:
+    branches:
+      - feature/project-visual-design-sync-new11
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install package dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check JavaScript syntax
+        run: |
+          node --check server.js
+          node --check public/project.js
+          node --check public/projects.js
+          node --check public/project-access.js
+          node --check public/project-join.js
+          node --check gen3-auth/sheets-store.js
+      - name: Run unit tests
+        run: npm test
