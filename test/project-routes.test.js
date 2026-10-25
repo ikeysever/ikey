@@ -43,7 +43,7 @@ test('authenticated project APIs validate roles, origins and invite-code secrecy
  const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
  t.after(()=>new Promise(resolve=>server.close(resolve)));
  const base='http://127.0.0.1:'+server.address().port;
- const fetchApi=(url,options={})=>fetch(base+url,{headers:{Cookie:'ikey_gen3_session=demo',Origin:base,'Content-Type':'application/json',...options.headers},...options});
+ const fetchApi=(url,options={})=>fetch(base+url,{...options,headers:{Cookie:'ikey_gen3_session=demo',Origin:base,'Content-Type':'application/json',...options.headers}});
  await t.test('not logged in is unauthorized',async()=>{
   const r=await fetchApi('/api/projects',{headers:{Cookie:''}});
   assert.equal(r.status,401);
