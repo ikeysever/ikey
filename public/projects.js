@@ -60,6 +60,7 @@
  get('projects-view-list').addEventListener('click',()=>setView('list'));
  get('projects-view-grid').addEventListener('click',()=>setView('grid'));
  get('projects-create').addEventListener('click',()=>location.assign('/project-create.html'));
+ get('projects-join')?.addEventListener('click',()=>location.assign('/project-join.html'));
  get('projects-advanced-toggle').addEventListener('click',()=>{const pane=get('projects-advanced');pane.hidden=!pane.hidden;get('projects-advanced-toggle').setAttribute('aria-expanded',String(!pane.hidden));});
  get('projects-clear').addEventListener('click',()=>{search.value='';for(const id of controls){const el=get(id);if(el)el.value=el.type==='date'||id==='projects-creator-name'?'':el.querySelector('option')?.value||'';}render();});
  search.addEventListener('input',render);
