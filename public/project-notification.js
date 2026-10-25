@@ -10,6 +10,15 @@ get('notify-test').addEventListener('click',showEvent);select.addEventListener('
 const wavNames={uploading:'上傳中',success:'上傳成功',error:'上傳失敗',warning:'連線異常',binding:'綁定中',binding_success:'綁定成功',binding_error:'綁定失敗',extension_warning:'擴充功能警示',environment_warning:'櫃內溫度濕度異常',door_open:'櫃門開啟',door_closed:'櫃門關閉',door_abnormal:'櫃門異常開啟',authorization_success:'授權成功',authorization_error:'授權失敗',low_battery_warning:'低電量警示'};
 const wavFiles=new Map();let currentAudio=null,sequence=0;const status=get('notify-audio-status'),volume=get('notify-volume');
 get('notify-wav-files').addEventListener('change',e=>{wavFiles.clear();for(const file of e.target.files){if(file.name.toLowerCase().endsWith('.wav'))wavFiles.set(file.name,file);}status.textContent='已載入 '+wavFiles.size+' 個 WAV（僅本機試聽，未上傳）。';});
+get('notify-wav-zip').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;const zipStatus=get('notify-zip-status');zipStatus.textContent='正在讀取原始 WAV ZIP…';
+ try{const decoded=await window.iKeyReadWavZip(file);if(decoded.size!==90){zipStatus.textContent='ZIP 包含 '+decoded.size+' 個 WAV（預期 90 個），請檢查是否為完整原始包。';return;}
+ const expected=new Set();for(const [,packName] of packs)for(const event of Object.values(wavNames))expected.add(packName+'_'+event+'.wav');
+ const missing=[...expected].filter(name=>!decoded.has(name));if(missing.length){zipStatus.textContent='ZIP 缺少 '+missing.length+' 個音效：'+missing.slice(0,2).join('、');return;}
+ stopAudio();wavFiles.clear();for(const [name,blob] of decoded)wavFiles.set(name,blob);
+ zipStatus.textContent='已載入並驗證 90 個原始 WAV，可以直接試聽。';status.textContent='已從 ZIP 載入 6 套音色 × 15 個事件。';
+ }catch(err){zipStatus.textContent='ZIP 讀取失敗：'+(err.message||'未知錯誤');}
+});
 volume.addEventListener('input',()=>{get('notify-volume-value').textContent=volume.value+'%';if(currentAudio)currentAudio.volume=Number(volume.value)/100;});
 function stopAudio(){sequence++;if(currentAudio){currentAudio.pause();currentAudio.src='';currentAudio=null;}}
 async function playOne(pack,event){const packName=packs.find(p=>p[0]===pack)?.[1],name=packName+'_'+wavNames[event]+'.wav',file=wavFiles.get(name);if(!file){status.textContent='找不到 '+name+'，請先選取對應的原始 WAV。';return false;}if(currentAudio){currentAudio.pause();currentAudio.src='';}const url=URL.createObjectURL(file),audio=new Audio(url);currentAudio=audio;audio.volume=Number(volume.value)/100;status.textContent='正在播放：'+name;try{await audio.play();await new Promise(resolve=>{audio.onended=resolve;audio.onerror=resolve;audio.onpause=resolve;});return true;}catch(e){status.textContent='無法播放 '+name+'：'+(e.message||'請確認瀏覽器音訊權限');return false;}finally{URL.revokeObjectURL(url);if(currentAudio===audio){audio.pause();currentAudio=null;}}}
