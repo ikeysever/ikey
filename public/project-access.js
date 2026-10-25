@@ -21,13 +21,13 @@
     if(data.join_policy)policy.value=data.join_policy;
     if(!data.members.length){status.textContent='目前尚無其他成員或待審核申請。';return;}
     const pending=data.members.filter(m=>m.status==='pending').length;
-    status.textContent='共 '+data.members.length+' 位申請者／成員，其中 '+pending+' 筆等待審核。';
+    status.textContent='共 '+data.members.length+' 位使用者（含管理員），其中 '+pending+' 筆等待審核。';
     for(const member of data.members){
      const item=document.createElement('li');item.style.cssText='padding:12px;border:1px solid var(--project-border);border-radius:10px';
      const title=document.createElement('strong');title.textContent=member.display_name||'未命名使用者';
      const detail=document.createElement('p');detail.style.margin='6px 0';
      const labels={pending:'等待審核',active:'已加入',rejected:'已拒絕'};
-     detail.textContent='使用者 · '+(labels[member.status]||'未知狀態');
+     detail.textContent=(member.role==='admin'?'管理員':'使用者')+' · '+(labels[member.status]||'未知狀態');
      item.append(title,detail);
      if(member.status==='pending'){
       const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='8px';
