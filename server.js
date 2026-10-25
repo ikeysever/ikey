@@ -143,8 +143,21 @@ app.patch('/api/projects/:id',requireProjectUser,async(req,res)=>{
   return res.json({success:true,project_id:id});
  }catch(err){console.warn('Project settings unavailable',err.message);return res.status(503).json({success:false,message:'設定儲存服務暫時無法使用'});}
 });
+// Destructive actions use a dedicated per-account limiter in addition to origin checks.
+const projectDeleteAttempts=new Map();
+function limitProjectDelete(req,res,next){
+ const key=req.projectUser.user_id;
+ const now=Date.now();
+ const previous=projectDeleteAttempts.get(key);
+ const state=!previous||now>=previous.until?{count:0,until:now+60000}:previous;
+ if(state.count>=5){res.set('Retry-After',String(Math.ceil((state.until-now)/1000)));return res.status(429).json({success:false,message:'刪除確認嘗試過於頻繁，請稍後再試'});}
+ state.count++;
+ projectDeleteAttempts.set(key,state);
+ if(projectDeleteAttempts.size>1000)for(const [id,b] of projectDeleteAttempts)if(b.until<=now)projectDeleteAttempts.delete(id);
+ next();
+}
 // Soft-delete only: ownership, same-origin, exact name and an explicit second confirmation are required.
-app.post('/api/projects/:id/delete',requireProjectUser,async(req,res)=>{
+app.post('/api/projects/:id/delete',requireProjectUser,limitProjectDelete,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
  const id=String(req.params.id||'');
  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
