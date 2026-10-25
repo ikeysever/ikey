@@ -41,7 +41,7 @@
  get('create-save').addEventListener('click',async()=>{
   const button=get('create-save');if(button.disabled)return;
   const form=new FormData(get('create-settings-form'));
-  const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes'};
+  const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes',notification_theme:get('notify-theme-id').value,notification_sound_pack:get('notify-sound-pack').value,notification_volume:Number(get('notify-volume').value)};
   button.disabled=true;get('create-save-error').textContent='';button.textContent='正在儲存…';
   try{
    const response=await fetch('/api/projects',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
