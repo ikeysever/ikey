@@ -125,9 +125,9 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
  const description=typeof req.body?.description==='string'?req.body.description.trim():'';
  const authorization=req.body?.authorization_method;
  const schedule=req.body?.scheduled_authorization;
- const theme=req.body?.notification_theme;
- const soundPack=req.body?.notification_sound_pack;
- const volume=req.body?.notification_volume;
+ const theme=req.body?.notification_theme??'midnight';
+ const soundPack=req.body?.notification_sound_pack??'pulse';
+ const volume=req.body?.notification_volume??50;
  const allowedThemes=['midnight','polar','emerald','copper','violet','graphite'];
  const allowedSoundPacks=['pulse','crystal','air','wood','future','click'];
  if(!name||name.length>80||description.length>1000||!['application','self_registration'].includes(authorization)||typeof schedule!=='boolean'||!allowedThemes.includes(theme)||!allowedSoundPacks.includes(soundPack)||!Number.isInteger(volume)||volume<0||volume>100)return res.status(400).json({success:false,message:'專案設定資料不正確'});
