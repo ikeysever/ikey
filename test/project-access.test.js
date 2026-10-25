@@ -49,7 +49,9 @@ test('project access: approval, review, rotation and soft delete',()=>{
  assert.throws(()=>call('projectAccessConfigure',{actor_user_id:UUIDS.alice,project_id:UUIDS.project,join_policy:'direct',invite_hash:'b'.repeat(64)}),/PROJECT_FORBIDDEN/);
  assert.equal(call('projectAccessJoin',{actor_user_id:UUIDS.alice,invite_hash:'a'.repeat(64)}).status,'pending');
  assert.equal(call('projectAccessGet',{actor_user_id:UUIDS.alice,project_id:UUIDS.project}),null);
- assert.equal(call('projectAccessList',{actor_user_id:UUIDS.owner,project_id:UUIDS.project}).members[0].display_name,'alice');
+ const members=call('projectAccessList',{actor_user_id:UUIDS.owner,project_id:UUIDS.project}).members;
+ assert.equal(members[0].role,'admin');
+ assert.equal(members[1].display_name,'alice');
  const entry=data.Project_Access.find(r=>r.entry_type==='member').entry_id;
  assert.throws(()=>call('projectAccessReview',{actor_user_id:UUIDS.bob,project_id:UUIDS.project,entry_id:entry,decision:'approve'}),/PROJECT_FORBIDDEN/);
  assert.equal(call('projectAccessReview',{actor_user_id:UUIDS.owner,project_id:UUIDS.project,entry_id:entry,decision:'approve'}).status,'active');
