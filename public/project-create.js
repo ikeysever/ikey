@@ -3,7 +3,7 @@
  const get=id=>document.getElementById(id);
  const stepLabel=get('create-step-label');
  const basic=get('create-project-form'),settings=get('create-step2'),confirm=get('create-confirm');
- function show(step){basic.hidden=step!==1;settings.hidden=step!==2;confirm.hidden=step!==3;stepLabel.textContent=step===1?'步驟 1 · 專案基本資料':step===2?'步驟 2 · 借還模式設定':'步驟 3 · 確認設定';}
+ function show(step){basic.hidden=step!==1;settings.hidden=step!==2;confirm.hidden=step!==3;stepLabel.textContent=step===1?'步驟 1 · 專案基本資料':step===2?'步驟 2 · 通知與借還模式設定':'步驟 3 · 確認設定';}
  // No sensitive project data is exposed; the server session is checked in parallel.
  get('create-loading').hidden=true;get('create-content').hidden=false;show(1);
  basic.addEventListener('submit',event=>{
