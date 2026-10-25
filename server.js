@@ -144,7 +144,7 @@ app.patch('/api/projects/:id',requireProjectUser,async(req,res)=>{
   if(!changed)return res.status(503).json({success:false,message:'資料庫未確認更新請求'});
   const check=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:id,created_by_user_id:req.projectUser.user_id},limit:1});
   const persisted=(check?.rows||[]).find(p=>p.project_id===id&&p.created_by_user_id===req.projectUser.user_id&&p.status!=='deleted');
-  if(!persisted||Object.entries(updates).some(([key,value])=>String(persisted[key]??'')!==String(value)))return res.status(503).json({success:false,message:'設定未通過資料庫寫入覆核，請重新整理確認'});
+  if(!persisted||Object.entries(updates).filter(([key])=>key!=='updated_at').some(([key,value])=>String(persisted[key]??'')!==String(value)))return res.status(503).json({success:false,message:'設定未通過資料庫寫入覆核，請重新整理確認'});
   return res.json({success:true,project_id:id,project:persisted});
  }catch(err){console.warn('Project settings unavailable',err.message);return res.status(503).json({success:false,message:'設定儲存服務暫時無法使用'});}
 });
