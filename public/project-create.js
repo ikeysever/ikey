@@ -23,6 +23,9 @@
   get('create-confirm-description').textContent=get('create-project-description').value.trim()||'未填寫';
   get('create-confirm-authorization').textContent=auth==='application'?'申請授權':'使用者自行登記';
   get('create-confirm-schedule').textContent=schedule==='yes'?'是':'否';
+  get('create-confirm-theme').textContent=document.querySelector('#notify-themes button[aria-pressed="true"] span:last-child')?.textContent||'午夜科技';
+  get('create-confirm-sound').textContent=get('notify-sound-pack')?.selectedOptions[0]?.textContent||'鋼片琴';
+  get('create-confirm-volume').textContent=(get('notify-volume')?.value||'50')+'%';
   show(3);
  });
  get('create-back').addEventListener('click',()=>show(2));
