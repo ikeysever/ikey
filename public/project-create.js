@@ -2,8 +2,8 @@
 (()=>{
  const get=id=>document.getElementById(id);
  const stepLabel=get('create-step-label');
- const basic=get('create-project-form'),settings=get('create-step2'),confirm=get('create-confirm');
- function show(step){basic.hidden=step!==1;settings.hidden=step!==2;confirm.hidden=step!==3;stepLabel.textContent=step===1?'步驟 1 · 專案基本資料':step===2?'步驟 2 · 通知與借還模式設定':'步驟 3 · 確認設定';}
+ const basic=get('create-project-form'),settings=get('create-step2'),visual=get('create-step3'),audio=get('create-step4'),confirm=get('create-confirm');
+ function show(step){basic.hidden=step!==1;settings.hidden=step!==2;visual.hidden=step!==3;audio.hidden=step!==4;confirm.hidden=step!==5;stepLabel.textContent=({1:'步驟 1 · 專案基本資料',2:'步驟 2 · 借還模式設定',3:'步驟 3 · 視覺設定',4:'步驟 4 · 音效設定',5:'步驟 5 · 確認設定'})[step];window.scrollTo({top:0,behavior:'instant'});}
  // No sensitive project data is exposed; the server session is checked in parallel.
  get('create-loading').hidden=true;get('create-content').hidden=false;show(1);
  basic.addEventListener('submit',event=>{
@@ -19,6 +19,15 @@
    get('create-settings-error').textContent='請完成 Q1 與 Q2。';return;
   }
   get('create-settings-error').textContent='';
+  show(3);
+ });
+ get('create-step3-back').addEventListener('click',()=>show(2));
+ get('create-step3-next').addEventListener('click',()=>show(4));
+ get('create-step4-back').addEventListener('click',()=>show(3));
+ get('create-step4-next').addEventListener('click',()=>{
+  const form=new FormData(get('create-settings-form'));
+  const auth=form.get('authorization_method'),schedule=form.get('scheduled_authorization');
+  if(!['application','self_registration'].includes(auth)||!['yes','no'].includes(schedule)){show(2);get('create-settings-error').textContent='請完成 Q1 與 Q2。';return;}
   get('create-confirm-name').textContent=get('create-project-name').value.trim();
   get('create-confirm-description').textContent=get('create-project-description').value.trim()||'未填寫';
   get('create-confirm-authorization').textContent=auth==='application'?'申請授權':'使用者自行登記';
@@ -26,9 +35,9 @@
   get('create-confirm-theme').textContent=document.querySelector('#notify-themes button[aria-pressed="true"] span:last-child')?.textContent||'午夜科技';
   get('create-confirm-sound').textContent=get('notify-sound-pack')?.selectedOptions[0]?.textContent||'鋼片琴';
   get('create-confirm-volume').textContent=(get('notify-volume')?.value||'50')+'%';
-  show(3);
+  show(5);
  });
- get('create-back').addEventListener('click',()=>show(2));
+ get('create-back').addEventListener('click',()=>show(4));
  get('create-save').addEventListener('click',async()=>{
   const button=get('create-save');if(button.disabled)return;
   const form=new FormData(get('create-settings-form'));
