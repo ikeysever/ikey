@@ -136,7 +136,8 @@ function executeProjectAccess(action,p){
    entry_id:r.value.entry_id,user_id:r.value.user_id,display_name:users.get(r.value.user_id)||"已停用的帳號",
    role:r.value.role,status:r.value.status,created_at:r.value.created_at,updated_at:r.value.updated_at
   }));
-  return {join_policy:accessProjectConfig(id)?.value.join_policy||"",members};
+  const owner={entry_id:"",user_id:actor,display_name:users.get(actor)||"專案建立者",role:"admin",status:"active",created_at:"",updated_at:""};
+  return {join_policy:accessProjectConfig(id)?.value.join_policy||"",members:[owner,...members]};
  })();
  if(action==="projectAccessReview")return locked(()=>{
   const id=String(p.project_id||""),entryId=String(p.entry_id||""),decision=String(p.decision||"");
