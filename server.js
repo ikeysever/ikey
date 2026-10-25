@@ -125,10 +125,15 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
  const description=typeof req.body?.description==='string'?req.body.description.trim():'';
  const authorization=req.body?.authorization_method;
  const schedule=req.body?.scheduled_authorization;
- if(!name||name.length>80||description.length>1000||!['application','self_registration'].includes(authorization)||typeof schedule!=='boolean')return res.status(400).json({success:false,message:'專案設定資料不正確'});
+ const theme=req.body?.notification_theme??'midnight';
+ const soundPack=req.body?.notification_sound_pack??'pulse';
+ const volume=req.body?.notification_volume??50;
+ const allowedThemes=['midnight','polar','emerald','copper','violet','graphite'];
+ const allowedSoundPacks=['pulse','crystal','air','wood','future','click'];
+ if(!name||name.length>80||description.length>1000||!['application','self_registration'].includes(authorization)||typeof schedule!=='boolean'||!allowedThemes.includes(theme)||!allowedSoundPacks.includes(soundPack)||!Number.isInteger(volume)||volume<0||volume>100)return res.status(400).json({success:false,message:'專案設定資料不正確'});
  try{
   const now=new Date().toISOString();
-  const project={project_id:randomUUID(),project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:String(schedule),status:'active',created_at:now,updated_at:now};
+  const project={project_id:randomUUID(),project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:String(schedule),notification_theme:theme,notification_sound_pack:soundPack,notification_volume:String(volume),status:'active',created_at:now,updated_at:now};
   const result=await authStore.dbCall('db.insert',{table:'Projects',primary_key:'project_id',data:project});
   if(result?.inserted!==true||result?.record?.project_id!==project.project_id)return res.status(503).json({success:false,message:'專案尚未成功儲存'});
   return res.status(201).json({success:true,project});
