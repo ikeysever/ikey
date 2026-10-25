@@ -119,6 +119,30 @@ app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
+// P1: update only existing project settings; ownership is verified server-side.
+app.patch('/api/projects/:id',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const id=String(req.params.id||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
+ const allowed=['project_name','description','notification_theme','notification_sound_pack','notification_volume'];
+ const body=req.body;
+ if(!body||typeof body!=='object'||Array.isArray(body)||!Object.keys(body).length||Object.keys(body).some(k=>!allowed.includes(k)))return res.status(400).json({success:false,message:'不支援的設定欄位'});
+ const updates={};
+ if('project_name'in body){if(typeof body.project_name!=='string'||!body.project_name.trim()||body.project_name.trim().length>80)return res.status(400).json({success:false,message:'專案名稱不正確'});updates.project_name=body.project_name.trim();}
+ if('description'in body){if(typeof body.description!=='string'||body.description.length>1000)return res.status(400).json({success:false,message:'專案說明過長'});updates.description=body.description.trim();}
+ if('notification_theme'in body){if(!['midnight','polar','emerald','copper','violet','graphite'].includes(body.notification_theme))return res.status(400).json({success:false,message:'視覺風格不正確'});updates.notification_theme=body.notification_theme;}
+ if('notification_sound_pack'in body){if(!['pulse','crystal','air','wood','future','click'].includes(body.notification_sound_pack))return res.status(400).json({success:false,message:'音效風格不正確'});updates.notification_sound_pack=body.notification_sound_pack;}
+ if('notification_volume'in body){if(!Number.isInteger(body.notification_volume)||body.notification_volume<0||body.notification_volume>100)return res.status(400).json({success:false,message:'音量不正確'});updates.notification_volume=String(body.notification_volume);}
+ try{
+  const found=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:id,created_by_user_id:req.projectUser.user_id},limit:1});
+  const existing=(found?.rows||[]).find(p=>p.project_id===id&&p.created_by_user_id===req.projectUser.user_id&&p.status!=='deleted');
+  if(!existing)return res.status(404).json({success:false,message:'找不到專案或無修改權限'});
+  updates.updated_at=new Date().toISOString();
+  const changed=await authStore.dbCall('db.update',{table:'Projects',where:{project_id:id,created_by_user_id:req.projectUser.user_id},data:updates});
+  if(!changed||changed.updated!==true)return res.status(503).json({success:false,message:'資料庫尚未確認儲存成功'});
+  return res.json({success:true,project_id:id});
+ }catch(err){console.warn('Project settings unavailable',err.message);return res.status(503).json({success:false,message:'設定儲存服務暫時無法使用'});}
+});
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
