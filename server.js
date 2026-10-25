@@ -143,6 +143,27 @@ app.patch('/api/projects/:id',requireProjectUser,async(req,res)=>{
   return res.json({success:true,project_id:id});
  }catch(err){console.warn('Project settings unavailable',err.message);return res.status(503).json({success:false,message:'設定儲存服務暫時無法使用'});}
 });
+// Soft-delete only: ownership, same-origin, exact name and an explicit second confirmation are required.
+app.post('/api/projects/:id/delete',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const id=String(req.params.id||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
+ const body=req.body;
+ if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).sort().join(',')!=='confirmation,project_name'||body.confirmation!=='DELETE_PROJECT'||typeof body.project_name!=='string')return res.status(400).json({success:false,message:'必須完成兩次刪除確認'});
+ try{
+  const where={project_id:id,created_by_user_id:req.projectUser.user_id};
+  const found=await authStore.dbCall('db.select',{table:'Projects',where,limit:1});
+  const project=(found?.rows||[]).find(p=>p.project_id===id&&p.created_by_user_id===req.projectUser.user_id&&p.status==='active');
+  if(!project)return res.status(404).json({success:false,message:'找不到可刪除的專案或權限不足'});
+  if(body.project_name!==project.project_name)return res.status(409).json({success:false,message:'專案名稱不符，請重新確認'});
+  const updated=await authStore.dbCall('db.update',{table:'Projects',where:{...where,status:'active'},data:{status:'deleted',updated_at:new Date().toISOString()}});
+  if(!updated)return res.status(503).json({success:false,message:'資料庫未確認刪除狀態'});
+  const verified=await authStore.dbCall('db.select',{table:'Projects',where,limit:1});
+  const record=(verified?.rows||[]).find(p=>p.project_id===id&&p.created_by_user_id===req.projectUser.user_id);
+  if(!record||record.status!=='deleted')return res.status(503).json({success:false,message:'刪除狀態未通過資料庫覆核'});
+  return res.json({success:true,project_id:id,deleted:true,mode:'soft_delete'});
+ }catch(err){console.warn('Project soft deletion unavailable',err.message);return res.status(503).json({success:false,message:'刪除服務暫時無法使用'});}
+});
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
