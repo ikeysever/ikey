@@ -119,6 +119,17 @@ app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
+// Fetch one project with server-side ownership checks; never expose other users' projects.
+app.get('/api/projects/:id',requireProjectUser,async(req,res)=>{
+ const id=String(req.params.id||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
+ try{
+  const found=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:id,created_by_user_id:req.projectUser.user_id},limit:1});
+  const project=(found?.rows||[]).find(p=>p.project_id===id&&p.created_by_user_id===req.projectUser.user_id&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,message:'找不到專案或無存取權限'});
+  return res.json({success:true,project});
+ }catch(err){console.warn('Project details unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務暫時無法使用'});}
+});
 // P1: update only existing project settings; ownership is verified server-side.
 app.patch('/api/projects/:id',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
