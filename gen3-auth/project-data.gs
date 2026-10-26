@@ -87,6 +87,22 @@ function executeProjectAccess(action,p){
  const actor=String(p.actor_user_id||"");
  if(!PROJECT_UUID.test(actor))throw Error("ACTOR_INVALID");
  accessActiveUser(actor);
+ if(action==="projectSettingsUpdate")return locked(()=>{
+  const id=String(p.project_id||""),changes=p.changes||{};
+  if(!PROJECT_UUID.test(id)||!changes||typeof changes!=="object"||Array.isArray(changes))throw Error("INVALID_SETTINGS");
+  const keys=Object.keys(changes);
+  if(!keys.length||keys.some(k=>!["status","authorization_method","scheduled_authorization"].includes(k)))throw Error("SETTINGS_FIELDS_FORBIDDEN");
+  if("status"in changes&&!["active","inactive"].includes(changes.status))throw Error("INVALID_PROJECT_STATUS");
+  if("authorization_method"in changes&&!["application","self_registration"].includes(changes.authorization_method))throw Error("INVALID_AUTHORIZATION_METHOD");
+  if("scheduled_authorization"in changes&&!["true","false"].includes(changes.scheduled_authorization))throw Error("INVALID_SCHEDULE");
+  const r=accessOwner(id,actor);
+  const next={...r.value,...changes,updated_at:new Date().toISOString()};
+  overwrite("Projects",r.index,next);
+  const confirmed=projectRecord(id)?.value;
+  if(!confirmed||keys.some(k=>confirmed[k]!==next[k]))throw Error("PROJECT_SETTINGS_READBACK_FAILED");
+  accessAudit(actor,"project_settings_updated",id);
+  return {updated:true,project:publicProject(confirmed,"admin")};
+ });
  if(action==="projectAccessConfigure")return locked(()=>{
   const id=String(p.project_id||""),policy=String(p.join_policy||""),hash=String(p.invite_hash||"");
   if(!PROJECT_UUID.test(id)||!["direct","approval"].includes(policy)||!/^[a-f0-9]{64}$/.test(hash))throw Error("INVITE_INVALID");
