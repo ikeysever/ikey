@@ -106,7 +106,6 @@
   get('device-registration-status').value='查詢中…';
   get('device-connection-status').value='連線中…';
   updateLiveStatus({connection_status:'connecting'});
-  get('device-unlock-status');
   get('unlock-test-status').textContent='尚未執行測試。';
   get('unlock-test').disabled=false;
   get('settings-dialog').showModal();
