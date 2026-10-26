@@ -13,11 +13,11 @@
 <a class="brand brand-home-link" href="/home.html" aria-label="iKey 首頁"><img src="/assets/brand/ikey-nextgen.svg" alt="" width="52" height="52"><div><strong>iKey</strong><small>智慧鑰匙管理系統</small></div></a>
 <nav aria-label="主要導覽"><a href="/home.html">首頁</a><div class="project-nav"><div class="project-nav-heading"><button id="project-menu-toggle" class="project-menu-toggle" type="button" aria-label="展開我的專案" aria-expanded="false" aria-controls="project-menu-content"><span class="project-menu-chevron" aria-hidden="true">▶</span></button><a class="project-nav-link" href="/projects.html">我的專案</a></div><div id="project-menu-content" hidden><p class="project-menu-empty">目前沒有專案</p></div></div><a class="active" href="/super-admin.html" aria-current="page">超級管理員</a></nav>
 <div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
-<main><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>超級管理員</h1><p>系統管理控制台</p></header>
+<main class="projects-page"><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>超級管理員</h1><p>系統管理控制台</p></header>
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
-<section id="account-empty-page" class="card admin-panel" hidden aria-label="超級管理員控制台">
+<section id="account-empty-page" class="admin-panel" hidden aria-label="超級管理員控制台">
 <style>
-.admin-panel{max-width:900px;padding:28px!important;background:linear-gradient(145deg,rgba(24,42,65,.9),rgba(10,19,34,.92))!important;border:1px solid rgba(126,185,218,.16)!important;border-radius:22px!important}
+.admin-panel{max-width:1100px;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important}
 .admin-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}
 .admin-head h2{margin:0 0 6px;font-size:1.35rem}.admin-muted{color:#9db1c7;font-size:.9rem;margin:0}
 .admin-pill{border:1px solid #426077;border-radius:100px;padding:7px 12px;color:#a9d8e5;font-size:.8rem}
@@ -33,7 +33,7 @@
 .admin-message{min-height:22px;color:#b9d9e8;font-size:.87rem;overflow-wrap:anywhere}
 @media(max-width:720px){.admin-grid{grid-template-columns:1fr}.admin-panel{padding:18px!important}}
 </style>
-<div class="admin-head"><div><h2>裝置管理</h2><p class="admin-muted">在同一個頁面完成登錄、查詢與測試準備。</p></div><span class="admin-pill">SUPER ADMIN · 3.1</span></div>
+<div class="projects-toolbar" style="margin-bottom:20px"><div class="projects-heading">裝置管理 <span style="font-weight:400;color:#9db1c7;font-size:.85rem">· 超級管理員</span></div><div class="projects-actions"><button class="projects-create" type="button" id="admin-new-device">＋ 新增裝置</button><button type="button" id="admin-focus-search">⌕ 查詢裝置</button></div></div><p class="admin-muted" style="margin:0 0 20px">管理裝置登錄與連線測試</p>
 <div class="admin-grid">
 <div class="admin-box"><h3>＋ 新增裝置</h3><p>建立 8 碼裝置 ID。裝置名稱在綁定專案時設定。</p>
 <form id="admin-register"><label for="admin-password">裝置密碼</label><input id="admin-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="至少 8 個字元" required>
@@ -50,6 +50,8 @@
 <script>
 (()=>{
 const create=document.getElementById('admin-create-status'),status=document.getElementById('admin-device-status');
+document.getElementById('admin-new-device').addEventListener('click',()=>document.getElementById('admin-password').focus());
+document.getElementById('admin-focus-search').addEventListener('click',()=>document.getElementById('admin-device-id').focus());
 document.getElementById('admin-register').addEventListener('submit',async e=>{
 e.preventDefault();const btn=document.getElementById('admin-create');btn.disabled=true;create.textContent='正在建立裝置…';
 try{const response=await fetch('/api/devices/pre-register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('admin-password').value})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'建立失敗');document.getElementById('admin-device-id').value=data.device_id;document.getElementById('admin-password').value='';create.textContent='建立成功！裝置 ID：'+data.device_id;}
