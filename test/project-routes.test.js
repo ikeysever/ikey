@@ -48,7 +48,7 @@ test('authenticated project APIs validate roles, origins and invite-code secrecy
  await t.test('project readiness fails closed on missing GAS capability',async()=>{
   const r=await fetchApi('/api/projects/readiness');
   assert.equal(r.status,503);
-  assert.deepEqual(await r.json(),{ready:false,component:'projects'});
+  assert.deepEqual(await r.json(),{ready:false,component:'projects',version:null});
  });
  await t.test('project readiness verifies expected schema version',async()=>{
   setProjectHealth({ready:true,version:'ikey-projects-v1',access_schema:'project-access-v1'});
