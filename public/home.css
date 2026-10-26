@@ -169,3 +169,12 @@ body.menu-open{overflow:hidden}
   .menu-toggle{top:112px;left:24px;width:44px;height:44px;}
   body.desktop-sidebar-collapsed .menu-toggle{top:18px;left:18px;}
 }
+
+/* Keep the desktop menu control in its own vertical row between brand and navigation.
+   Reserve its full height in the sidebar layout so it never covers 首頁 at any zoom. */
+@media (min-width:761px){
+  body:not(.desktop-sidebar-collapsed) .side .brand{margin-bottom:0;}
+  body:not(.desktop-sidebar-collapsed) .side nav{padding-top:78px;}
+  body:not(.desktop-sidebar-collapsed) .menu-toggle{top:100px;left:24px;width:44px;height:44px;}
+  body.desktop-sidebar-collapsed .menu-toggle{top:18px;left:18px;}
+}
