@@ -28,8 +28,11 @@ function publicProject(p,role){
 }
 function executeProjectData(action,p){
  // Generic Projects API is intentionally narrower than dbCall's action list.
- if(action==="db.health")return {ready:Boolean(sheet("Projects")),version:"ikey-projects-v1"};
- if(action==="db.schema")return {Projects:HEADERS.Projects};
+ if(action==="db.health"){
+  sheet("Projects");sheet(TABS.access);
+  return {ready:true,version:"ikey-projects-v1",access_schema:"project-access-v1"};
+ }
+ if(action==="db.schema")return {Projects:HEADERS.Projects,Project_Access:HEADERS.Project_Access};
  const name=String(p.table||"");
  if(name!=="Projects")throw Error("DB_TABLE_NOT_ALLOWED");
  sheet("Projects");
