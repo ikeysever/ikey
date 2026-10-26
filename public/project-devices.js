@@ -23,6 +23,38 @@
   el.textContent=text;
   return el;
  }
+ function normalizeDeviceStatus(device){
+  const connection=device.connection_status;
+  const connected=['connected','online','verified'].includes(String(connection||'').toLowerCase());
+  const connecting=['connecting','pending'].includes(String(connection||'').toLowerCase());
+  const lockOpen=device.lock_status==='unlocked'||device.feedback_open===true;
+  const doorClosed=device.door_status==='closed'||device.cabinet_door_closed===true;
+  return {
+   network:connecting?{text:'連線中',className:'status-connecting'}:
+    connected?{text:'連線中',className:'status-online'}:
+    {text:'未連線',className:'status-offline'},
+   lock:lockOpen?{text:'已解鎖',className:'status-unlocked'}:
+    {text:'尚未回報',className:'status-unknown'},
+   door:doorClosed?{text:'櫃門關閉',className:'status-closed'}:
+    {text:'尚未回報',className:'status-unknown'}
+  };
+ }
+ function updateLiveStatus(device){
+  const s=normalizeDeviceStatus(device);
+  for(const [id,value] of [['device-network-state',s.network],['device-lock-state',s.lock],['device-door-state',s.door]]){
+   const el=get(id);
+   if(!el)continue;
+   el.textContent=value.text;
+   el.className='status-pill '+value.className;
+  }
+  const note=get('device-live-status-note');
+  if(note){
+   const hasLive= ['connected','online','verified'].includes(String(device.connection_status||'').toLowerCase()) ||
+    device.feedback_open===true || typeof device.lock_status==='string' ||
+    typeof device.door_status==='string' || typeof device.cabinet_door_closed==='boolean';
+   note.textContent=hasLive?'狀態依 API 最新回報顯示。':'目前 API 尚未提供即時心跳、開鎖回授及櫃門感測資料，因此鎖具與櫃門狀態不會被猜測。';
+  }
+ }
  function renderDevices(devices){
   const grid=get('device-grid');
   grid.replaceChildren();
@@ -38,7 +70,12 @@
    card.dataset.deviceName=device.device_id;
    card.append(textElement('h2','device-card-title','裝置 '+device.device_id));
    card.append(textElement('p','device-meta','登錄狀態：'+(device.registration_status||'unknown')));
-   card.append(textElement('p','device-meta','實體連線：'+(device.connection_status==='verified'?'已驗證':'尚未驗證')));
+   const live=normalizeDeviceStatus(device);
+   const statusRow=textElement('div','device-status-row','');
+   for(const value of [live.network,live.lock,live.door]){
+    statusRow.append(textElement('span','status-pill '+value.className,value.text));
+   }
+   card.append(statusRow);
    const button=textElement('button','device-settings-button','裝置設定 →');
    button.type='button';
    button.addEventListener('click',()=>openSettings(device.device_id));
@@ -67,14 +104,17 @@
   selectedDeviceId=deviceId;
   get('device-id').value=deviceId;
   get('device-registration-status').value='查詢中…';
-  get('device-connection-status').value='尚未驗證';
+  get('device-connection-status').value='連線中…';
+  updateLiveStatus({connection_status:'connecting'});
+  get('device-unlock-status');
   get('unlock-test-status').textContent='尚未執行測試。';
   get('unlock-test').disabled=false;
   get('settings-dialog').showModal();
   try{
    const data=await api('/api/devices/'+encodeURIComponent(deviceId)+'/status');
    get('device-registration-status').value=data.registration_status||'unknown';
-   get('device-connection-status').value=data.connection_status==='verified'?'已驗證':'尚未驗證';
+   get('device-connection-status').value=['connected','online','verified'].includes(String(data.connection_status||'').toLowerCase())?'已連線':'未連線';
+   updateLiveStatus(data);
    get('unlock-test').disabled=false;
    if(!data.control_ready)get('unlock-test-status').textContent='目前只有裝置登錄資料，實體控制尚未啟用；可嘗試 staging 模擬測試。';
   }catch(e){
