@@ -10,7 +10,7 @@
    const response=await fetch('/api/projects/'+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store'});
    const data=await response.json();
    if(!response.ok||!data.success||!data.project)throw Error(data.message||'無法讀取專案');
-   if(data.project.project_role!=='admin')throw Error('只有專案管理員可以開啟裝置管理');
+   if(data.project.project_role&&data.project.project_role!=='admin')throw Error('只有專案管理員可以開啟裝置管理');
    get('project-label').textContent=data.project.project_name+' · 管理員';
    content.hidden=false;
    // Fail closed: no registered-device API exists yet. Never invent devices.
