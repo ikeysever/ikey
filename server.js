@@ -119,6 +119,31 @@ app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
+app.patch('/api/projects/:id/other-settings',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const id=String(req.params.id||''),body=req.body;
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
+ if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).length!==3||
+  Object.keys(body).some(k=>!['status','authorization_method','scheduled_authorization'].includes(k))||
+  !['active','inactive'].includes(body.status)||
+  !['application','self_registration'].includes(body.authorization_method)||
+  typeof body.scheduled_authorization!=='boolean')return res.status(400).json({success:false,message:'設定資料格式錯誤'});
+ try{
+  const result=await authStore.projectCall('projectSettingsUpdate',{
+   actor_user_id:req.projectUser.user_id,project_id:id,
+   changes:{status:body.status,authorization_method:body.authorization_method,scheduled_authorization:String(body.scheduled_authorization)}
+  });
+  const p=result?.project;
+  if(!result?.updated||!p||p.project_id!==id||p.status!==body.status||
+   p.authorization_method!==body.authorization_method||
+   String(p.scheduled_authorization)!==String(body.scheduled_authorization))
+   return res.status(503).json({success:false,message:'資料庫尚未確認儲存'});
+  return res.json({success:true,project:p});
+ }catch(err){
+  console.warn('Project settings update unavailable',err.message);
+  return res.status(503).json({success:false,message:'設定儲存服務尚未就緒，未修改設定'});
+ }
+});
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
