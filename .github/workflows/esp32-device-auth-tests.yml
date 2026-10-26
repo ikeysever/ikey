@@ -1,6 +1,23 @@
 name: iKey 3.1 ESP32 Staging Tests
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'server.js'
+      - 'public/project-devices.js'
+      - 'public/project-devices.html'
+      - 'public/project-subpages.css'
+      - 'device-auth.js'
+      - 'device-command-simulation.js'
+      - 'firmware/**'
+      - 'gen3-auth/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/esp32-device-auth-tests.yml'
   push:
     branches:
       - feature/esp32-device-auth-staging
@@ -11,6 +28,7 @@ on:
       - 'public/project-subpages.css'
       - 'device-auth.js'
       - 'device-command-simulation.js'
+      - 'firmware/**'
       - 'gen3-auth/**'
       - 'lib/**'
       - 'test/**'
