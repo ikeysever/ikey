@@ -68,3 +68,12 @@
 - **Electrical safety:** GPIO 25 must never receive 5 V; verify its input circuit and signal common ground. Relay/lock coil must be driven through a suitable driver, not directly from ESP32 GPIO.
 - **Scope preserved:** staging branch only; no `main` changes, no Render deployment, no production database access.
 - **Next:** confirm relay active polarity and verify GPIO 25 signal wiring; then run a supervised local pulse/feedback test before adding authenticated HTTPS command polling and result reporting.
+## 2026-10-26 — Relay active-HIGH polarity confirmed and firmware configured
+
+- **User-confirmed hardware fact:** GPIO 23 output HIGH (approximately 3.3 V) energizes the relay.
+- **Firmware updated:** `firmware/esp32-ikey-unlock/esp32-ikey-unlock.ino` now enables `IKEY_RELAY_ACTIVE_HIGH`; `IKEY_RELAY_ACTIVE_LOW` remains commented out.
+- **Feedback requirement retained:** GPIO 25 HIGH (approximately 3.3 V) means lock-open.
+- **Pulse behavior retained:** relay active 500 ms, inactive pause 200 ms, maximum 10 attempts; stop on open feedback and always force relay inactive on terminal result.
+- **Commit:** `6ab19f0b455dce59c242b532e98d8e11ec928aec`.
+- **Verification status:** Source edit confirmed via GitHub readback. Arduino IDE compilation and physical relay/feedback tests have not yet been run; do not treat as hardware-verified.
+- **Remaining integration:** Serial `u` is still the local test trigger; authenticated web command polling and result reporting are not yet connected. No Render deployment and no `main` changes.
