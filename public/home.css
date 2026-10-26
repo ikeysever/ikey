@@ -162,3 +162,10 @@ body.menu-open{overflow:hidden}
 .project-detail{max-width:850px;background:rgba(20,31,52,.78);border:1px solid #3a526a;border-radius:15px;padding:24px;margin-top:25px}
 .project-detail[hidden]{display:none}.project-detail h2{margin:0 0 20px;font-size:22px}.project-detail dl{margin:0;display:grid;gap:12px}.project-detail dl>div{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px;padding:12px 0;border-bottom:1px solid #34465c}.project-detail dt{color:#9cb8ce}.project-detail dd{margin:0;overflow-wrap:anywhere}.project-detail-actions{display:flex;align-items:center;gap:16px;margin-top:24px;flex-wrap:wrap}.project-detail-actions a{padding:11px 16px;background:#1b3651;color:#e8f8ff;border:1px solid #608ba7;border-radius:9px;text-decoration:none}.project-settings-pending{color:#92a7b9;font-size:13px}
 @media(max-width:600px){.projects-row{flex-wrap:wrap}.projects-row .projects-enter{margin:8px 0 0;width:100%}.project-detail dl>div{grid-template-columns:1fr;gap:5px}.project-detail{padding:17px}}
+
+/* Desktop: place the persistent sidebar toggle in the gap immediately above 首頁,
+   below the iKey logo. Keep it outside the sidebar so it remains usable when collapsed. */
+@media (min-width:761px){
+  .menu-toggle{top:112px;left:24px;width:44px;height:44px;}
+  body.desktop-sidebar-collapsed .menu-toggle{top:18px;left:18px;}
+}
