@@ -23,6 +23,23 @@
    el('sound').textContent=sounds[p.notification_sound_pack]||p.notification_sound_pack||'未設定';
    el('volume').textContent=(p.notification_volume??50)+'%';
    el('edit-link').href=projectUrl+'#project-settings';
+   el('invite-link').href=projectUrl+'#project-invite-heading';
+   const refresh=el('members-refresh'),list=el('members-list'),status=el('members-status');
+   const loadMembers=async()=>{
+    refresh.disabled=true;status.textContent='正在讀取使用者…';list.replaceChildren();
+    try{
+     const response=await fetch('/api/projects/'+q+'/access',{credentials:'same-origin',cache:'no-store'});
+     const data=await response.json();if(!response.ok||!data.success||!Array.isArray(data.members))throw Error(data.message||'使用者清單無法讀取');
+     status.textContent='共 '+data.members.length+' 位使用者（含待審核申請）';
+     for(const member of data.members){
+      const item=document.createElement('li');const name=document.createElement('strong');name.textContent=member.display_name||'未設定專案名稱';
+      const detail=document.createElement('span');detail.textContent=' · '+(member.role==='admin'?'管理員':'使用者')+' · '+({active:'已加入',pending:'待審核',rejected:'已拒絕'}[member.status]||member.status||'未知');
+      item.append(name,detail);list.append(item);
+     }
+    }catch(e){status.textContent=e.message||'無法讀取使用者';}
+    finally{refresh.disabled=false;}
+   };
+   refresh.addEventListener('click',loadMembers);loadMembers();
    el('devices-link').href='/project-devices.html?id='+q;
    el('other-link').href='/project-other-settings.html?id='+q;
    el('delete-link').href=projectUrl+'#project-danger-heading';
