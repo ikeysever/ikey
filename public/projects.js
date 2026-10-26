@@ -68,13 +68,14 @@
  creator.addEventListener('change',()=>{creatorName.hidden=creator.value!=='name';});
  for(const href of ['/project-create.html','/project-create.css','/project-create.js']){const link=document.createElement('link');link.rel='prefetch';link.href=href;document.head.append(link);}
  try{const cached=sessionStorage.getItem('ikey-projects-refresh');if(cached){sessionStorage.removeItem('ikey-projects-refresh');projects=JSON.parse(cached).filter(complete);loading=false;loaded=true;}}catch{sessionStorage.removeItem('ikey-projects-refresh');}
+ if(!loaded){const snapshot=window.iKeyProjectCache?.read();if(snapshot){projects=snapshot.filter(complete);loaded=true;loading=false;}}
  render();
  async function reload(){
   const id=++requestId;if(!loaded)loading=true;error='';render();
   try{
    const response=await fetch('/api/projects',{credentials:'same-origin',cache:'no-store'});
    const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'無法載入專案');
-   if(id!==requestId)return;projects=(Array.isArray(data.projects)?data.projects:[]).filter(complete);loaded=true;loading=false;render();
+   if(id!==requestId)return;projects=(Array.isArray(data.projects)?data.projects:[]).filter(complete);window.iKeyProjectCache?.write(projects);loaded=true;loading=false;render();
   }catch(e){if(id!==requestId)return;loading=false;error=loaded?'無法更新專案，已顯示上次取得的資料':e.message||'專案載入失敗';render();}
  }
  reload();
