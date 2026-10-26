@@ -26,17 +26,43 @@
 <button id="device-new" class="device-btn primary" type="button" aria-expanded="false" aria-controls="device-create-panel">＋ 新增裝置</button>
 <div class="device-switch" role="group" aria-label="檢視模式"><button id="device-view-list" class="device-btn" type="button" aria-pressed="true" title="列表">☷</button><button id="device-view-grid" class="device-btn" type="button" aria-pressed="false" title="格狀">▦</button></div>
 </div>
-<div id="device-help" class="device-panel" hidden><p class="device-caption">目前支援以 8 碼裝置 ID 查詢；完整裝置清單與多條件篩選需待後端資料庫清單 API 驗證後開放。</p></div>
+<div id="device-help" class="device-panel" hidden><p class="device-caption">目前支援以 8 碼裝置 ID 查詢；目前列出已預註冊裝置，其他狀態與進階篩選待串接。</p></div>
 <div id="device-create-panel" class="device-panel" hidden><h3>新增裝置</h3><p class="device-caption">系統建立 8 碼裝置 ID；裝置名稱於綁定專案時設定。</p><form id="device-create-form"><label for="device-password">裝置密碼</label><input id="device-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="至少 8 個字元"><div class="device-tools" style="margin-top:14px"><button id="device-submit" class="device-btn primary" type="submit">建立裝置</button><button id="device-cancel" class="device-btn" type="button">取消</button></div></form><p id="device-create-status" class="device-message" role="status" aria-live="polite"></p></div>
-<div id="device-results" class="device-results" aria-live="polite"><p class="device-empty">輸入 8 碼裝置 ID，即可查詢裝置狀態。<br>完整裝置清單尚未開放。</p></div>
-<div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">上鎖測試（待串接）</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div></div>
+<div id="device-results" class="device-results" aria-live="polite"><p class="device-empty">輸入 8 碼裝置 ID，即可查詢裝置狀態。<br>目前僅列出已預註冊裝置。</p></div>
+<div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div></div>
 <script>
 (()=>{
-const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,requested=0;
+const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,devices=[],requested=0,listError='',limited=false;
 function show(id,on){el(id).hidden=!on}
 function line(message){results.replaceChildren();const p=document.createElement('p');p.className='device-empty';p.textContent=message;results.append(p)}
-function render(){el('device-count').textContent=found?'(1 筆查詢結果)':'(清單未開放)';if(!found){line(search.value.trim()?'按 Enter 查詢此裝置 ID':'輸入 8 碼裝置 ID 查詢。完整裝置清單尚未開放。');return}
-results.replaceChildren();const row=document.createElement('div');row.className='device-row';const sym=document.createElement('span');sym.className='device-symbol';sym.textContent='▣';const info=document.createElement('div');info.className='device-info';const title=document.createElement('strong');title.textContent=found.device_id;const meta=document.createElement('small');meta.textContent='登錄狀態：'+found.registration_status+' · 實體連線尚未驗證';info.append(title,meta);const btn=document.createElement('button');btn.type='button';btn.className='device-btn';btn.textContent='裝置設定 →';btn.addEventListener('click',()=>{el('device-detail-status').textContent='裝置 '+found.device_id+'｜'+meta.textContent;show('device-detail',true);el('device-detail').scrollIntoView({behavior:'smooth',block:'nearest'});});row.append(sym,info,btn);const wrap=document.createElement('div');wrap.className=view==='grid'?'device-grid':'device-rows';wrap.append(row);results.append(wrap)}
+function render(){
+ const keyword=search.value.trim().toUpperCase();
+ const rows=found?[found]:devices.filter(d=>d.device_id.includes(keyword));
+ el('device-count').textContent=listError?'(讀取失敗)':'('+rows.length+(limited?'+':'')+')';
+ results.replaceChildren();
+ if(!rows.length){line(listError||'目前沒有符合條件的已預註冊裝置');return}
+ const wrap=document.createElement('div');wrap.className=view==='grid'?'device-grid':'device-rows';
+ for(const device of rows){
+  const row=document.createElement('div');row.className='device-row';
+  const sym=document.createElement('span');sym.className='device-symbol';sym.textContent='▣';
+  const info=document.createElement('div');info.className='device-info';
+  const title=document.createElement('strong');title.textContent=device.device_id;
+  const meta=document.createElement('small');meta.textContent='登錄狀態：'+device.registration_status+' · 實體連線尚未驗證';
+  info.append(title,meta);
+  const btn=document.createElement('button');btn.type='button';btn.className='device-btn';btn.textContent='裝置設定 →';
+  btn.addEventListener('click',()=>{el('device-detail-status').textContent='裝置 '+device.device_id+'｜'+meta.textContent;show('device-detail',true);el('device-detail').scrollIntoView({behavior:'smooth',block:'nearest'})});
+  row.append(sym,info,btn);wrap.append(row)
+ }
+ results.append(wrap)
+}
+async function loadDevices(){
+ try{
+  const response=await fetch('/api/devices',{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||!data.success||!Array.isArray(data.devices))throw Error(data.message||'裝置清單讀取失敗');
+  devices=data.devices;limited=!!data.limited;listError='';render();
+ }catch(err){listError=err.message||'裝置清單讀取失敗';render()}
+}
 async function lookup(){const id=search.value.trim().toUpperCase();search.value=id;found=null;show('device-detail',false);if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)){line('請輸入正確的 8 碼裝置 ID');return}const n=++requested;line('正在查詢裝置…');try{const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/status',{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'查詢失敗');if(n!==requested)return;found=data;render()}catch(e){if(n===requested)line(e.message||'查詢失敗')}}
 search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookup()}});search.addEventListener('input',()=>{requested++;found=null;show('device-detail',false);render()});
 el('device-advanced').addEventListener('click',()=>{const open=el('device-help').hidden;show('device-help',open);el('device-advanced').setAttribute('aria-expanded',String(open))});
@@ -44,25 +70,9 @@ el('device-new').addEventListener('click',()=>{const open=el('device-create-pane
 el('device-cancel').addEventListener('click',()=>{show('device-create-panel',false);el('device-new').setAttribute('aria-expanded','false')});
 el('device-close-detail').addEventListener('click',()=>show('device-detail',false));
 for(const type of ['list','grid'])el('device-view-'+type).addEventListener('click',()=>{view=type;for(const t of ['list','grid'])el('device-view-'+t).setAttribute('aria-pressed',String(t===type));render()});
-el('device-create-form').addEventListener('submit',async e=>{e.preventDefault();const btn=el('device-submit'),status=el('device-create-status');btn.disabled=true;status.textContent='正在建立…';try{const response=await fetch('/api/devices/pre-register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:el('device-password').value})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'建立失敗');status.textContent='建立成功，裝置 ID：'+data.device_id;el('device-password').value='';search.value=data.device_id;await lookup()}catch(err){status.textContent=err.message||'建立失敗'}finally{btn.disabled=false}});
-render();
+el('device-create-form').addEventListener('submit',async e=>{e.preventDefault();const btn=el('device-submit'),status=el('device-create-status');btn.disabled=true;status.textContent='正在建立…';try{const response=await fetch('/api/devices/pre-register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:el('device-password').value})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'建立失敗');status.textContent='建立成功，裝置 ID：'+data.device_id;el('device-password').value='';search.value=data.device_id;await loadDevices();await lookup()}catch(err){status.textContent=err.message||'建立失敗'}finally{btn.disabled=false}});
+loadDevices();
 })();
 </script>
 </section>
-<script>
-(()=>{
-const create=document.getElementById('admin-create-status'),status=document.getElementById('admin-device-status');
-document.getElementById('admin-new-device').addEventListener('click',()=>document.getElementById('admin-password').focus());
-document.getElementById('admin-focus-search').addEventListener('click',()=>document.getElementById('admin-device-id').focus());
-document.getElementById('admin-register').addEventListener('submit',async e=>{
-e.preventDefault();const btn=document.getElementById('admin-create');btn.disabled=true;create.textContent='正在建立裝置…';
-try{const response=await fetch('/api/devices/pre-register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('admin-password').value})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'建立失敗');document.getElementById('admin-device-id').value=data.device_id;document.getElementById('admin-password').value='';create.textContent='建立成功！裝置 ID：'+data.device_id;}
-catch(err){create.textContent=err.message||'建立失敗';}finally{btn.disabled=false;}
-});
-document.getElementById('admin-check').addEventListener('click',async()=>{
-const id=document.getElementById('admin-device-id').value.trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)){status.textContent='請輸入正確的 8 碼裝置 ID';return;}status.textContent='正在查詢…';
-try{const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/status',{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'查詢失敗');status.textContent='登錄狀態：'+data.registration_status+'｜實體連線：尚未驗證';}catch(err){status.textContent=err.message||'查詢失敗';}
-});
-})();
-</script>
 </main></div></body></html>
