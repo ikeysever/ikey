@@ -1,0 +1,19 @@
+name: Safe project UI release
+on:
+  push:
+    branches: [release/project-settings-ui-safe-20261026]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: node --check public/project.js && node --check public/project-devices.js && node --check public/project-other-settings.js
+      - run: npm test
