@@ -6,6 +6,9 @@ on:
       - feature/esp32-device-auth-staging
     paths:
       - 'server.js'
+      - 'public/project-devices.js'
+      - 'public/project-devices.html'
+      - 'public/project-subpages.css'
       - 'device-auth.js'
       - 'device-command-simulation.js'
       - 'gen3-auth/**'
@@ -38,5 +41,6 @@ jobs:
           node --check server.js
           node --check device-auth.js
           node --check device-command-simulation.js
+          node --check public/project-devices.js
       - name: Run automated tests
         run: npm test
