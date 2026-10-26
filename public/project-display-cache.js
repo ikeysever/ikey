@@ -1,7 +1,7 @@
 'use strict';
 /* UI-only navigation snapshot. Never use it to authorize a device or a write. */
 window.iKeyProjectCache=(()=>{
- const KEY='ikey:projects:display:v1',TTL=45000;
+ const KEY='ikey:projects:display:v1',TTL=86400000;
  const clean=p=>({project_id:p.project_id,project_name:p.project_name,description:p.description,created_at:p.created_at,updated_at:p.updated_at,creator_display_name:p.creator_display_name,status:p.status,authorization_method:p.authorization_method,scheduled_authorization:p.scheduled_authorization,notification_theme:p.notification_theme,notification_sound_pack:p.notification_sound_pack,notification_volume:p.notification_volume});
  function read(){
   try{
