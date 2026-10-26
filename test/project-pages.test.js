@@ -19,11 +19,11 @@ test('device management provides search, factory credential entry, dialog and gr
  assert.match(js,/project_role!=='admin'/);
  assert.doesNotMatch(js,/localStorage|sessionStorage/);
 });
-test('other settings reflect server values without fake save',()=>{
+test('other settings reflect server values and persist through secured API',()=>{
  const html=read('project-other-settings.html');
  for(const name of ['status','authorization_method','scheduled_authorization'])assert.ok(html.includes('name="'+name+'"'),name);
  assert.match(html,/id="save-settings"/);
  const js=read('project-other-settings.js');new Function(js);
  assert.match(js,/project_role!=='admin'/);
- assert.doesNotMatch(js,/method:\s*['"]PATCH['"]/);
+ assert.match(js,/method:'PATCH'/);
 });
