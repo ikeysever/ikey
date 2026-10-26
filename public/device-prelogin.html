@@ -15,5 +15,28 @@
 <div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
 <main><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>裝置預登入</h1><p>超級管理員 / 裝置預登入</p></header>
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
-<section id="account-empty-page" class="card" hidden aria-label="裝置預登入頁面"><h2>裝置預登入準備中</h2><p>此頁面已建立，預登入流程、裝置識別方式及權限驗證尚待確認。</p><p>目前尚未連接裝置管理 API，不會建立真實裝置或核發憑證。</p><p><button id="add-device-button" type="button" style="padding:12px 20px;border:1px solid rgba(100,228,194,.5);border-radius:12px;background:#173d4b;color:#efffff;font:inherit;font-weight:700;cursor:pointer">＋ 新增裝置</button></p><p id="add-device-status" role="status" aria-live="polite" hidden>新增裝置功能準備中，尚未開放建立裝置。</p><script>document.getElementById("add-device-button").addEventListener("click",()=>{document.getElementById("add-device-status").hidden=false;});</script><p><a href="/super-admin.html">← 返回超級管理員</a></p></section>
+<section id="account-empty-page" class="card" hidden aria-label="裝置預登入頁面">
+<h2>裝置預登入</h2>
+<p>由超級管理員預先登錄裝置。裝置預登錄與專案綁定是不同流程；一個專案可綁定多台已登錄裝置。</p>
+<p><button id="add-device-button" type="button" aria-expanded="false" aria-controls="add-device-form" style="padding:12px 20px;border:1px solid rgba(100,228,194,.5);border-radius:12px;background:#173d4b;color:#efffff;font:inherit;font-weight:700;cursor:pointer">＋ 新增裝置</button></p>
+<form id="add-device-form" hidden style="max-width:520px;display:grid;gap:14px;padding:18px;border:1px solid rgba(255,255,255,.12);border-radius:14px">
+<h3 style="margin:0">新增裝置（介面預覽）</h3>
+<label for="device-name">裝置名稱</label><input id="device-name" name="deviceName" type="text" maxlength="80" required placeholder="例如：實習工廠鑰匙櫃" style="padding:12px;border-radius:9px">
+<label for="device-id">裝置 ID</label><input id="device-id" name="deviceId" type="text" maxlength="80" required placeholder="輸入裝置識別碼" style="padding:12px;border-radius:9px">
+<label for="device-password">裝置密碼</label><input id="device-password" name="devicePassword" type="password" autocomplete="new-password" required placeholder="設定預登錄密碼" style="padding:12px;border-radius:9px">
+<p style="margin:0;opacity:.8">目前僅為前端介面預覽，不會儲存密碼、建立裝置或連線 API。</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><button type="submit" style="padding:10px 16px;border-radius:9px">確認（預覽）</button><button id="cancel-device-button" type="button" style="padding:10px 16px;border-radius:9px">取消</button></div>
+</form>
+<p id="add-device-status" role="status" aria-live="polite" hidden></p>
+<p><a href="/super-admin.html">← 返回超級管理員</a></p>
+</section>
+<script>
+(()=>{
+ const toggle=document.getElementById("add-device-button"),form=document.getElementById("add-device-form"),status=document.getElementById("add-device-status");
+ form.style.display="none";
+ toggle.addEventListener("click",()=>{const show=form.hidden;form.hidden=!show;form.style.display=show?"grid":"none";toggle.setAttribute("aria-expanded",String(show));status.hidden=true;});
+ document.getElementById("cancel-device-button").addEventListener("click",()=>{form.reset();form.hidden=true;form.style.display="none";toggle.setAttribute("aria-expanded","false");status.hidden=true;});
+ form.addEventListener("submit",event=>{event.preventDefault();status.textContent="目前為介面預覽：未建立裝置，也未儲存任何資料。";status.hidden=false;});
+})();
+</script>
 </main></div></body></html>
