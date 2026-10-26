@@ -18,8 +18,17 @@ function ikeyDeviceRows_(sheet){
  if(sheet.getLastRow()<2)return [];
  return sheet.getRange(2,1,sheet.getLastRow()-1,sheet.getLastColumn()).getValues();
 }
+// Deployment gate: existing authenticated GAS dispatcher must provide a trusted
+// authorization function, never trust actor_user_id supplied in a payload alone.
+// The function must return true only after verifying the actor against persisted
+// account/session state and project ownership. Absent verifier = deny.
+function ikeyDeviceAuthorized_(action,p){
+ if(typeof ikeyVerifyDeviceActor_!=='function')return false;
+ return ikeyVerifyDeviceActor_(action,p)===true;
+}
 function ikeyFactoryDeviceAction(action,p){
  if(!p||typeof p!=='object')throw Error('BAD_REQUEST');
+ if(!ikeyDeviceAuthorized_(action,p))throw Error('DEVICE_AUTH_NOT_READY');
  const id=String(p.device_id||'');
  if(!/^[A-Za-z0-9_-]{6,64}$/.test(id))throw Error('BAD_DEVICE_ID');
  if(action==='factoryDeviceCredentialGet'){
