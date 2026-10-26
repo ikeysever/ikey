@@ -71,3 +71,13 @@ test('project access: duplicates, denials and schema fail-closed',()=>{
  assert.throws(()=>call('db.delete',{table:'Projects'}),/DB_ACTION_NOT_ALLOWED|DB_TABLE_NOT_ALLOWED/);
  assert.equal(call('db.update',{table:'Projects',where:{project_id:UUIDS.project,created_by_user_id:UUIDS.alice},data:{project_name:'Hacked'}}).updated,false);
 });
+
+test('project storage readiness checks both source tables',()=>{
+ const {call,data}=setup();
+ const ready=call('db.health',{});
+ assert.equal(ready.ready,true);
+ assert.equal(ready.version,'ikey-projects-v1');
+ assert.equal(ready.access_schema,'project-access-v1');
+ delete data.Project_Access;
+ assert.throws(()=>call('db.health',{}),/MISSING_SHEET/);
+});
