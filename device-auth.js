@@ -74,6 +74,8 @@ module.exports = function mountDeviceAuth(app, authStore) {
       return res.status(503).json({ success: false, code: 'DEVICE_AUTH_UNAVAILABLE' });
     }
   });
+  require('./device-command-simulation')(app, { enabled: process.env.IKEY_DEVICE_SIMULATION_ENABLED === 'true', authStore });
+
   app.get('/api/device/me', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     if (!secret || Buffer.byteLength(secret, 'utf8') < 32)
