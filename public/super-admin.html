@@ -17,7 +17,7 @@
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
 <section id="account-empty-page" class="device-page" hidden>
 <style>
-.device-page{margin-top:36px}.device-page button,.device-page input{font:inherit}.device-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line)}.device-heading{font-weight:700;white-space:nowrap;margin-right:8px}.device-search{flex:1;min-width:190px;padding:12px 15px;border:1px solid #4c647c;border-radius:10px;background:rgba(20,31,52,.65);color:white}.device-btn{padding:11px 14px;border:1px solid #54738c;border-radius:10px;background:#233852;color:#f1f7ff;cursor:pointer}.device-btn:disabled{opacity:.45;cursor:not-allowed}.device-btn.primary{background:#25445f}.device-switch{display:flex;border:1px solid #52647b;border-radius:9px;overflow:hidden}.device-switch button{border:0;border-radius:0}.device-switch button[aria-pressed=true]{background:#3a536c}.device-results{min-height:160px}.device-empty{padding:42px 10px;text-align:center;color:#9db1c7}.device-row{display:flex;align-items:center;gap:18px;padding:20px 12px;border-bottom:1px solid var(--line)}.device-symbol{color:#8ebbd4;font-size:21px}.device-info{flex:1;min-width:0}.device-info strong{display:block}.device-info small{display:block;color:#92a8c1;margin-top:5px}.device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px;margin-top:16px}.device-grid .device-row{border:1px solid var(--line);border-radius:14px;flex-wrap:wrap}.device-grid .device-row .device-btn{width:100%}.device-panel{margin:20px 0;padding:22px;border:1px solid var(--line);border-radius:15px;background:rgba(20,31,52,.72)}.device-panel[hidden]{display:none}.device-panel h3{margin:0 0 12px}.device-panel label{display:block;margin:12px 0 6px;color:#bed0e1}.device-panel input{padding:12px 14px;background:#101d30;border:1px solid #50667d;border-radius:9px;color:white;width:100%;max-width:460px}.device-message{color:#b8dce9;overflow-wrap:anywhere}.device-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.device-caption{color:#94a9bf;font-size:13px}@media(max-width:760px){.device-toolbar{align-items:stretch}.device-search{flex-basis:100%}.device-row{gap:10px;flex-wrap:wrap}}
+.device-page{margin-top:36px}.device-page button,.device-page input{font:inherit}.device-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line)}.device-heading{font-weight:700;white-space:nowrap;margin-right:8px}.device-search{flex:1;min-width:190px;padding:12px 15px;border:1px solid #4c647c;border-radius:10px;background:rgba(20,31,52,.65);color:white}.device-btn{padding:11px 14px;border:1px solid #54738c;border-radius:10px;background:#233852;color:#f1f7ff;cursor:pointer}.device-btn:disabled{opacity:.45;cursor:not-allowed}.device-btn.primary{background:#25445f}.device-btn.danger{background:#6c2432;border-color:#bc5264;color:#fff}.device-btn.danger:disabled{opacity:.5}.device-switch{display:flex;border:1px solid #52647b;border-radius:9px;overflow:hidden}.device-switch button{border:0;border-radius:0}.device-switch button[aria-pressed=true]{background:#3a536c}.device-results{min-height:160px}.device-empty{padding:42px 10px;text-align:center;color:#9db1c7}.device-row{display:flex;align-items:center;gap:18px;padding:20px 12px;border-bottom:1px solid var(--line)}.device-symbol{color:#8ebbd4;font-size:21px}.device-info{flex:1;min-width:0}.device-info strong{display:block}.device-info small{display:block;color:#92a8c1;margin-top:5px}.device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px;margin-top:16px}.device-grid .device-row{border:1px solid var(--line);border-radius:14px;flex-wrap:wrap}.device-grid .device-row .device-btn{width:100%}.device-panel{margin:20px 0;padding:22px;border:1px solid var(--line);border-radius:15px;background:rgba(20,31,52,.72)}.device-panel[hidden]{display:none}.device-panel h3{margin:0 0 12px}.device-panel label{display:block;margin:12px 0 6px;color:#bed0e1}.device-panel input{padding:12px 14px;background:#101d30;border:1px solid #50667d;border-radius:9px;color:white;width:100%;max-width:460px}.device-message{color:#b8dce9;overflow-wrap:anywhere}.device-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.device-caption{color:#94a9bf;font-size:13px}@media(max-width:760px){.device-toolbar{align-items:stretch}.device-search{flex-basis:100%}.device-row{gap:10px;flex-wrap:wrap}}
 </style>
 <div class="device-toolbar">
 <strong class="device-heading">裝置管理 <span id="device-count" class="device-caption">(尚未載入)</span></strong>
@@ -29,10 +29,10 @@
 <div id="device-help" class="device-panel" hidden><p class="device-caption">目前支援以 8 碼裝置 ID 查詢；目前列出已預註冊裝置，其他狀態與進階篩選待串接。</p></div>
 <div id="device-create-panel" class="device-panel" hidden><h3>新增裝置</h3><p class="device-caption">系統建立 8 碼裝置 ID；裝置名稱於綁定專案時設定。</p><form id="device-create-form"><label for="device-password">裝置密碼</label><input id="device-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="至少 8 個字元"><div class="device-tools" style="margin-top:14px"><button id="device-submit" class="device-btn primary" type="submit">建立裝置</button><button id="device-cancel" class="device-btn" type="button">取消</button></div></form><p id="device-create-status" class="device-message" role="status" aria-live="polite"></p></div>
 <div id="device-results" class="device-results" aria-live="polite"><p class="device-empty">輸入 8 碼裝置 ID，即可查詢裝置狀態。<br>目前僅列出已預註冊裝置。</p></div>
-<div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div></div>
+<div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button id="device-delete" class="device-btn danger" type="button">刪除裝置</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div><p id="device-delete-status" class="device-message" role="status" aria-live="polite"></p></div>
 <script>
 (()=>{
-const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,devices=[],requested=0,listError='',limited=false;
+const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,devices=[],requested=0,listError='',limited=false,selectedDeviceId=null;
 function show(id,on){el(id).hidden=!on}
 function line(message){results.replaceChildren();const p=document.createElement('p');p.className='device-empty';p.textContent=message;results.append(p)}
 function render(){
@@ -50,7 +50,7 @@ function render(){
   const meta=document.createElement('small');meta.textContent='登錄狀態：'+device.registration_status+' · 實體連線尚未驗證';
   info.append(title,meta);
   const btn=document.createElement('button');btn.type='button';btn.className='device-btn';btn.textContent='裝置設定 →';
-  btn.addEventListener('click',()=>{el('device-detail-status').textContent='裝置 '+device.device_id+'｜'+meta.textContent;show('device-detail',true);el('device-detail').scrollIntoView({behavior:'smooth',block:'nearest'})});
+  btn.addEventListener('click',()=>{selectedDeviceId=device.device_id;el('device-delete-status').textContent='';el('device-detail-status').textContent='裝置 '+device.device_id+'｜'+meta.textContent;show('device-detail',true);el('device-detail').scrollIntoView({behavior:'smooth',block:'nearest'})});
   row.append(sym,info,btn);wrap.append(row)
  }
  results.append(wrap)
@@ -68,7 +68,21 @@ search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();loo
 el('device-advanced').addEventListener('click',()=>{const open=el('device-help').hidden;show('device-help',open);el('device-advanced').setAttribute('aria-expanded',String(open))});
 el('device-new').addEventListener('click',()=>{const open=el('device-create-panel').hidden;show('device-create-panel',open);el('device-new').setAttribute('aria-expanded',String(open));if(open)el('device-password').focus()});
 el('device-cancel').addEventListener('click',()=>{show('device-create-panel',false);el('device-new').setAttribute('aria-expanded','false')});
-el('device-close-detail').addEventListener('click',()=>show('device-detail',false));
+el('device-close-detail').addEventListener('click',()=>{selectedDeviceId=null;show('device-detail',false)});
+el('device-delete').addEventListener('click',async()=>{
+ const id=selectedDeviceId,status=el('device-delete-status'),btn=el('device-delete');
+ if(!id)return;
+ if(!confirm('確定要永久刪除裝置 '+id+'？此操作不可復原。'))return;
+ const typed=prompt('第二次確認：請完整輸入裝置 ID '+id+' 才能永久刪除');
+ if(typed!==id){status.textContent='已取消：裝置 ID 不符';return}
+ btn.disabled=true;status.textContent='正在送出永久刪除請求…';
+ try{
+  const response=await fetch('/api/devices/'+encodeURIComponent(id),{method:'DELETE',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm_device_id:id})});
+  const data=await response.json();
+  if(!response.ok||!data.success)throw Error(data.message||'刪除失敗');
+  status.textContent='已永久刪除裝置 '+id;selectedDeviceId=null;found=null;search.value='';await loadDevices();show('device-detail',false)
+ }catch(err){status.textContent=err.message||'刪除失敗'}finally{btn.disabled=false}
+});
 for(const type of ['list','grid'])el('device-view-'+type).addEventListener('click',()=>{view=type;for(const t of ['list','grid'])el('device-view-'+t).setAttribute('aria-pressed',String(t===type));render()});
 el('device-create-form').addEventListener('submit',async e=>{e.preventDefault();const btn=el('device-submit'),status=el('device-create-status');btn.disabled=true;status.textContent='正在建立…';try{const response=await fetch('/api/devices/pre-register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:el('device-password').value})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'建立失敗');status.textContent='建立成功，裝置 ID：'+data.device_id;el('device-password').value='';search.value=data.device_id;await loadDevices();await lookup()}catch(err){status.textContent=err.message||'建立失敗'}finally{btn.disabled=false}});
 loadDevices();
