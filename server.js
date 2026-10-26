@@ -167,10 +167,14 @@ app.post('/api/projects/:id/devices/bind',requireProjectUser,factoryRateLimit,as
  try{
   const project=await authStore.projectCall('projectAccessGet',{actor_user_id:req.projectUser.user_id,project_id:projectId});
   if(!project||project.project_role!=='admin')return res.status(403).json({success:false,message:'僅限專案管理員'});
-  // The GAS implementation MUST verify the scrypt hash using constant-time comparison
-  // and atomically reject an existing binding. Never send or store the plaintext password.
-  // Until an authenticated server-side verifier is implemented, refuse to bind.
-  return res.status(503).json({success:false,code:'DEVICE_BIND_NOT_READY',message:'裝置憑證驗證與原子綁定服務尚未完成'});
+  const credential=await authStore.projectCall('factoryDeviceCredentialGet',{actor_user_id:req.projectUser.user_id,device_id:b.device_id});
+  if(!credential||credential.credential_kdf!=='scrypt-n16384-r8-p1'||!/^([a-f0-9]{64})$/.test(credential.credential_salt||'')||!/^([a-f0-9]{128})$/.test(credential.credential_hash||''))return res.status(403).json({success:false,message:'裝置 ID 或密碼無效'});
+  const candidate=scryptSync(b.password,Buffer.from(credential.credential_salt,'hex'),64,{N:16384,r:8,p:1});
+  const expected=Buffer.from(credential.credential_hash,'hex');
+  if(!timingSafeEqual(candidate,expected))return res.status(403).json({success:false,message:'裝置 ID 或密碼無效'});
+  const result=await authStore.projectCall('factoryDeviceBind',{actor_user_id:req.projectUser.user_id,project_id:projectId,device_id:b.device_id});
+  if(!result?.bound)return res.status(409).json({success:false,message:'裝置已綁定或目前無法綁定'});
+  return res.status(201).json({success:true,device_id:b.device_id,project_id:projectId});
  }catch(e){console.warn('Device binding unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'裝置綁定服務尚未就緒'});}
 });
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
