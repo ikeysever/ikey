@@ -219,6 +219,13 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
 });
 // ESP32 device-only authentication; does not enable physical control.
 require('./device-auth')(app, authStore);
+// Staging command simulation only. Disabled by default; it is in-memory and is NOT a physical-control backend.
+require('./device-command-simulation')(app, {
+  enabled: process.env.IKEY_DEVICE_SIMULATION_ENABLED === 'true',
+  secret: process.env.IKEY_DEVICE_TOKEN_SECRET,
+  authStore,
+  requireProjectUser
+});
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
