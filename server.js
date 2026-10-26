@@ -167,7 +167,7 @@ app.post('/api/projects/:id/devices/bind',requireProjectUser,factoryRateLimit,as
  try{
   const project=await authStore.projectCall('projectAccessGet',{actor_user_id:req.projectUser.user_id,project_id:projectId});
   if(!project||project.project_role!=='admin')return res.status(403).json({success:false,message:'僅限專案管理員'});
-  const credential=await authStore.projectCall('factoryDeviceCredentialGet',{actor_user_id:req.projectUser.user_id,device_id:b.device_id});
+  const credential=await authStore.projectCall('factoryDeviceCredentialGet',{actor_user_id:req.projectUser.user_id,project_id:projectId,device_id:b.device_id});
   if(!credential||credential.credential_kdf!=='scrypt-n16384-r8-p1'||!/^([a-f0-9]{64})$/.test(credential.credential_salt||'')||!/^([a-f0-9]{128})$/.test(credential.credential_hash||''))return res.status(403).json({success:false,message:'裝置 ID 或密碼無效'});
   const candidate=scryptSync(b.password,Buffer.from(credential.credential_salt,'hex'),64,{N:16384,r:8,p:1});
   const expected=Buffer.from(credential.credential_hash,'hex');
