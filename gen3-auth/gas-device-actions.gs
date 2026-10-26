@@ -29,6 +29,16 @@ function ikeyDeviceAuthorized_(action,p){
 function ikeyFactoryDeviceAction(action,p){
  if(!p||typeof p!=='object')throw Error('BAD_REQUEST');
  if(!ikeyDeviceAuthorized_(action,p))throw Error('DEVICE_AUTH_NOT_READY');
+ if(action==='factoryDeviceList'){
+  if(!/^[0-9a-f-]{36}$/i.test(String(p.project_id||'')))throw Error('BAD_PROJECT_ID');
+  const sheet=ikeyDeviceSheet_('Project_Devices',IKEY_BIND_HEADERS);
+  const devices=ikeyDeviceRows_(sheet).filter(row=>String(row[1])===String(p.project_id)).map(row=>({
+   device_id:String(row[2]),display_name:String(row[3]),lock_mode:String(row[4]),
+   heartbeat_interval_minutes:Number(row[5]),auto_firmware_update:row[6]===true,
+   bound_at:String(row[8])
+  }));
+  return {devices};
+ }
  const id=String(p.device_id||'');
  if(!/^[A-Za-z0-9_-]{6,64}$/.test(id))throw Error('BAD_DEVICE_ID');
  if(action==='factoryDeviceCredentialGet'){
