@@ -75,7 +75,7 @@
    const data=await api('/api/devices/'+encodeURIComponent(deviceId)+'/status');
    get('device-registration-status').value=data.registration_status||'unknown';
    get('device-connection-status').value=data.connection_status==='verified'?'已驗證':'尚未驗證';
-   get('unlock-test').disabled=!data.control_ready;
+   get('unlock-test').disabled=false;
    if(!data.control_ready)get('unlock-test-status').textContent='目前只有裝置登錄資料，實體控制尚未啟用；可嘗試 staging 模擬測試。';
   }catch(e){
    get('device-registration-status').value='無法確認';
