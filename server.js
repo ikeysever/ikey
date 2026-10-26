@@ -177,6 +177,23 @@ app.post('/api/projects/:id/devices/bind',requireProjectUser,factoryRateLimit,as
   return res.status(201).json({success:true,device_id:b.device_id,project_id:projectId});
  }catch(e){console.warn('Device binding unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'裝置綁定服務尚未就緒'});}
 });
+app.patch('/api/projects/:id/devices/:deviceId',requireProjectUser,factoryRateLimit,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const projectId=String(req.params.id||''),deviceId=String(req.params.deviceId||''),b=req.body;
+ if(!/^[0-9a-f-]{36}$/i.test(projectId)||!factoryId(deviceId)||!b||Array.isArray(b)||
+ Object.keys(b).sort().join(',')!=='auto_firmware_update,display_name,heartbeat_interval_minutes,lock_mode'||
+ typeof b.display_name!=='string'||!b.display_name.trim()||b.display_name.length>64||
+ !['locked','open'].includes(b.lock_mode)||!Number.isInteger(b.heartbeat_interval_minutes)||
+ b.heartbeat_interval_minutes<1||b.heartbeat_interval_minutes>1440||typeof b.auto_firmware_update!=='boolean')
+ return res.status(400).json({success:false,message:'裝置設定格式錯誤'});
+ try{
+  const project=await authStore.projectCall('projectAccessGet',{actor_user_id:req.projectUser.user_id,project_id:projectId});
+  if(!project||project.project_role!=='admin')return res.status(403).json({success:false,message:'僅限專案管理員'});
+  const result=await authStore.projectCall('factoryDeviceUpdate',{actor_user_id:req.projectUser.user_id,project_id:projectId,device_id:deviceId,display_name:b.display_name.trim(),lock_mode:b.lock_mode,heartbeat_interval_minutes:b.heartbeat_interval_minutes,auto_firmware_update:b.auto_firmware_update});
+  if(!result?.updated)return res.status(404).json({success:false,message:'找不到此專案裝置'});
+  return res.json({success:true});
+ }catch(e){console.warn('Device settings unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'裝置設定服務尚未就緒'});}
+});
 app.get('/api/projects/:id/devices',requireProjectUser,async(req,res)=>{
  const id=String(req.params.id||'');
  if(!/^[0-9a-f-]{36}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
