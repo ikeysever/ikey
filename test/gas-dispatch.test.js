@@ -78,6 +78,16 @@ test('real Apps Script dispatch works with mock Sheets service',()=>{
  };
  assert.equal(expectOk(invoke('db.insert',{table:'Projects',primary_key:'project_id',data:project})).inserted,true);
  assert.equal(expectOk(invoke('projectAccessMine',{actor_user_id:USER})).projects[0].project_role,'admin');
+ assert.equal(invoke('projectSettingsUpdate',{actor_user_id:GUEST,project_id:PROJECT,changes:{status:'inactive'}}).ok,false);
+ assert.equal(invoke('projectSettingsUpdate',{actor_user_id:USER,project_id:PROJECT,changes:{status:'deleted'}}).ok,false);
+ assert.equal(invoke('projectSettingsUpdate',{actor_user_id:USER,project_id:PROJECT,changes:{created_by_user_id:GUEST}}).ok,false);
+ const saved=expectOk(invoke('projectSettingsUpdate',{actor_user_id:USER,project_id:PROJECT,changes:{status:'inactive',authorization_method:'self_registration',scheduled_authorization:'true'}}));
+ assert.equal(saved.updated,true);
+ assert.equal(saved.project.status,'inactive');
+ assert.equal(saved.project.authorization_method,'self_registration');
+ assert.equal(saved.project.scheduled_authorization,'true');
+ assert.equal(expectOk(invoke('projectSettingsUpdate',{actor_user_id:USER,project_id:PROJECT,changes:{status:'active'}})).updated,true);
+
  assert.equal(invoke('projectAccessConfigure',{actor_user_id:GUEST,project_id:PROJECT,join_policy:'direct',invite_hash:'a'.repeat(64)}).ok,false);
  assert.equal(expectOk(invoke('projectAccessConfigure',{actor_user_id:USER,project_id:PROJECT,join_policy:'approval',invite_hash:'a'.repeat(64)})).configured,true);
  assert.equal(expectOk(invoke('projectAccessJoin',{actor_user_id:GUEST,invite_hash:'a'.repeat(64)})).status,'pending');
