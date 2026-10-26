@@ -15,5 +15,50 @@
 <div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
 <main><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>超級管理員</h1><p>系統管理控制台</p></header>
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
-<section id="account-empty-page" class="card" hidden aria-label="超級管理員頁面"><h2>管理功能</h2><p>請選擇要管理的項目。實際操作與權限驗證將在後續階段確認與實作。</p><p><a href="/device-prelogin.html">裝置預登入 →</a></p><p><a href="/device-settings.html">裝置設定 →</a></p></section>
+<section id="account-empty-page" class="card admin-panel" hidden aria-label="超級管理員控制台">
+<style>
+.admin-panel{max-width:900px;padding:28px!important;background:linear-gradient(145deg,rgba(24,42,65,.9),rgba(10,19,34,.92))!important;border:1px solid rgba(126,185,218,.16)!important;border-radius:22px!important}
+.admin-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.admin-head h2{margin:0 0 6px;font-size:1.35rem}.admin-muted{color:#9db1c7;font-size:.9rem;margin:0}
+.admin-pill{border:1px solid #426077;border-radius:100px;padding:7px 12px;color:#a9d8e5;font-size:.8rem}
+.admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.admin-box{padding:22px;border-radius:18px;background:rgba(255,255,255,.035);border:1px solid rgba(184,216,238,.12)}
+.admin-box h3{margin:0 0 8px;font-size:1.1rem}.admin-box p{color:#9db1c7;font-size:.86rem;line-height:1.6}
+.admin-panel label{display:block;margin:14px 0 8px;color:#d6e5f3;font-size:.88rem}
+.admin-panel input{width:100%;box-sizing:border-box;padding:12px 14px;background:#0b1929;color:#fff;border:1px solid #3b566e;border-radius:11px;font:inherit}
+.admin-panel button{font:inherit;font-weight:650;border:1px solid #466a80;border-radius:11px;padding:11px 15px;background:#193449;color:#e8f8ff;cursor:pointer}
+.admin-panel button.primary{background:linear-gradient(110deg,#157e87,#1b657f);border-color:#398c96}
+.admin-panel button:disabled{opacity:.42;cursor:not-allowed}
+.admin-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.admin-message{min-height:22px;color:#b9d9e8;font-size:.87rem;overflow-wrap:anywhere}
+@media(max-width:720px){.admin-grid{grid-template-columns:1fr}.admin-panel{padding:18px!important}}
+</style>
+<div class="admin-head"><div><h2>裝置管理</h2><p class="admin-muted">在同一個頁面完成登錄、查詢與測試準備。</p></div><span class="admin-pill">SUPER ADMIN · 3.1</span></div>
+<div class="admin-grid">
+<div class="admin-box"><h3>＋ 新增裝置</h3><p>建立 8 碼裝置 ID。裝置名稱在綁定專案時設定。</p>
+<form id="admin-register"><label for="admin-password">裝置密碼</label><input id="admin-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="至少 8 個字元" required>
+<div class="admin-actions"><button class="primary" id="admin-create" type="submit">建立裝置</button></div></form>
+<p class="admin-message" id="admin-create-status" role="status" aria-live="polite"></p></div>
+<div class="admin-box"><h3>⌘ 裝置設定</h3><p>輸入已登錄的裝置 ID，查詢登錄狀態。</p>
+<label for="admin-device-id">裝置 ID</label><input id="admin-device-id" maxlength="8" autocomplete="off" placeholder="8 碼裝置 ID">
+<div class="admin-actions"><button id="admin-check" type="button">查詢狀態</button></div>
+<p class="admin-message" id="admin-device-status" role="status" aria-live="polite">尚未查詢裝置</p>
+<div class="admin-actions"><button type="button" disabled title="待完成 ESP32 控制與回報驗證">開鎖測試</button><button type="button" disabled title="待完成 ESP32 控制與回報驗證">上鎖測試</button></div></div>
+</div>
+<p class="admin-muted" style="margin-top:20px">安全提示：實體控制功能尚未串接；僅在後端確認操作成功後顯示結果。</p>
+</section>
+<script>
+(()=>{
+const create=document.getElementById('admin-create-status'),status=document.getElementById('admin-device-status');
+document.getElementById('admin-register').addEventListener('submit',async e=>{
+e.preventDefault();const btn=document.getElementById('admin-create');btn.disabled=true;create.textContent='正在建立裝置…';
+try{const response=await fetch('/api/devices/pre-register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('admin-password').value})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'建立失敗');document.getElementById('admin-device-id').value=data.device_id;document.getElementById('admin-password').value='';create.textContent='建立成功！裝置 ID：'+data.device_id;}
+catch(err){create.textContent=err.message||'建立失敗';}finally{btn.disabled=false;}
+});
+document.getElementById('admin-check').addEventListener('click',async()=>{
+const id=document.getElementById('admin-device-id').value.trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)){status.textContent='請輸入正確的 8 碼裝置 ID';return;}status.textContent='正在查詢…';
+try{const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/status',{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'查詢失敗');status.textContent='登錄狀態：'+data.registration_status+'｜實體連線：尚未驗證';}catch(err){status.textContent=err.message||'查詢失敗';}
+});
+})();
+</script>
 </main></div></body></html>
