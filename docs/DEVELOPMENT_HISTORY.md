@@ -49,3 +49,12 @@
 - **Verification:** The first staging Actions run passed the backend and simulation tests before the UI contract tests were updated. Subsequent run is being checked after adjusting the tests to the new UI contract; final green status is not yet confirmed at time of this entry.
 - **Known limitation:** Command storage is in-memory and the staging API is not deployed at the production URL. The UI change is not visible on `https://ikey.onrender.com` until a separately approved release. This stage is not yet a real physical unlock integration.
 - **Next:** Confirm the latest Actions run is green; then implement and test ESP32 polling/result reporting against the staged API contract. Only after end-to-end testing should a separate release plan be discussed.
+## 2026-10-26 — ESP32 bounded unlock pulse and feedback requirements
+
+- **User requirement:** Web-triggered unlock test; relay output GPIO 23; lock-open feedback GPIO 25; energize 500 ms, pause 200 ms; repeat up to 10 times or stop immediately when feedback confirms open.
+- **Specification added:** `docs/ESP32-UNLOCK-CONTROL-SPEC-2026-10-26.md`.
+- **Safety/behavior requirements:** Maximum 10 attempts; always de-energize relay on success, exhaustion, timeout, reset, or error; only report success after GPIO 25 confirms the open state; duplicate command IDs must never start a second physical sequence.
+- **Unconfirmed hardware details:** Relay active polarity and GPIO 25 open-feedback polarity still require confirmation against the actual wiring/module. GPIO 25 must be electrically compatible with ESP32 3.3 V logic.
+- **Backend limitation:** Current command simulation is in-memory and staging-only. End-to-end device polling needs a securely provisioned device token and a staging API host with verified TLS; no TLS certificate bypass is permitted.
+- **Scope preserved:** No `main` changes, no Render deployment, and no production database access.
+- **Next step:** Confirm feedback polarity first, then relay active polarity; prepare firmware with explicit constants and test the pulse/feedback state machine before connecting it to the network API.
