@@ -179,6 +179,22 @@ test('expired and tampered device tokens are rejected', async t => {
   assert.equal(tamperedResponse.status, 401);
 });
 
+test('super-admin can read the status of a simulated command', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const created = await ctx.request('/api/device-commands', {
+    method: 'POST',
+    headers: { 'Idempotency-Key': 'status-read-key-0001' },
+    body: { device_id: deviceId, command: 'unlock', timeout_ms: 5000 }
+  });
+  assert.equal(created.status, 201);
+  const read = await ctx.request('/api/device-commands/' + created.body.command.command_id);
+  assert.equal(read.status, 200);
+  assert.equal(read.body.success, true);
+  assert.equal(read.body.command.command_id, created.body.command.command_id);
+  assert.equal(read.body.command.status, 'pending');
+});
+
 test('failed execution is terminal and a contradictory late result is rejected', async t => {
   const ctx = await setup();
   t.after(ctx.close);
