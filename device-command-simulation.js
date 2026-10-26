@@ -68,14 +68,32 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
     };
   }
 
-  function adminOnly(req, res, next) {
-    if (typeof requireProjectUser !== 'function')
-      return res.status(503).json({ success: false, code: 'ADMIN_AUTH_NOT_CONFIGURED' });
-    return requireProjectUser(req, res, () => {
-      if (req.projectUser?.global_role !== 'super_admin')
+  async function adminOnly(req, res, next) {
+    if (typeof requireProjectUser === 'function') {
+      return requireProjectUser(req, res, () => {
+        if (req.projectUser?.global_role !== 'super_admin')
+          return res.status(403).json({ success: false, code: 'FORBIDDEN' });
+        next();
+      });
+    }
+    if (!authStore) return res.status(503).json({ success: false, code: 'ADMIN_AUTH_UNAVAILABLE' });
+    try {
+      const { hashToken, active } = require('./gen3-auth/core');
+      const raw = String(req.headers.cookie || '').split(';').map(x => x.trim())
+        .find(x => x.startsWith('ikey_gen3_session='))?.slice('ikey_gen3_session='.length);
+      if (!raw || raw.length > 256) return res.status(401).json({ success: false, code: 'UNAUTHORIZED' });
+      const resolved = await authStore.resolveSession(hashToken(raw));
+      if (!resolved || resolved.session.revoked_at ||
+          Date.parse(resolved.session.expires_at) <= now() || !active(resolved.user))
+        return res.status(401).json({ success: false, code: 'UNAUTHORIZED' });
+      req.projectUser = resolved.user;
+      if (req.projectUser.global_role !== 'super_admin')
         return res.status(403).json({ success: false, code: 'FORBIDDEN' });
       next();
-    });
+    } catch (error) {
+      console.warn('Simulated command admin auth unavailable', error.name);
+      return res.status(503).json({ success: false, code: 'ADMIN_AUTH_UNAVAILABLE' });
+    }
   }
 
   app.post('/api/device-commands', gate, noStore, adminOnly, (req, res) => {
