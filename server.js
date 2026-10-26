@@ -177,6 +177,18 @@ app.post('/api/projects/:id/devices/bind',requireProjectUser,factoryRateLimit,as
   return res.status(201).json({success:true,device_id:b.device_id,project_id:projectId});
  }catch(e){console.warn('Device binding unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'裝置綁定服務尚未就緒'});}
 });
+app.get('/api/projects/:id/devices',requireProjectUser,async(req,res)=>{
+ const id=String(req.params.id||'');
+ if(!/^[0-9a-f-]{36}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
+ try{
+  const project=await authStore.projectCall('projectAccessGet',{actor_user_id:req.projectUser.user_id,project_id:id});
+  if(!project||project.project_role!=='admin')return res.status(403).json({success:false,message:'僅限專案管理員'});
+  const result=await authStore.projectCall('factoryDeviceList',{actor_user_id:req.projectUser.user_id,project_id:id});
+  if(!Array.isArray(result?.devices))throw Error('INVALID_DEVICE_LIST');
+  const devices=result.devices.map(d=>({device_id:d.device_id,display_name:d.display_name,lock_mode:d.lock_mode,heartbeat_interval_minutes:d.heartbeat_interval_minutes,auto_firmware_update:d.auto_firmware_update,bound_at:d.bound_at}));
+  return res.json({success:true,devices});
+ }catch(e){console.warn('Device list unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'裝置清單服務尚未就緒'});}
+});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.projectCall('projectAccessMine',{actor_user_id:req.projectUser.user_id});if(!Array.isArray(result?.projects))throw Error('PROJECT_LIST_INVALID');return res.json({success:true,projects:result.projects});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
