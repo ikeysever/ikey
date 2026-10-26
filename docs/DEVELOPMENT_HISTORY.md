@@ -58,3 +58,13 @@
 - **Backend limitation:** Current command simulation is in-memory and staging-only. End-to-end device polling needs a securely provisioned device token and a staging API host with verified TLS; no TLS certificate bypass is permitted.
 - **Scope preserved:** No `main` changes, no Render deployment, and no production database access.
 - **Next step:** Confirm feedback polarity first, then relay active polarity; prepare firmware with explicit constants and test the pulse/feedback state machine before connecting it to the network API.
+## 2026-10-26 — Firmware pulse engine added; GPIO 25 feedback polarity confirmed
+
+- **User-confirmed hardware fact:** GPIO 25 reads HIGH (approximately 3.3 V) when the lock is open.
+- **Firmware file added:** `firmware/esp32-ikey-unlock/esp32-ikey-unlock.ino`.
+- **Behavior implemented:** GPIO 23 relay output; 500 ms energized pulse; 200 ms inactive pause; up to 10 attempts; stop immediately when GPIO 25 reads HIGH; force relay inactive and report failure when attempts are exhausted; ignore duplicate serial requests while a sequence is running.
+- **Safety compile gate:** Relay active polarity remains unconfirmed. Firmware intentionally fails compilation until exactly one of `IKEY_RELAY_ACTIVE_HIGH` or `IKEY_RELAY_ACTIVE_LOW` is selected after verifying the actual relay driver/module.
+- **Current test trigger:** Serial `u` starts a local bounded hardware test. Web/API command polling and result reporting are not connected in this firmware file yet.
+- **Electrical safety:** GPIO 25 must never receive 5 V; verify its input circuit and signal common ground. Relay/lock coil must be driven through a suitable driver, not directly from ESP32 GPIO.
+- **Scope preserved:** staging branch only; no `main` changes, no Render deployment, no production database access.
+- **Next:** confirm relay active polarity and verify GPIO 25 signal wiring; then run a supervised local pulse/feedback test before adding authenticated HTTPS command polling and result reporting.
