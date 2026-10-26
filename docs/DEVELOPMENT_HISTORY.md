@@ -114,3 +114,13 @@
 - Updated `.github/workflows/esp32-device-auth-tests.yml` to run on pull requests targeting `main` and to include `firmware/**` changes in both PR and staging-push filters.
 - Earlier staging workflow runs passed on commits `fbd5b4f4fac63055a07a2e91777a3bc6dcb3c527` and `4cd85fed7fa80eb43bcac66891a5445918ae6b90`; the latest CI trigger change is pending its own run at time of entry.
 - This CI checks Node.js syntax and `npm test`; it does not compile the Arduino sketch or prove hardware operation.
+
+## 2026-10-26 — Full-chain review follow-up: duplicate route mount removed
+
+- **Critical finding:** `device-auth.js` also mounted `device-command-simulation.js`, while `server.js` mounted it a second time. This created two independent in-memory command queues and duplicate route handlers; the earlier route-mount test did not detect this.
+- **Fix:** Removed the simulator mount from `device-auth.js`. `server.js` is now the single command-route mount and passes the existing super-admin middleware. No physical-control or production behavior was enabled.
+- **Regression test:** `test/device-command-route-mount.test.js` now asserts exactly one command-simulation mount and asserts that `device-auth.js` does not mount it.
+- **Commits:** duplicate mount removed in `ee0fa88b2606dabb18332a4ecb595cb4e023ddd3`; regression assertion in `c575249625b80d1e0ddf8e3cd39ee614ed9f5f86`.
+- **Latest CI:** staging-push run for `c575249625b80d1e0ddf8e3cd39ee614ed9f5f86` was queued/in progress when checked; verify its final result before treating this revision as tested.
+- **Unresolved deployment blocker:** The command queue remains in-memory. Existing `gas/README-generic-db.md` explicitly says its generic database integration is not deployed and documents only the `Projects` allowlist. Device APIs already depend on a `Devices` table and its schema. Do not enable the simulator on the production service or merge this PR until the actual existing Apps Script source is compared, the allowlist/schema are verified, and a durable atomic command store is implemented and tested.
+- **Hardware boundary:** The ESP32 sketch uses HTTPS CA validation and reports success only when GPIO 25 indicates open. The sketch has not been compiled or hardware-in-the-loop tested by GitHub Actions; its local configuration placeholders and trusted CA must be filled privately before any physical test.
