@@ -178,3 +178,10 @@ body.menu-open{overflow:hidden}
   body:not(.desktop-sidebar-collapsed) .menu-toggle{top:100px;left:24px;width:44px;height:44px;}
   body.desktop-sidebar-collapsed .menu-toggle{top:18px;left:18px;}
 }
+
+/* Align the desktop hamburger strokes with the Home label's left inset,
+   and keep the same horizontal anchor when the sidebar is collapsed. */
+@media (min-width:761px){
+  body:not(.desktop-sidebar-collapsed) .menu-toggle,
+  body.desktop-sidebar-collapsed .menu-toggle{left:18px;}
+}
