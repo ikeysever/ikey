@@ -35,6 +35,7 @@
    const p=data.project;
    if(p.status!==changes.status||p.authorization_method!==changes.authorization_method||
     String(p.scheduled_authorization)!==String(changes.scheduled_authorization))throw Error('資料庫回傳值不一致，請重新整理確認');
+   try{sessionStorage.removeItem('ikey:projects:display:v1');sessionStorage.removeItem('ikey-projects-refresh');}catch(_){}
    status.textContent='設定已儲存，並通過資料庫覆核。';
   }catch(error){status.textContent=error.message||'儲存失敗';}
   finally{button.disabled=false;}
