@@ -20,12 +20,12 @@
 <p>由超級管理員預先登錄裝置。裝置預登錄與專案綁定是不同流程；一個專案可綁定多台已登錄裝置。</p>
 <p><button id="add-device-button" type="button" aria-expanded="false" aria-controls="add-device-form" style="padding:12px 20px;border:1px solid rgba(100,228,194,.5);border-radius:12px;background:#173d4b;color:#efffff;font:inherit;font-weight:700;cursor:pointer">＋ 新增裝置</button></p>
 <form id="add-device-form" hidden style="max-width:520px;display:grid;gap:14px;padding:18px;border:1px solid rgba(255,255,255,.12);border-radius:14px">
-<h3 style="margin:0">新增裝置（介面預覽）</h3>
-<label for="device-name">裝置名稱</label><input id="device-name" name="deviceName" type="text" maxlength="80" required placeholder="例如：實習工廠鑰匙櫃" style="padding:12px;border-radius:9px">
-<label for="device-id">裝置 ID</label><input id="device-id" name="deviceId" type="text" maxlength="80" required placeholder="輸入裝置識別碼" style="padding:12px;border-radius:9px">
-<label for="device-password">裝置密碼</label><input id="device-password" name="devicePassword" type="password" autocomplete="new-password" required placeholder="設定預登錄密碼" style="padding:12px;border-radius:9px">
-<p style="margin:0;opacity:.8">目前僅為前端介面預覽，不會儲存密碼、建立裝置或連線 API。</p>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><button type="submit" style="padding:10px 16px;border-radius:9px">確認（預覽）</button><button id="cancel-device-button" type="button" style="padding:10px 16px;border-radius:9px">取消</button></div>
+<h3 style="margin:0">新增裝置</h3>
+<p style="margin:0;opacity:.85">裝置名稱將於專案綁定時設定。</p>
+<label for="device-id">裝置 ID（系統產生，8 碼）</label><input id="device-id" name="deviceId" type="text" readonly placeholder="建立成功後顯示" style="padding:12px;border-radius:9px">
+<label for="device-password">裝置密碼</label><input id="device-password" name="devicePassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="設定預登錄密碼" style="padding:12px;border-radius:9px">
+<p style="margin:0;opacity:.8">裝置 ID 由伺服器安全產生。伺服器尚未完成超級管理員權限及資料儲存驗證前，無法正式建立裝置。</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><button type="submit" style="padding:10px 16px;border-radius:9px">建立裝置</button><button id="cancel-device-button" type="button" style="padding:10px 16px;border-radius:9px">取消</button></div>
 </form>
 <p id="add-device-status" role="status" aria-live="polite" hidden></p>
 <p><a href="/super-admin.html">← 返回超級管理員</a></p>
@@ -36,7 +36,20 @@
  form.style.display="none";
  toggle.addEventListener("click",()=>{const show=form.hidden;form.hidden=!show;form.style.display=show?"grid":"none";toggle.setAttribute("aria-expanded",String(show));status.hidden=true;});
  document.getElementById("cancel-device-button").addEventListener("click",()=>{form.reset();form.hidden=true;form.style.display="none";toggle.setAttribute("aria-expanded","false");status.hidden=true;});
- form.addEventListener("submit",event=>{event.preventDefault();status.textContent="目前為介面預覽：未建立裝置，也未儲存任何資料。";status.hidden=false;});
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  status.hidden=false;
+  status.textContent="正在驗證建立權限…";
+  const password=document.getElementById("device-password").value;
+  try {
+    const response=await fetch("/api/devices/pre-register",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});
+    const data=await response.json();
+    if(!response.ok||!data.success)throw new Error(data.message||"建立失敗");
+    document.getElementById("device-id").value=data.device_id;
+    document.getElementById("device-password").value="";
+    status.textContent="裝置已建立，ID："+data.device_id;
+  }catch(error){status.textContent=error.message||"無法建立裝置";}
+});
 })();
 </script>
 </main></div></body></html>
