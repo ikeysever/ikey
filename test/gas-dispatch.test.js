@@ -81,7 +81,7 @@ test('real Apps Script dispatch works with mock Sheets service',()=>{
  assert.equal(invoke('projectAccessConfigure',{actor_user_id:GUEST,project_id:PROJECT,join_policy:'direct',invite_hash:'a'.repeat(64)}).ok,false);
  assert.equal(expectOk(invoke('projectAccessConfigure',{actor_user_id:USER,project_id:PROJECT,join_policy:'approval',invite_hash:'a'.repeat(64)})).configured,true);
  assert.equal(expectOk(invoke('projectAccessJoin',{actor_user_id:GUEST,invite_hash:'a'.repeat(64)})).status,'pending');
- assert.equal(expectOk(invoke('projectAccessGet',{actor_user_id:GUEST,project_id:PROJECT}),null));
+ assert.equal(expectOk(invoke('projectAccessGet',{actor_user_id:GUEST,project_id:PROJECT})),null);
  const members=expectOk(invoke('projectAccessList',{actor_user_id:USER,project_id:PROJECT})).members;
  assert.equal(members[0].role,'admin');
  const waiting=members.find(m=>m.status==='pending');
