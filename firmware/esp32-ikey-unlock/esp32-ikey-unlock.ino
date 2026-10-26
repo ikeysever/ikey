@@ -5,8 +5,8 @@
  * GPIO 23: relay control output
  * GPIO 25: lock-open feedback input; HIGH (about 3.3 V) means OPEN.
  *
- * IMPORTANT: Select the relay's actual active polarity below before compiling.
- * This sketch intentionally fails compilation until one polarity is selected.
+ * Confirmed relay polarity: HIGH (about 3.3 V) energizes the relay.
+ * The compile-time guard prevents conflicting polarity selections.
  * Do not connect GPIO 25 to 5 V. ESP32 GPIO is 3.3 V logic.
  *
  * Serial test command: send lowercase 'u' to request one bounded unlock test.
@@ -15,8 +15,8 @@
 
 #include <Arduino.h>
 
-// Choose exactly ONE after verifying the relay module/driver input polarity:
-// #define IKEY_RELAY_ACTIVE_HIGH
+// Hardware polarity confirmed by user: HIGH energizes the relay. Keep exactly one:
+#define IKEY_RELAY_ACTIVE_HIGH
 // #define IKEY_RELAY_ACTIVE_LOW
 #if defined(IKEY_RELAY_ACTIVE_HIGH) && defined(IKEY_RELAY_ACTIVE_LOW)
   #error "Select only one relay active polarity."
