@@ -77,3 +77,12 @@
 - **Commit:** `6ab19f0b455dce59c242b532e98d8e11ec928aec`.
 - **Verification status:** Source edit confirmed via GitHub readback. Arduino IDE compilation and physical relay/feedback tests have not yet been run; do not treat as hardware-verified.
 - **Remaining integration:** Serial `u` is still the local test trigger; authenticated web command polling and result reporting are not yet connected. No Render deployment and no `main` changes.
+## 2026-10-26 — Web device live-status indicators added
+
+- **User request:** Add web-visible status labels for `連線中`, `未連線`, `已解鎖`, and `櫃門關閉`.
+- **Files changed:** `public/project-devices.html`, `public/project-devices.js`, `public/project-subpages.css`.
+- **UI behavior:** Device cards and the device settings dialog now show network connection, lock state, and cabinet-door state indicators. Connection status uses only API fields (`connected`/`online`/`verified` or `connecting`/`pending`); lock status only shows `已解鎖` when API reports `lock_status: unlocked` or `feedback_open: true`; cabinet status only shows `櫃門關閉` when API reports `door_status: closed` or `cabinet_door_closed: true`.
+- **Truthful fallback:** Current `/api/devices` and `/api/devices/:deviceId/status` responses expose `connection_status: unverified` and `control_ready: false`, not live ESP32 heartbeat, GPIO 25 feedback, or cabinet-door sensor state. Therefore current UI displays `未連線` and `尚未回報` for states the backend cannot verify; it does not invent a successful state.
+- **Database status:** Existing server code reads device registration data through `authStore.dbCall('db.select', ...)` (the existing Apps Script/database adapter). Actual runtime availability has not been verified in this change, and live telemetry fields are not currently persisted/read from the database.
+- **Safety boundary:** Staging branch only; no Render service deployed or modified, no `main` changes, no physical Relay test.
+- **Next:** Implement authenticated ESP32 heartbeat/status reporting for network, GPIO 25 lock feedback, and a separate cabinet-door sensor input if that status must be real; define persistence schema/adapter behavior before claiming database-backed live status.
