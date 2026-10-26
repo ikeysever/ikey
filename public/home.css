@@ -97,7 +97,12 @@ body.menu-open{overflow:hidden}
 @media (min-width: 761px) {
   .app { display:grid; grid-template-columns:230px minmax(0,1fr); }
   .side, .side.open { position:sticky; top:0; left:auto; bottom:auto; width:230px; height:100vh; transform:none; padding:26px 18px; box-shadow:none; overflow-y:auto; z-index:auto; }
-  .menu-toggle, .sidebar-backdrop { display:none!important; }
+  .menu-toggle { display:flex!important; z-index:100; }
+  .sidebar-backdrop { display:none!important; }
+  body.desktop-sidebar-collapsed .app { grid-template-columns:0 minmax(0,1fr); }
+  body.desktop-sidebar-collapsed .side { visibility:hidden; pointer-events:none; overflow:hidden; padding-left:0; padding-right:0; border:0; }
+  body.desktop-sidebar-collapsed main { width:100%; }
+  .app { transition:grid-template-columns .2s ease; }
   main { min-width:0; padding-top:38px; }
   body.menu-open { overflow:auto; }
 }
