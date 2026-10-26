@@ -414,7 +414,6 @@ void loop() {
     lastPollAt = millis();
     pollCommands();
   }
-  relayOffIfNotRunning:
   if (!commandRunning) relayOff();
   delay(2);
 }
