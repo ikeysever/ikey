@@ -5,10 +5,10 @@
  if(!id||!/^[0-9a-f-]{36}$/i.test(id)){error.hidden=false;error.textContent='缺少有效的專案 ID。';return;}
  get('back-link').href='/project.html?id='+encodeURIComponent(id);
  const form=get('other-settings-form');
- fetch('/api/projects/'+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store'})
-  .then(async r=>{const data=await r.json();if(!r.ok||!data.success||!data.project)throw Error(data.message||'專案無法讀取');return data.project;})
+ fetch('/api/projects',{credentials:'same-origin',cache:'no-store'})
+  .then(async r=>{const data=await r.json();if(!r.ok||!data.success)throw Error(data.message||'專案無法讀取');const p=(data.projects||[]).find(p=>p.project_id===id);if(!p)throw Error('找不到專案或沒有管理權限');return p;})
   .then(p=>{
-   if(p.project_role&&p.project_role!=='admin')throw Error('只有管理員可以查看其他設定');
+   
    get('project-label').textContent=p.project_name+' · 管理員';
    form.elements.status.value=p.status==='inactive'?'inactive':'active';
    const auth=form.querySelector('input[name="authorization_method"][value="'+(p.authorization_method==='self_registration'?'self_registration':'application')+'"]');
