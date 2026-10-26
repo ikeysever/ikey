@@ -68,6 +68,7 @@
      setTimeout(()=>ctx.close().catch(()=>{}),1500);
     }
    }catch{/* Audio may be blocked; visual confirmation still works. */}
+   try{sessionStorage.removeItem('ikey:projects:display:v1');}catch{}
    const refresh=fetch('/api/projects',{credentials:'same-origin',cache:'no-store'})
     .then(async response=>{const latest=await response.json();if(response.ok&&latest.success&&Array.isArray(latest.projects)){sessionStorage.setItem('ikey-projects-refresh',JSON.stringify(latest.projects));}})
     .catch(()=>{});
