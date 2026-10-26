@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220">
+<title>iKey 3.1｜裝置設定</title><link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
+<link rel="stylesheet" href="/home.css?v=20261026-sidebar-align4"><script src="/home.js?v=20261026-desktop-sidebar-hotfix" defer></script>
+<script src="/app-shell-register.js?v=20261026-local1" defer>
+</script></head>
+<body>
+<button id="menu-toggle" class="menu-toggle" type="button" aria-label="開啟選單" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+<div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+<div class="app"><aside id="sidebar" class="side">
+<a class="brand brand-home-link" href="/home.html" aria-label="iKey 首頁"><img src="/assets/brand/ikey-nextgen.svg" alt="" width="52" height="52"><div><strong>iKey</strong><small>智慧鑰匙管理系統</small></div></a>
+<nav aria-label="主要導覽"><a href="/home.html">首頁</a><div class="project-nav"><div class="project-nav-heading"><button id="project-menu-toggle" class="project-menu-toggle" type="button" aria-label="展開我的專案" aria-expanded="false" aria-controls="project-menu-content"><span class="project-menu-chevron" aria-hidden="true">▶</span></button><a class="project-nav-link" href="/projects.html">我的專案</a></div><div id="project-menu-content" hidden><p class="project-menu-empty">目前沒有專案</p></div></div><a class="active" href="/super-admin.html" aria-current="page">超級管理員</a></nav>
+<div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
+<main><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>裝置設定</h1><p>超級管理員 / 裝置設定</p></header>
+<div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
+<section id="account-empty-page" class="card" hidden aria-label="裝置設定頁面"><h2>裝置連線與測試</h2><p>此頁面為測試控制介面。尚未完成裝置清單、後端權限驗證及 ESP32 指令回報前，不會送出實體開鎖指令。</p><label for="device-id">裝置 ID（8 碼）</label><p><input id="device-id" maxlength="8" placeholder="輸入已登錄裝置 ID" autocomplete="off" style="padding:12px;border-radius:9px"></p><p id="device-status" role="status">狀態：尚未連線</p><div style="display:flex;gap:12px;flex-wrap:wrap"><button type="button" disabled title="等待安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button type="button" disabled title="等待安全控制 API 與 ESP32 回報">上鎖測試（待串接）</button></div><p><a href="/super-admin.html">← 返回超級管理員</a></p></section>
+</main></div></body></html>
