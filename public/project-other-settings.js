@@ -16,5 +16,27 @@
    form.elements.scheduled_authorization.checked=p.scheduled_authorization===true||String(p.scheduled_authorization).toLowerCase()==='true';
    get('admin-content').hidden=false;
   }).catch(e=>{error.hidden=false;error.textContent=e.message||'無法取得設定';});
- form.addEventListener('submit',e=>{e.preventDefault();get('save-status').textContent='後端尚未支援此類設定的權限驗證與儲存，未進行任何變更。';});
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const button=get('save-settings'),status=get('save-status');
+  const changes={
+   status:form.elements.status.value,
+   authorization_method:form.elements.authorization_method.value,
+   scheduled_authorization:form.elements.scheduled_authorization.checked
+  };
+  button.disabled=true;status.textContent='正在儲存並覆核資料庫…';
+  try{
+   const response=await fetch('/api/projects/'+encodeURIComponent(id)+'/other-settings',{
+    method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(changes)
+   });
+   const data=await response.json();
+   if(!response.ok||!data.success||!data.project)throw Error(data.message||'儲存失敗');
+   const p=data.project;
+   if(p.status!==changes.status||p.authorization_method!==changes.authorization_method||
+    String(p.scheduled_authorization)!==String(changes.scheduled_authorization))throw Error('資料庫回傳值不一致，請重新整理確認');
+   status.textContent='設定已儲存，並通過資料庫覆核。';
+  }catch(error){status.textContent=error.message||'儲存失敗';}
+  finally{button.disabled=false;}
+ });
 })();
