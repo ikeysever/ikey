@@ -98,3 +98,13 @@
 - **Backend boundary:** `device-command-simulation.js` is in-memory staging simulation and is hidden unless `IKEY_DEVICE_SIMULATION_ENABLED=true`. No staging API host deployment or end-to-end test is confirmed by this firmware edit. The code intentionally does not target production Render.
 - **Verification:** GitHub source update completed. Arduino IDE compilation, TLS connection, API authentication, command round-trip, and hardware-in-the-loop test have not been run; do not treat as verified.
 - **Safety note:** If HTTPS host/CA/credentials are not configured, network command control remains disabled. GPIO 25 must never receive 5 V; relay/lock coil must use a suitable driver.
+
+## 2026-10-26 — Full-chain audit: command API mount gap found and fixed on staging
+
+- **User goal:** Complete the web → API → ESP32 → relay → feedback → status flow as one coordinated task; user authorized a production merge/deploy only after review and tests.
+- **Audit finding:** The staging branch contained `device-command-simulation.js`, but `server.js` did not mount it. The ESP32 firmware and device settings UI therefore had no active command routes even if the simulation file existed.
+- **Staging fix:** `server.js` now mounts the command simulation behind `IKEY_DEVICE_SIMULATION_ENABLED === 'true'`, passing the existing token secret, auth store, and super-admin project-user middleware. Default remains disabled unless the environment variable is explicitly set.
+- **Safety boundary:** The mounted simulator remains in-memory only and is not a physical-control backend or persistent database queue. It must not be presented as production-ready unlock control.
+- **Regression test added:** `test/device-command-route-mount.test.js` asserts the route mount is explicitly gated and that poll/result routes exist.
+- **Commits:** server route mount `fbd5b4f4fac63055a07a2e91777a3bc6dcb3c527`; regression test `4cd85fed7fa80eb43bcac66891a5445918ae6b90`.
+- **Still required before any production deployment:** run full GitHub Actions test suite; confirm API/firmware JSON contracts and TLS CA configuration; replace or explicitly isolate in-memory queue; verify Apps Script schema and environment variables without exposing secrets; complete a hardware-in-the-loop test. No production merge/deployment has been performed in this step.
