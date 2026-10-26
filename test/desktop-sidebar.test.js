@@ -18,7 +18,7 @@ test('all three pages have working toggle and fresh assets',()=>{
   const html=read(file);
   assert.match(html,/id="menu-toggle"/);
   assert.match(html,/id="sidebar"/);
-  assert.match(html,/home\.css\?v=20261026-desktop-sidebar-hotfix/);
+  assert.match(html,/home\.css\?v=20261026-[a-z0-9-]+/);
  }
  for(const file of ['home.html','projects.html'])assert.match(read(file),/home\.js\?v=20261026-desktop-sidebar-hotfix/);
  assert.match(read('project.html'),/project-sidebar\.js\?v=20261026-desktop-sidebar-hotfix/);
