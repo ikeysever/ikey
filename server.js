@@ -172,6 +172,21 @@ app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'無法產生裝置 ID'});
   }catch(err){console.warn('Device pre-registration failed',err.name);return res.status(503).json({success:false,message:'裝置建立失敗'});}
 });
+// Read-only device list: limited to preregistered records; no secrets returned.
+app.get('/api/devices',requireProjectUser,async(req,res)=>{
+  if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
+  try{
+    const result=await authStore.dbCall('db.select',{table:'Devices',where:{status:'pre_registered'},limit:100});
+    if(!Array.isArray(result?.rows))throw Error('INVALID_DEVICE_LIST');
+    const devices=result.rows.filter(r=>/^[A-HJ-NP-Z2-9]{8}$/.test(String(r.device_id||''))).map(r=>({
+      device_id:String(r.device_id),registration_status:'pre_registered',connection_status:'unverified'
+    }));
+    return res.json({success:true,devices,limited:result.rows.length===100});
+  }catch(err){
+    console.warn('Device list unavailable',err.message);
+    return res.status(503).json({success:false,message:'裝置清單暫時無法讀取'});
+  }
+});
 // Read-only device lookup for the super-admin test console.
 // Device control remains disabled until authenticated device polling and acknowledgements exist.
 app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
