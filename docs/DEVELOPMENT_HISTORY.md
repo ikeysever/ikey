@@ -86,3 +86,15 @@
 - **Database status:** Existing server code reads device registration data through `authStore.dbCall('db.select', ...)` (the existing Apps Script/database adapter). Actual runtime availability has not been verified in this change, and live telemetry fields are not currently persisted/read from the database.
 - **Safety boundary:** Staging branch only; no Render service deployed or modified, no `main` changes, no physical Relay test.
 - **Next:** Implement authenticated ESP32 heartbeat/status reporting for network, GPIO 25 lock feedback, and a separate cabinet-door sensor input if that status must be real; define persistence schema/adapter behavior before claiming database-backed live status.
+
+## 2026-10-26 — ESP32 staging HTTPS firmware overlay
+
+- **File replaced:** `firmware/esp32-ikey-unlock/esp32-ikey-unlock.ino` on `feature/esp32-device-auth-staging`.
+- **Added:** Wi-Fi connection, HTTPS certificate validation (no `setInsecure()`), device authentication via `POST /api/device/auth`, authenticated command polling via `GET /api/device/commands/next`, and result reporting via `POST /api/device/commands/:commandId/result`.
+- **Safety retained:** GPIO 23 active-HIGH relay, GPIO 25 HIGH=open feedback, 500 ms maximum energized pulse, 200 ms pause, maximum 10 attempts, relay de-energized on each pulse end and error path, success only when feedback reads OPEN.
+- **Duplicate protection:** Persist command ID in ESP32 Preferences/NVS before actuation; the same command ID will not start a second sequence after a reset.
+- **Required local configuration:** Wi-Fi SSID/password, preregistered device ID/password, separately approved staging HTTPS base URL, and correct trusted CA PEM. These are placeholders in the repository; real credentials must not be committed.
+- **Dependency:** ArduinoJson library.
+- **Backend boundary:** `device-command-simulation.js` is in-memory staging simulation and is hidden unless `IKEY_DEVICE_SIMULATION_ENABLED=true`. No staging API host deployment or end-to-end test is confirmed by this firmware edit. The code intentionally does not target production Render.
+- **Verification:** GitHub source update completed. Arduino IDE compilation, TLS connection, API authentication, command round-trip, and hardware-in-the-loop test have not been run; do not treat as verified.
+- **Safety note:** If HTTPS host/CA/credentials are not configured, network command control remains disabled. GPIO 25 must never receive 5 V; relay/lock coil must use a suitable driver.
