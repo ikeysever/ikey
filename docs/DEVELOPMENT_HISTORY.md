@@ -35,3 +35,17 @@
 
 ### 記錄原則
 後續每次重大修改都補上日期、需求、設計決策、檔案路徑、PR／Commit、測試與部署狀態、已知限制、待辦與交接資訊；以可核對的事實為準。
+## 2026-10-26 — Device settings and staged unlock-test integration
+
+- **Scope:** `feature/esp32-device-auth-staging` only.
+- **Goal:** Start implementing the super-admin device settings flow for device `Y8R69EXB`, while preserving the production `main`, production Render service, and production database.
+- **Changes:
+  - Added `.github/workflows/esp32-device-auth-tests.yml` to run Node.js syntax checks and `npm test` on staging changes and manual dispatch.
+  - Added a super-admin read-only command status endpoint, `GET /api/device-commands/:commandId`, to the in-memory command simulation.
+  - Updated `public/project-devices.html`, `public/project-devices.js`, and `public/project-subpages.css` to load the authenticated preregistered device list, open device settings, request an explicitly confirmed simulated unlock command, and display command status.
+  - Kept physical mode, heartbeat, firmware-update, and settings writes disabled. UI text explicitly states that the simulated command does not prove a physical door opened.
+  - Added/updated tests for command status readback and device page API contracts.
+- **Safety boundary:** No Render service was created, changed, or deployed. No commit was made to `main`. No production database or physical Relay was accessed.
+- **Verification:** The first staging Actions run passed the backend and simulation tests before the UI contract tests were updated. Subsequent run is being checked after adjusting the tests to the new UI contract; final green status is not yet confirmed at time of this entry.
+- **Known limitation:** Command storage is in-memory and the staging API is not deployed at the production URL. The UI change is not visible on `https://ikey.onrender.com` until a separately approved release. This stage is not yet a real physical unlock integration.
+- **Next:** Confirm the latest Actions run is green; then implement and test ESP32 polling/result reporting against the staged API contract. Only after end-to-end testing should a separate release plan be discussed.
