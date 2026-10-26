@@ -108,3 +108,9 @@
 - **Regression test added:** `test/device-command-route-mount.test.js` asserts the route mount is explicitly gated and that poll/result routes exist.
 - **Commits:** server route mount `fbd5b4f4fac63055a07a2e91777a3bc6dcb3c527`; regression test `4cd85fed7fa80eb43bcac66891a5445918ae6b90`.
 - **Still required before any production deployment:** run full GitHub Actions test suite; confirm API/firmware JSON contracts and TLS CA configuration; replace or explicitly isolate in-memory queue; verify Apps Script schema and environment variables without exposing secrets; complete a hardware-in-the-loop test. No production merge/deployment has been performed in this step.
+
+## 2026-10-26 — CI expanded for pull requests and firmware changes
+
+- Updated `.github/workflows/esp32-device-auth-tests.yml` to run on pull requests targeting `main` and to include `firmware/**` changes in both PR and staging-push filters.
+- Earlier staging workflow runs passed on commits `fbd5b4f4fac63055a07a2e91777a3bc6dcb3c527` and `4cd85fed7fa80eb43bcac66891a5445918ae6b90`; the latest CI trigger change is pending its own run at time of entry.
+- This CI checks Node.js syntax and `npm test`; it does not compile the Arduino sketch or prove hardware operation.
