@@ -157,3 +157,29 @@ body.menu-open{overflow:hidden}
 .project-detail{max-width:850px;background:rgba(20,31,52,.78);border:1px solid #3a526a;border-radius:15px;padding:24px;margin-top:25px}
 .project-detail[hidden]{display:none}.project-detail h2{margin:0 0 20px;font-size:22px}.project-detail dl{margin:0;display:grid;gap:12px}.project-detail dl>div{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px;padding:12px 0;border-bottom:1px solid #34465c}.project-detail dt{color:#9cb8ce}.project-detail dd{margin:0;overflow-wrap:anywhere}.project-detail-actions{display:flex;align-items:center;gap:16px;margin-top:24px;flex-wrap:wrap}.project-detail-actions a{padding:11px 16px;background:#1b3651;color:#e8f8ff;border:1px solid #608ba7;border-radius:9px;text-decoration:none}.project-settings-pending{color:#92a7b9;font-size:13px}
 @media(max-width:600px){.projects-row{flex-wrap:wrap}.projects-row .projects-enter{margin:8px 0 0;width:100%}.project-detail dl>div{grid-template-columns:1fr;gap:5px}.project-detail{padding:17px}}
+
+
+/* P1: obvious create/join actions, 44px touch targets and single-column mobile toolbar. */
+.projects-actions #projects-create,
+.projects-actions #projects-join{
+ display:inline-flex;justify-content:center;align-items:center;
+ min-height:44px;border:1px solid #608ba7;border-radius:10px;
+ padding:8px 13px;color:#e8f8ff;font-weight:700;text-decoration:none;
+ background:#1b3651;transition:background .15s ease,border-color .15s ease;
+}
+.projects-actions #projects-create{background:#25607a;border-color:#67e8f9;color:#fff}
+.projects-actions #projects-create:hover,.projects-actions #projects-join:hover{background:#245575;border-color:#a5f3fc}
+.projects-actions #projects-create:focus-visible,.projects-actions #projects-join:focus-visible{
+ outline:3px solid #a5f3fc;outline-offset:3px;
+}
+@media(max-width:600px){
+ .projects-toolbar{grid-template-columns:minmax(0,1fr)}
+ .projects-toolbar .projects-heading{grid-column:1;grid-row:1}
+ .projects-toolbar .projects-actions{grid-column:1;grid-row:2;justify-self:stretch;white-space:normal;gap:8px}
+ .projects-toolbar .projects-search-bar{grid-column:1;grid-row:3;min-width:0}
+ .projects-actions #projects-create,.projects-actions #projects-join{flex:1 1 125px}
+ .projects-actions .projects-view-switch{margin-left:auto}
+}
+@media(prefers-reduced-motion:reduce){
+ .projects-actions #projects-create,.projects-actions #projects-join{transition:none}
+}
