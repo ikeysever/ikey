@@ -96,7 +96,7 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
     }
   }
 
-  app.post('/api/device-commands', gate, noStore, adminOnly, (req, res) => {
+  app.post('/api/device-commands', gate, noStore, adminOnly, async (req, res) => {
     expireCommands();
     const deviceId = req.body?.device_id;
     const commandName = req.body?.command;
@@ -108,13 +108,38 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
         !Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 60000)
       return res.status(400).json({ success: false, code: 'INVALID_REQUEST' });
 
+    const origin = req.get('origin');
+    if (origin) {
+      try {
+        const parsed = new URL(origin);
+        const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https:' : 'http:';
+        if (parsed.protocol !== protocol || parsed.host !== req.get('host'))
+          return res.status(403).json({ success: false, code: 'ORIGIN_REJECTED' });
+      } catch { return res.status(403).json({ success: false, code: 'ORIGIN_REJECTED' }); }
+    }
     const fingerprint = JSON.stringify({ device_id: deviceId, command: commandName, timeout_ms: timeoutMs });
-    const priorId = idempotency.get(key);
+    const scopedKey = deviceId + ':' + key;
+    const priorId = idempotency.get(scopedKey);
     if (priorId) {
       const prior = commands.get(priorId);
       if (prior && prior.fingerprint !== fingerprint)
         return res.status(409).json({ success: false, code: 'IDEMPOTENCY_CONFLICT' });
       if (prior) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(prior) });
+    }
+    try {
+      if (!authStore || typeof authStore.dbCall !== 'function')
+        return res.status(503).json({ success: false, code: 'DEVICE_LOOKUP_UNAVAILABLE' });
+      const result = await authStore.dbCall('db.select', {
+        table: 'Devices', where: { device_id: deviceId }, limit: 1
+      });
+      if (!Array.isArray(result?.rows))
+        return res.status(503).json({ success: false, code: 'DEVICE_LOOKUP_UNAVAILABLE' });
+      const device = result.rows.find(item => item.device_id === deviceId);
+      if (!device || device.status !== 'pre_registered')
+        return res.status(404).json({ success: false, code: 'DEVICE_NOT_REGISTERED' });
+    } catch (error) {
+      console.warn('Simulated command device lookup failed', error.name);
+      return res.status(503).json({ success: false, code: 'DEVICE_LOOKUP_UNAVAILABLE' });
     }
 
     const time = now();
@@ -125,7 +150,7 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
       result: null, idempotency_key: key, fingerprint, updated_at: new Date(time).toISOString()
     };
     commands.set(command.command_id, command);
-    idempotency.set(key, command.command_id);
+    idempotency.set(scopedKey, command.command_id);
     return res.status(201).json({ success: true, duplicate: false, command: publicCommand(command) });
   });
 
