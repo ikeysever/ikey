@@ -187,6 +187,16 @@ app.get('/api/devices',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置清單暫時無法讀取'});
   }
 });
+// Permanent deletion is deliberately unavailable until the storage layer supports
+// an atomic physical row removal. Existing db.delete may only soft-delete records.
+app.delete('/api/devices/:deviceId',requireProjectUser,async(req,res)=>{
+  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+  if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
+  const id=String(req.params.deviceId||'').toUpperCase();
+  if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id))return res.status(400).json({success:false,message:'裝置 ID 格式不正確'});
+  if(req.body?.confirm_device_id!==id)return res.status(400).json({success:false,message:'第二次確認的裝置 ID 不符'});
+  return res.status(501).json({success:false,message:'永久刪除尚未啟用：資料庫需先支援實體刪除及稽核紀錄；裝置資料未變更'});
+});
 // Read-only device lookup for the super-admin test console.
 // Device control remains disabled until authenticated device polling and acknowledgements exist.
 app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
