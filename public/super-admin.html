@@ -28,18 +28,19 @@
 </div>
 <div id="device-help" class="device-panel" hidden><p class="device-caption">目前支援以 8 碼裝置 ID 查詢；目前列出已預註冊裝置，其他狀態與進階篩選待串接。</p></div>
 <div id="device-create-panel" class="device-panel" hidden><h3>新增裝置</h3><p class="device-caption">系統建立 8 碼裝置 ID；裝置名稱於綁定專案時設定。</p><form id="device-create-form"><label for="device-password">裝置密碼</label><input id="device-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="至少 8 個字元"><div class="device-tools" style="margin-top:14px"><button id="device-submit" class="device-btn primary" type="submit">建立裝置</button><button id="device-cancel" class="device-btn" type="button">取消</button></div></form><p id="device-create-status" class="device-message" role="status" aria-live="polite"></p></div>
-<div id="device-results" class="device-results" aria-live="polite"><p class="device-empty">輸入 8 碼裝置 ID，即可查詢裝置狀態。<br>目前僅列出已預註冊裝置。</p></div>
+<div id="device-results" class="device-results" aria-live="polite"><p class="device-empty">正在載入裝置清單…</p></div>
 <div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button id="device-delete" class="device-btn danger" type="button">刪除裝置</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div><p id="device-delete-status" class="device-message" role="status" aria-live="polite"></p></div>
 <script>
 (()=>{
-const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,devices=[],requested=0,listError='',limited=false,selectedDeviceId=null;
+const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,devices=[],requested=0,listError='',limited=false,selectedDeviceId=null,loading=true;
 function show(id,on){el(id).hidden=!on}
 function line(message){results.replaceChildren();const p=document.createElement('p');p.className='device-empty';p.textContent=message;results.append(p)}
 function render(){
  const keyword=search.value.trim().toUpperCase();
  const rows=found?[found]:devices.filter(d=>d.device_id.includes(keyword));
- el('device-count').textContent=listError?'(讀取失敗)':'('+rows.length+(limited?'+':'')+')';
+ el('device-count').textContent=loading?'(載入中…)':listError?'(讀取失敗)':'('+rows.length+(limited?'+':'')+')';
  results.replaceChildren();
+ if(loading){line('正在載入裝置清單…');return}
  if(!rows.length){line(listError||'目前沒有符合條件的已預註冊裝置');return}
  const wrap=document.createElement('div');wrap.className=view==='grid'?'device-grid':'device-rows';
  for(const device of rows){
@@ -56,12 +57,13 @@ function render(){
  results.append(wrap)
 }
 async function loadDevices(){
+ loading=true;listError='';render();
  try{
   const response=await fetch('/api/devices',{credentials:'same-origin',cache:'no-store'});
   const data=await response.json();
   if(!response.ok||!data.success||!Array.isArray(data.devices))throw Error(data.message||'裝置清單讀取失敗');
-  devices=data.devices;limited=!!data.limited;listError='';render();
- }catch(err){listError=err.message||'裝置清單讀取失敗';render()}
+  devices=data.devices;limited=!!data.limited;listError='';loading=false;render();
+ }catch(err){loading=false;listError=err.message||'裝置清單讀取失敗';render()}
 }
 async function lookup(){const id=search.value.trim().toUpperCase();search.value=id;found=null;show('device-detail',false);if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)){line('請輸入正確的 8 碼裝置 ID');return}const n=++requested;line('正在查詢裝置…');try{const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/status',{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'查詢失敗');if(n!==requested)return;found=data;render()}catch(e){if(n===requested)line(e.message||'查詢失敗')}}
 search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookup()}});search.addEventListener('input',()=>{requested++;found=null;show('device-detail',false);render()});
