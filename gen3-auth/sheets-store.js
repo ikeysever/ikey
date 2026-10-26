@@ -44,7 +44,7 @@ function createSheetsStore() {
    },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
-     if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine","projectAccessConfigure","projectAccessJoin","projectAccessMine","projectAccessGet","projectAccessList","projectAccessReview","projectSettingsUpdate","factoryDeviceRegister"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
+     if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine","projectAccessConfigure","projectAccessJoin","projectAccessMine","projectAccessGet","projectAccessList","projectAccessReview","projectSettingsUpdate","factoryDeviceRegister","factoryDeviceCredentialGet","factoryDeviceBind","factoryDeviceList"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
      return call(action,payload);
    }
  };
