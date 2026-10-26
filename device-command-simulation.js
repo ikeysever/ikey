@@ -214,6 +214,18 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
     }
   });
 
+  // Super-admin readback for the settings UI; this only reads simulated in-memory state.
+  app.get('/api/device-commands/:commandId', gate, noStore, adminOnly, (req, res) => {
+    expireCommands();
+    const commandId = String(req.params.commandId || '');
+    if (!/^[0-9a-f-]{36}$/i.test(commandId))
+      return res.status(400).json({ success: false, code: 'INVALID_COMMAND_ID' });
+    const command = commands.get(commandId);
+    if (!command)
+      return res.status(404).json({ success: false, code: 'COMMAND_NOT_FOUND' });
+    return res.json({ success: true, command: publicCommand(command) });
+  });
+
   // Test-only introspection is deliberately not mounted as an HTTP route.
   return { commands, idempotency, expireCommands };
 };
