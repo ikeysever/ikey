@@ -7,11 +7,13 @@
  get('back-link').href='/project.html?id='+encodeURIComponent(id);
  const load=async()=>{
   try{
-   const response=await fetch('/api/projects/'+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store'});
+   const response=await fetch('/api/projects',{credentials:'same-origin',cache:'no-store'});
    const data=await response.json();
-   if(!response.ok||!data.success||!data.project)throw Error(data.message||'無法讀取專案');
-   if(data.project.project_role&&data.project.project_role!=='admin')throw Error('只有專案管理員可以開啟裝置管理');
-   get('project-label').textContent=data.project.project_name+' · 管理員';
+   if(!response.ok||!data.success)throw Error(data.message||'無法讀取專案');
+   const project=(data.projects||[]).find(p=>p.project_id===id);
+   if(!project)throw Error('找不到專案或沒有管理權限');
+   
+   get('project-label').textContent=project.project_name+' · 管理員';
    content.hidden=false;
    // Fail closed: no registered-device API exists yet. Never invent devices.
    status.textContent='裝置登錄與讀取 API 尚未啟用，無法驗證實際裝置清單。';
