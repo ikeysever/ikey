@@ -30,3 +30,12 @@
 6. **尚未完成：** 裝置 API、實體設備配對及解鎖授權。不可將這部分標示為已上線。
 
 只有在 Apps Script 已同步、真實 GAS/Sheets 整合測試完成、無安全阻塞缺陷之後，才合併 PR #63 至 `main` 並手動觸發 Render 部署；部署後需重新驗證健康狀態。
+
+
+## Other project settings (2026-10-26)
+
+- The owner-only endpoint `PATCH /api/projects/:id/other-settings` accepts only `status` (`active`/`inactive`), `authorization_method` (`application`/`self_registration`), and boolean `scheduled_authorization`.
+- The Render API validates origin, session, project ID, payload shape and values. GAS `projectSettingsUpdate` rechecks the active actor and project owner under a script lock, performs the update, reads it back and appends an audit event.
+- The deployment **must** publish both `gen3-auth/Code.gs` and `gen3-auth/project-data.gs` together, since the new dispatcher action is not present in the previously published GAS version. Do not deploy Render first.
+- Validate unauthorized member and invalid status rejection; verify actual Sheets write/readback, audit row, and that inactive projects cannot receive new joins. No hardware unlock claim is implied.
+- Until live GAS verification succeeds, leave PR #63 unmerged and Render unchanged.
