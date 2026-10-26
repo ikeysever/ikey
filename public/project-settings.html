@@ -10,8 +10,10 @@
 <div id="admin-settings" hidden>
 <h2>管理員設定</h2><p>只有管理員可查看下列管理入口。所有寫入仍由伺服器驗證。</p>
 <dl><div><dt>視覺風格</dt><dd id="theme"></dd></div><div><dt>音效風格</dt><dd id="sound"></dd></div><div><dt>通知音量</dt><dd id="volume"></dd></div></dl>
-<p><a id="edit-link" href="#">編輯視覺、音效及使用者設定 →</a></p>
+<p><a id="edit-link" href="#">編輯視覺與音效設定 →</a></p>
+<section aria-labelledby="members-title"><h3 id="members-title">使用者</h3><p>顯示專案帳號名稱（不是登入帳號）及身分：管理員／使用者。</p><button type="button" id="members-refresh">重新整理使用者</button><p id="members-status" role="status">尚未讀取使用者</p><ul id="members-list"></ul></section>
+<section aria-labelledby="invite-title"><h3 id="invite-title">邀請成員</h3><p>可選擇直接加入或申請後由管理員審核。邀請碼僅在產生時顯示。</p><a id="invite-link" href="#">管理邀請碼與審核申請 →</a></section>
 <p><a id="devices-link" href="#">裝置管理 →</a></p>
 <p><a id="other-link" href="#">其他設定（狀態／授權／排程） →</a></p>
-<p><a id="delete-link" href="#">刪除專案（雙重確認） →</a></p>
+<section aria-labelledby="danger-title"><h3 id="danger-title">危險操作</h3><p>刪除專案採雙重確認，並保留軟刪除紀錄。</p><p><a id="delete-link" href="#">刪除專案（雙重確認） →</a></p></section>
 </div></section></main></body></html>
