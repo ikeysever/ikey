@@ -142,6 +142,16 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
       return res.status(503).json({ success: false, code: 'DEVICE_LOOKUP_UNAVAILABLE' });
     }
 
+    // Re-check after the async device lookup: concurrent requests may both
+    // pass the first idempotency check before either reaches this point.
+    const racedId = idempotency.get(scopedKey);
+    if (racedId) {
+      const raced = commands.get(racedId);
+      if (raced && raced.fingerprint !== fingerprint)
+        return res.status(409).json({ success: false, code: 'IDEMPOTENCY_CONFLICT' });
+      if (raced) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(raced) });
+    }
+
     const time = now();
     const command = {
       command_id: crypto.randomUUID(), device_id: deviceId, command: 'unlock',
