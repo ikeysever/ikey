@@ -59,7 +59,7 @@ function locked(fn) {
 }
 function execute(action,p) {
  if(["db.health","db.schema","db.select","db.insert","db.update","db.delete"].includes(action))return executeProjectData(action,p);
- if(["projectAccessConfigure","projectAccessJoin","projectAccessMine","projectAccessGet","projectAccessList","projectAccessReview"].includes(action))return executeProjectAccess(action,p);
+ if(["projectAccessConfigure","projectAccessJoin","projectAccessMine","projectAccessGet","projectAccessList","projectAccessReview","projectSettingsUpdate"].includes(action))return executeProjectAccess(action,p);
  switch(action) {
   case "registerAtomic":return locked(()=>{
    const u=p.user||{},username=String(u.username||"").trim().toLowerCase();
