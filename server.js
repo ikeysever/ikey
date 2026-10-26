@@ -129,6 +129,50 @@ app.get('/api/projects/readiness',async(_req,res)=>{
   return res.status(503).json({ready:false,component:'projects'});
  }
 });
+// Factory device preregistration. All writes fail closed until the GAS adapter implements
+// the dedicated atomic factoryDeviceRegister / factoryDeviceBind operations.
+const { scryptSync, timingSafeEqual } = require('node:crypto');
+const factoryAttempts = new Map();
+function factoryRateLimit(req,res,next){
+ const key=String(req.projectUser.user_id)+'|'+req.ip;
+ const now=Date.now();let v=factoryAttempts.get(key);
+ if(!v||v.until<=now)v={count:0,until:now+60000};
+ if(v.count>=5)return res.status(429).json({success:false,message:'操作過於頻繁，請稍後再試'});
+ v.count++;factoryAttempts.set(key,v);
+ if(factoryAttempts.size>2000)for(const [k,x] of factoryAttempts)if(x.until<=now)factoryAttempts.delete(k);
+ next();
+}
+function isFactorySuperAdmin(user){
+ const ids=(process.env.IKEY_SUPER_ADMIN_USER_IDS||'').split(',').map(x=>x.trim()).filter(Boolean);
+ return ids.length>0&&ids.includes(String(user.user_id));
+}
+function factoryId(value){return typeof value==='string'&&/^[A-Za-z0-9_-]{6,64}$/.test(value);}
+function factoryPassword(value){return typeof value==='string'&&value.length>=16&&value.length<=128;}
+app.post('/api/admin/factory-devices',requireProjectUser,factoryRateLimit,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ if(!isFactorySuperAdmin(req.projectUser))return res.status(403).json({success:false,message:'僅限超級管理員'});
+ const b=req.body;
+ if(!b||Array.isArray(b)||Object.keys(b).sort().join(',')!=='device_id,password'||!factoryId(b.device_id)||!factoryPassword(b.password))return res.status(400).json({success:false,message:'裝置 ID 或密碼格式錯誤（密碼至少 16 字元）'});
+ const salt=randomBytes(32);const hash=scryptSync(b.password,salt,64,{N:16384,r:8,p:1});
+ try{
+  const result=await authStore.projectCall('factoryDeviceRegister',{actor_user_id:req.projectUser.user_id,device_id:b.device_id,credential_kdf:'scrypt-n16384-r8-p1',credential_salt:salt.toString('hex'),credential_hash:hash.toString('hex')});
+  if(!result?.registered)return res.status(409).json({success:false,message:'裝置已存在或尚未完成登錄'});
+  return res.status(201).json({success:true,device_id:b.device_id});
+ }catch(e){console.warn('Factory registration unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'出廠裝置資料服務尚未就緒'});}
+});
+app.post('/api/projects/:id/devices/bind',requireProjectUser,factoryRateLimit,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const projectId=String(req.params.id||''),b=req.body;
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(projectId)||!b||Array.isArray(b)||Object.keys(b).sort().join(',')!=='device_id,password'||!factoryId(b.device_id)||!factoryPassword(b.password))return res.status(400).json({success:false,message:'參數格式錯誤'});
+ try{
+  const project=await authStore.projectCall('projectAccessGet',{actor_user_id:req.projectUser.user_id,project_id:projectId});
+  if(!project||project.project_role!=='admin')return res.status(403).json({success:false,message:'僅限專案管理員'});
+  // The GAS implementation MUST verify the scrypt hash using constant-time comparison
+  // and atomically reject an existing binding. Never send or store the plaintext password.
+  // Until an authenticated server-side verifier is implemented, refuse to bind.
+  return res.status(503).json({success:false,code:'DEVICE_BIND_NOT_READY',message:'裝置憑證驗證與原子綁定服務尚未完成'});
+ }catch(e){console.warn('Device binding unavailable',e.name||'unknown');return res.status(503).json({success:false,message:'裝置綁定服務尚未就緒'});}
+});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.projectCall('projectAccessMine',{actor_user_id:req.projectUser.user_id});if(!Array.isArray(result?.projects))throw Error('PROJECT_LIST_INVALID');return res.json({success:true,projects:result.projects});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
