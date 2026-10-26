@@ -172,6 +172,26 @@ app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'無法產生裝置 ID'});
   }catch(err){console.warn('Device pre-registration failed',err.name);return res.status(503).json({success:false,message:'裝置建立失敗'});}
 });
+// Read-only device lookup for the super-admin test console.
+// Device control remains disabled until authenticated device polling and acknowledgements exist.
+app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
+  if(req.projectUser.global_role!=='super_admin')
+    return res.status(403).json({success:false,message:'需要超級管理員權限'});
+  const id=String(req.params.deviceId||'').toUpperCase();
+  if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id))
+    return res.status(400).json({success:false,message:'裝置 ID 格式不正確'});
+  try{
+    const result=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:id},limit:1});
+    const row=(result?.rows||[]).find(item=>item.device_id===id);
+    if(!row)return res.status(404).json({success:false,message:'找不到此裝置'});
+    // No stored credentials or personally identifying data in the response.
+    return res.json({success:true,device_id:id,registration_status:row.status||'unknown',
+      connection_status:'unverified',control_ready:false});
+  }catch(err){
+    console.warn('Device status lookup unavailable',err.message);
+    return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
+  }
+});
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
