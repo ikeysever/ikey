@@ -10,6 +10,9 @@ test('device command simulation is mounted behind an explicit environment gate',
   assert.ok(server.includes("enabled: process.env.IKEY_DEVICE_SIMULATION_ENABLED === 'true'"));
   assert.ok(server.includes("secret: process.env.IKEY_DEVICE_TOKEN_SECRET"));
   assert.ok(server.includes('requireProjectUser'));
+  const deviceAuth = fs.readFileSync(path.join(__dirname, '../device-auth.js'), 'utf8');
+  assert.equal((server.match(/require\('\.\/device-command-simulation'\)\(app,/g) || []).length, 1);
+  assert.equal(deviceAuth.includes("require('./device-command-simulation')"), false);
 });
 
 test('device command simulation is documented as in-memory and not a physical-control backend', () => {
