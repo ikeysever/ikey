@@ -58,6 +58,23 @@ function ikeyFactoryDeviceAction(action,p){
    return {registered:true};
   }finally{lock.releaseLock();}
  }
+ if(action==='factoryDeviceUpdate'){
+  if(!/^[0-9a-f-]{36}$/i.test(String(p.project_id||'')))throw Error('BAD_PROJECT_ID');
+  if(typeof p.display_name!=='string'||!p.display_name.trim()||p.display_name.length>64||
+    !['locked','open'].includes(p.lock_mode)||!Number.isInteger(p.heartbeat_interval_minutes)||
+    p.heartbeat_interval_minutes<1||p.heartbeat_interval_minutes>1440||typeof p.auto_firmware_update!=='boolean')throw Error('BAD_DEVICE_SETTINGS');
+  const lock=LockService.getScriptLock();if(!lock.tryLock(15000))throw Error('DEVICE_BUSY');
+  try{
+   const sheet=ikeyDeviceSheet_('Project_Devices',IKEY_BIND_HEADERS);
+   const rows=ikeyDeviceRows_(sheet);
+   const index=rows.findIndex(row=>String(row[1])===String(p.project_id)&&String(row[2])===id);
+   if(index<0)return {updated:false};
+   const rowIndex=index+2;
+   sheet.getRange(rowIndex,4,1,4).setValues([[p.display_name.trim(),p.lock_mode,p.heartbeat_interval_minutes,p.auto_firmware_update]]);
+   sheet.getRange(rowIndex,10).setValue(new Date().toISOString());
+   return {updated:true};
+  }finally{lock.releaseLock();}
+ }
  if(action==='factoryDeviceBind'){
   if(!/^[0-9a-f-]{36}$/i.test(String(p.project_id||'')))throw Error('BAD_PROJECT_ID');
   const lock=LockService.getScriptLock();if(!lock.tryLock(15000))throw Error('DEVICE_BUSY');
