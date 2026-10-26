@@ -18,7 +18,8 @@
    if(f['projects-schedule']!=='all'&&String(asBool(p.scheduled_authorization))!==f['projects-schedule'])return false;
    if(f['projects-date-start']&&p.created_at.slice(0,10)<f['projects-date-start'])return false;
    if(f['projects-date-end']&&p.created_at.slice(0,10)>f['projects-date-end'])return false;
-   // The current API already returns only projects created by this account.
+   // The access-scoped API returns projects owned by or joined by this account.
+   if(f['projects-creator']==='mine'&&p.project_role!=='admin')return false;
    if(f['projects-creator']==='name'&&f['projects-creator-name'].trim()&&!normalize(p.creator_display_name).includes(normalize(f['projects-creator-name'].trim())))return false;
    return true;
   }).sort((a,b)=>{
@@ -52,7 +53,7 @@
    const info=document.createElement('div');info.className='projects-item-text';
    const title=document.createElement('strong');title.textContent=p.project_name||'未命名專案';
    const meta=document.createElement('small');meta.textContent=p.status==='active'?'啟用中':'已停用';
-   const secondary=document.createElement('small');secondary.textContent=(p.authorization_method==='application'?'申請授權':'自行登記')+' · '+(asBool(p.scheduled_authorization)?'有排程':'無排程');
+   const secondary=document.createElement('small');secondary.textContent=(p.project_role==='admin'?'管理員':'使用者')+' · '+(p.authorization_method==='application'?'解鎖須申請':'自行登記')+' · '+(asBool(p.scheduled_authorization)?'有排程':'無排程');
    const enter=document.createElement('a');enter.className='projects-enter';enter.href='/project.html?id='+encodeURIComponent(p.project_id);enter.textContent='進入專案 →';enter.setAttribute('aria-label','進入專案：'+(p.project_name||'未命名專案'));info.append(title,meta,secondary);item.append(icon,info,enter);item.addEventListener('click',event=>{if(event.target.closest('a,button'))return;location.assign(enter.href);});item.tabIndex=0;item.setAttribute('role','link');item.setAttribute('aria-label','進入專案：'+(p.project_name||'未命名專案'));item.addEventListener('keydown',event=>{if(event.target!==item)return;if(event.key==='Enter'||event.key===' '){event.preventDefault();location.assign(enter.href);}});container.append(item);
   }list.append(container);
  }
@@ -60,6 +61,7 @@
  get('projects-view-list').addEventListener('click',()=>setView('list'));
  get('projects-view-grid').addEventListener('click',()=>setView('grid'));
  get('projects-create').addEventListener('click',()=>location.assign('/project-create.html'));
+ get('projects-join')?.addEventListener('click',()=>location.assign('/project-join.html'));
  get('projects-advanced-toggle').addEventListener('click',()=>{const pane=get('projects-advanced');pane.hidden=!pane.hidden;get('projects-advanced-toggle').setAttribute('aria-expanded',String(!pane.hidden));});
  get('projects-clear').addEventListener('click',()=>{search.value='';for(const id of controls){const el=get(id);if(el)el.value=el.type==='date'||id==='projects-creator-name'?'':el.querySelector('option')?.value||'';}render();});
  search.addEventListener('input',render);

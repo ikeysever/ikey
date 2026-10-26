@@ -6,7 +6,7 @@
  * WARNING: Apps Script Web Apps may redirect; do not log credentials.
  */
 const TABS = Object.freeze({
- users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History",settings:"Project_Settings",members:"Project_Members"
+ users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History",settings:"Project_Settings",members:"Project_Members",access:"Project_Access"
 });
 const HEADERS = Object.freeze({
  Gen3_Users:["user_id","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","username"],
@@ -16,7 +16,9 @@ const HEADERS = Object.freeze({
  Project_Requests:["request_id","project_id","user_id","request_type","request_status","reviewed_by","created_at","reviewed_at","project_name","project_description"],
  Project_Review_History:["history_id","request_id","actor_user_id","event_type","from_status","to_status","note","created_at"],
  Project_Settings:["request_id","purpose","theme","sound","mode","updated_at"],
- Project_Members:["request_id","member_user_id","member_role","created_at"]
+ Project_Members:["request_id","member_user_id","member_role","created_at"],
+ Projects:["project_id","project_name","description","created_by_user_id","authorization_method","scheduled_authorization","status","created_at","updated_at","notification_theme","notification_sound_pack","notification_volume"],
+ Project_Access:["entry_id","project_id","entry_type","user_id","role","status","invite_hash","join_policy","created_at","updated_at","reviewed_by"]
 });
 const AUTH_TABS = [TABS.users, TABS.sessions, TABS.audit, TABS.tokens];
 function respond(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON)}
@@ -56,6 +58,8 @@ function locked(fn) {
  try{return fn()}finally{lock.releaseLock()}
 }
 function execute(action,p) {
+ if(["db.health","db.schema","db.select","db.insert","db.update","db.delete"].includes(action))return executeProjectData(action,p);
+ if(["projectAccessConfigure","projectAccessJoin","projectAccessMine","projectAccessGet","projectAccessList","projectAccessReview"].includes(action))return executeProjectAccess(action,p);
  switch(action) {
   case "registerAtomic":return locked(()=>{
    const u=p.user||{},username=String(u.username||"").trim().toLowerCase();

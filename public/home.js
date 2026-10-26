@@ -2,6 +2,13 @@
 const byId=id=>document.getElementById(id);
 const menuToggle=byId('menu-toggle'), sidebar=byId('sidebar'), backdrop=byId('sidebar-backdrop');
 function setMenu(open){
+  if(window.innerWidth>760){
+    document.body.classList.toggle('desktop-sidebar-collapsed',!open);
+    menuToggle.classList.toggle('is-open',open);
+    menuToggle.setAttribute('aria-expanded',String(open));
+    menuToggle.setAttribute('aria-label',open?'收合側欄':'展開側欄');
+    return;
+  }
   sidebar.classList.toggle('open',open);
   menuToggle.classList.toggle('is-open',open);
   document.body.classList.toggle('menu-open',open);
@@ -11,11 +18,12 @@ function setMenu(open){
   // Rotation is state-driven in CSS: open +180°, close back to 0°.
 
 }
-menuToggle.addEventListener('click',()=>setMenu(!sidebar.classList.contains('open')));
+menuToggle.addEventListener('click',()=>setMenu(window.innerWidth>760?document.body.classList.contains('desktop-sidebar-collapsed'):!sidebar.classList.contains('open')));
 backdrop.addEventListener('click',()=>setMenu(false));
+window.addEventListener('resize',()=>{if(window.innerWidth>760){sidebar.classList.remove('open');backdrop.hidden=true;document.body.classList.remove('menu-open');}else{document.body.classList.remove('desktop-sidebar-collapsed');menuToggle.classList.remove('is-open');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','開啟選單');}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false);});
 // Keep the sidebar open when toggling the nested project list on mobile.
-sidebar.querySelectorAll('a,button').forEach(el=>el.addEventListener('click',()=>{if(el.id==='project-menu-toggle')return;if(innerWidth<=760)setMenu(false);}));
+sidebar.querySelectorAll('a').forEach(el=>el.addEventListener('click',()=>{if(window.innerWidth<=760)setMenu(false);}));
 const projectMenuToggle=byId('project-menu-toggle'),projectMenuContent=byId('project-menu-content');
 if(projectMenuToggle&&projectMenuContent){projectMenuToggle.addEventListener('click',()=>{const open=projectMenuToggle.getAttribute('aria-expanded')!=='true';projectMenuToggle.setAttribute('aria-expanded',String(open));projectMenuToggle.setAttribute('aria-label',open?'收合我的專案':'展開我的專案');const chevron=projectMenuToggle.querySelector('.project-menu-chevron');if(chevron)chevron.textContent=open?'▼':'▶';projectMenuContent.hidden=!open;});}
 function showDashboard(user){
