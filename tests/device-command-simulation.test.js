@@ -130,3 +130,92 @@ test('simulation endpoints are not available unless explicitly enabled', async t
   const response = await fetch('http://127.0.0.1:' + server.address().port + '/api/device/commands/next');
   assert.equal(response.status, 404);
 });
+
+
+test('concurrent create requests with the same idempotency key create only one command', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const headers = { 'Idempotency-Key': 'concurrent-key-0001' };
+  const body = { device_id: deviceId, command: 'unlock', timeout_ms: 5000 };
+  const results = await Promise.all([
+    ctx.request('/api/device-commands', { method: 'POST', headers, body }),
+    ctx.request('/api/device-commands', { method: 'POST', headers, body })
+  ]);
+  assert.equal(results.filter(x => x.status === 201).length, 1);
+  assert.equal(results.filter(x => x.status === 200 && x.body.duplicate).length, 1);
+  assert.equal(new Set(results.map(x => x.body.command.command_id)).size, 1);
+  assert.equal(ctx.state.commands.size, 1);
+});
+
+test('concurrent device polls claim a pending command at most once', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const created = await ctx.request('/api/device-commands', {
+    method: 'POST', headers: { 'Idempotency-Key': 'poll-race-key-0001' },
+    body: { device_id: deviceId, command: 'unlock', timeout_ms: 5000 }
+  });
+  const headers = { Authorization: 'Bearer ' + ctx.token };
+  const polls = await Promise.all([
+    ctx.request('/api/device/commands/next', { headers }),
+    ctx.request('/api/device/commands/next', { headers })
+  ]);
+  assert.equal(polls.filter(x => x.body.command?.command_id === created.body.command.command_id).length, 1);
+  assert.equal(polls.filter(x => x.body.command === null).length, 1);
+});
+
+test('expired and tampered device tokens are rejected', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const expired = ctx.token;
+  ctx.advance(11 * 60 * 1000);
+  const expiredResponse = await ctx.request('/api/device/commands/next', {
+    headers: { Authorization: 'Bearer ' + expired }
+  });
+  assert.equal(expiredResponse.status, 401);
+
+  const tamperedResponse = await ctx.request('/api/device/commands/next', {
+    headers: { Authorization: 'Bearer ' + expired.slice(0, -1) + (expired.endsWith('A') ? 'B' : 'A') }
+  });
+  assert.equal(tamperedResponse.status, 401);
+});
+
+test('failed execution is terminal and a contradictory late result is rejected', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const created = await ctx.request('/api/device-commands', {
+    method: 'POST', headers: { 'Idempotency-Key': 'failure-key-0001' },
+    body: { device_id: deviceId, command: 'unlock', timeout_ms: 5000 }
+  });
+  const headers = { Authorization: 'Bearer ' + ctx.token };
+  await ctx.request('/api/device/commands/next', { headers });
+  const path = '/api/device/commands/' + created.body.command.command_id + '/result';
+  const failed = await ctx.request(path, {
+    method: 'POST', headers, body: { status: 'failed', detail: 'simulated actuator feedback timeout' }
+  });
+  assert.equal(failed.status, 200);
+  assert.equal(failed.body.command.status, 'failed');
+
+  const contradictory = await ctx.request(path, {
+    method: 'POST', headers, body: { status: 'succeeded', detail: 'late contradictory report' }
+  });
+  assert.equal(contradictory.status, 409);
+  assert.equal(contradictory.body.code, 'COMMAND_ALREADY_FINISHED');
+});
+
+test('a claimed command that passes its deadline cannot accept a late success report', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const created = await ctx.request('/api/device-commands', {
+    method: 'POST', headers: { 'Idempotency-Key': 'claimed-timeout-0001' },
+    body: { device_id: deviceId, command: 'unlock', timeout_ms: 1000 }
+  });
+  const headers = { Authorization: 'Bearer ' + ctx.token };
+  await ctx.request('/api/device/commands/next', { headers });
+  ctx.advance(1001);
+  const report = await ctx.request('/api/device/commands/' + created.body.command.command_id + '/result', {
+    method: 'POST', headers, body: { status: 'succeeded', detail: 'late result' }
+  });
+  assert.equal(report.status, 409);
+  assert.equal(report.body.code, 'COMMAND_ALREADY_FINISHED');
+  assert.equal(report.body.status, 'timed_out');
+});
