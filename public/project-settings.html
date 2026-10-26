@@ -10,10 +10,18 @@
 <div id="admin-settings" hidden>
 <h2>管理員設定</h2><p>只有管理員可查看下列管理入口。所有寫入仍由伺服器驗證。</p>
 <dl><div><dt>視覺風格</dt><dd id="theme"></dd></div><div><dt>音效風格</dt><dd id="sound"></dd></div><div><dt>通知音量</dt><dd id="volume"></dd></div></dl>
-<p><a id="edit-link" href="#">編輯視覺與音效設定 →</a></p>
+<form id="project-edit-form"><h3>編輯專案資料與通知</h3>
+<label>專案名稱<input name="project_name" maxlength="80" required></label>
+<label>專案說明<textarea name="description" maxlength="1000"></textarea></label>
+<label>視覺風格<select name="notification_theme"><option value="midnight">午夜科技</option><option value="polar">極地淺色</option><option value="emerald">實驗室翡翠</option><option value="copper">工業銅橘</option><option value="violet">未來紫</option><option value="graphite">石墨黑白</option></select></label>
+<label>音效風格<select name="notification_sound_pack"><option value="pulse">鋼片琴</option><option value="crystal">水晶鈴音</option><option value="air">鋼琴</option><option value="wood">木琴</option><option value="future">長笛</option><option value="click">豎琴</option></select></label>
+<label>通知音量<input name="notification_volume" type="range" min="0" max="100" value="50"></label>
+<button type="submit">儲存專案與通知設定</button><p id="edit-status" role="status"></p></form>
 <section aria-labelledby="members-title"><h3 id="members-title">使用者</h3><p>顯示專案帳號名稱（不是登入帳號）及身分：管理員／使用者。</p><button type="button" id="members-refresh">重新整理使用者</button><p id="members-status" role="status">尚未讀取使用者</p><ul id="members-list"></ul></section>
-<section aria-labelledby="invite-title"><h3 id="invite-title">邀請成員</h3><p>可選擇直接加入或申請後由管理員審核。邀請碼僅在產生時顯示。</p><a id="invite-link" href="#">管理邀請碼與審核申請 →</a></section>
+<section aria-labelledby="invite-title"><h3 id="invite-title">邀請成員</h3><p>可選擇直接加入或申請後由管理員審核。邀請碼僅在產生時顯示。</p><form id="invite-form"><label>加入方式<select name="join_policy"><option value="approval">管理員審核</option><option value="direct">直接加入</option></select></label><button type="submit">產生新邀請碼</button><p id="invite-status" role="status"></p><label id="invite-secret-wrap" hidden>本次邀請碼（僅顯示一次）<input id="invite-secret" readonly></label></form><p>待審核成員可在下方清單直接核准或拒絕。</p></section>
 <p><a id="devices-link" href="#">裝置管理 →</a></p>
 <p><a id="other-link" href="#">其他設定（狀態／授權／排程） →</a></p>
-<section aria-labelledby="danger-title"><h3 id="danger-title">危險操作</h3><p>刪除專案採雙重確認，並保留軟刪除紀錄。</p><p><a id="delete-link" href="#">刪除專案（雙重確認） →</a></p></section>
+<section aria-labelledby="danger-title"><h3 id="danger-title">危險操作</h3><p>刪除專案採雙重確認，並保留軟刪除紀錄。</p><button id="delete-start" type="button">刪除專案</button>
+<dialog id="delete-confirm"><h3>第一次確認：確定刪除專案？</h3><p>刪除後將無法正常使用此專案，資料保留為軟刪除紀錄。</p><button id="delete-next" type="button">繼續</button><button id="delete-cancel" type="button">取消</button></dialog>
+<dialog id="delete-final"><h3>第二次確認：輸入完整專案名稱</h3><label>專案名稱<input id="delete-name" autocomplete="off"></label><button id="delete-submit" type="button">確認刪除</button><button id="delete-final-cancel" type="button">取消</button><p id="delete-status" role="status"></p></dialog></section>
 </div></section></main></body></html>
