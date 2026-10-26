@@ -10,6 +10,7 @@ const USER='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PROJECT='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 function build(){
  const calls=[];
+ let projectHealth=null;
  const store={
   resolveSession:async hash=>hash==='demo'?{
    session:{revoked_at:'',expires_at:new Date(Date.now()+3600000).toISOString()},
@@ -25,7 +26,7 @@ function build(){
    if(action==='projectAccessReview')return {reviewed:true,status:'active'};
    throw Error('UNKNOWN_TEST_ACTION');
   },
-  dbCall:async()=>({rows:[]})
+  dbCall:async(action)=>action==='db.health'?projectHealth:{rows:[]}
  };
  const source=fs.readFileSync(path.join(__dirname,'../server.js'),'utf8');
  const testRequire=name=>{
@@ -36,14 +37,31 @@ function build(){
  };
  const mod={exports:{}};const wrapped=vm.runInThisContext('(function(exports, require, module, __filename, __dirname){'+source+'\n})',{filename:'server.js'});
  wrapped(mod.exports,testRequire,mod,path.join(__dirname,'../server.js'),path.join(__dirname,'..'));
- return {app:mod.exports,calls};
+ return {app:mod.exports,calls,setProjectHealth:value=>{projectHealth=value;}};
 }
 test('authenticated project APIs validate roles, origins and invite-code secrecy',async t=>{
- const {app,calls}=build();
+ const {app,calls,setProjectHealth}=build();
  const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
  t.after(()=>new Promise(resolve=>server.close(resolve)));
  const base='http://127.0.0.1:'+server.address().port;
  const fetchApi=(url,options={})=>fetch(base+url,{...options,headers:{Cookie:'ikey_gen3_session=demo',Origin:base,'Content-Type':'application/json',...options.headers}});
+ await t.test('project readiness fails closed on missing GAS capability',async()=>{
+  const r=await fetchApi('/api/projects/readiness');
+  assert.equal(r.status,503);
+  assert.deepEqual(await r.json(),{ready:false,component:'projects'});
+ });
+ await t.test('project readiness verifies expected schema version',async()=>{
+  setProjectHealth({ready:true,version:'ikey-projects-v1',access_schema:'project-access-v1'});
+  const r=await fetchApi('/api/projects/readiness');
+  assert.equal(r.status,200);
+  assert.equal((await r.json()).ready,true);
+ });
+ await t.test('project readiness rejects incompatible GAS version',async()=>{
+  setProjectHealth({ready:true,version:'ikey-projects-v0',access_schema:'project-access-v1'});
+  const r=await fetchApi('/api/projects/readiness');
+  assert.equal(r.status,503);
+  setProjectHealth(null);
+ });
  await t.test('not logged in is unauthorized',async()=>{
   const r=await fetchApi('/api/projects',{headers:{Cookie:''}});
   assert.equal(r.status,401);
