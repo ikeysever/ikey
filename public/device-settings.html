@@ -15,5 +15,18 @@
 <div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
 <main><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>裝置設定</h1><p>超級管理員 / 裝置設定</p></header>
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
-<section id="account-empty-page" class="card" hidden aria-label="裝置設定頁面"><h2>裝置連線與測試</h2><p>此頁面為測試控制介面。尚未完成裝置清單、後端權限驗證及 ESP32 指令回報前，不會送出實體開鎖指令。</p><label for="device-id">裝置 ID（8 碼）</label><p><input id="device-id" maxlength="8" placeholder="輸入已登錄裝置 ID" autocomplete="off" style="padding:12px;border-radius:9px"></p><p id="device-status" role="status">狀態：尚未連線</p><div style="display:flex;gap:12px;flex-wrap:wrap"><button type="button" disabled title="等待安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button type="button" disabled title="等待安全控制 API 與 ESP32 回報">上鎖測試（待串接）</button></div><p><a href="/super-admin.html">← 返回超級管理員</a></p></section>
-</main></div></body></html>
+<section id="account-empty-page" class="card" hidden aria-label="裝置設定頁面"><h2>裝置連線與測試</h2><p>此頁面為測試控制介面。尚未完成裝置清單、後端權限驗證及 ESP32 指令回報前，不會送出實體開鎖指令。</p><label for="device-id">裝置 ID（8 碼）</label><p><input id="device-id" maxlength="8" placeholder="輸入已登錄裝置 ID" autocomplete="off" style="padding:12px;border-radius:9px"></p><p><button id="check-device" type="button">查詢裝置狀態</button></p><p id="device-status" role="status" aria-live="polite">狀態：尚未查詢</p><div style="display:flex;gap:12px;flex-wrap:wrap"><button type="button" disabled title="等待安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button type="button" disabled title="等待安全控制 API 與 ESP32 回報">上鎖測試（待串接）</button></div><p><a href="/super-admin.html">← 返回超級管理員</a></p></section>
+<script>
+document.getElementById('check-device').addEventListener('click',async()=>{
+ const id=document.getElementById('device-id').value.trim().toUpperCase();
+ const status=document.getElementById('device-status');
+ if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)){status.textContent='請輸入正確的 8 碼裝置 ID';return;}
+ status.textContent='正在查詢裝置…';
+ try{
+  const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/status',{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||!data.success)throw Error(data.message||'查詢失敗');
+  status.textContent='裝置 '+data.device_id+'｜登錄狀態：'+data.registration_status+'｜實體連線：尚未驗證';
+ }catch(error){status.textContent=error.message||'查詢失敗';}
+});
+</script></main></div></body></html>
