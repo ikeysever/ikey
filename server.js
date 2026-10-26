@@ -115,6 +115,20 @@ function sameProjectOrigin(req){
  const origin=req.get('origin');if(!origin)return true;
  try{const u=new URL(origin);const proto=req.secure||req.get('x-forwarded-proto')==='https'?'https:':'http:';return u.protocol===proto&&u.host===req.get('host');}catch{return false;}
 }
+// Deployment readiness: verifies the live GAS has BOTH project schemas.
+// Does not return credentials, sheet IDs, or underlying provider error strings.
+app.get('/api/projects/readiness',async(_req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!authStore)return res.status(503).json({ready:false,component:'projects'});
+ try{
+  const check=await authStore.dbCall('db.health',{});
+  const ready=check?.ready===true&&check?.version==='ikey-projects-v1'&&check?.access_schema==='project-access-v1';
+  return res.status(ready?200:503).json({ready,component:'projects',version:ready?'ikey-projects-v1':null});
+ }catch(error){
+  console.warn('Project readiness failed',error.name||'unknown');
+  return res.status(503).json({ready:false,component:'projects'});
+ }
+});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.projectCall('projectAccessMine',{actor_user_id:req.projectUser.user_id});if(!Array.isArray(result?.projects))throw Error('PROJECT_LIST_INVALID');return res.json({success:true,projects:result.projects});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
