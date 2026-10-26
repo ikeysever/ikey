@@ -143,6 +143,22 @@ app.get('/api/projects/:id',requireProjectUser,async(req,res)=>{
   return res.json({success:true,project});
  }catch(err){console.warn('Project details unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務暫時無法使用'});}
 });
+app.patch('/api/projects/:id/other-settings',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const id=String(req.params.id||''),body=req.body;
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id))return res.status(400).json({success:false,message:'專案 ID 格式錯誤'});
+ if(!body||typeof body!=='object'||Array.isArray(body)||!Object.keys(body).length||
+    Object.keys(body).some(k=>!['status','authorization_method','scheduled_authorization'].includes(k)))return res.status(400).json({success:false,message:'不支援的設定欄位'});
+ const changes={};
+ if('status'in body){if(!['active','inactive'].includes(body.status))return res.status(400).json({success:false,message:'狀態無效'});changes.status=body.status;}
+ if('authorization_method'in body){if(!['application','self_registration'].includes(body.authorization_method))return res.status(400).json({success:false,message:'授權方式無效'});changes.authorization_method=body.authorization_method;}
+ if('scheduled_authorization'in body){if(typeof body.scheduled_authorization!=='boolean')return res.status(400).json({success:false,message:'排程授權必須是布林值'});changes.scheduled_authorization=String(body.scheduled_authorization);}
+ try{
+  const result=await authStore.projectCall('projectSettingsUpdate',{actor_user_id:req.projectUser.user_id,project_id:id,changes});
+  if(!result?.updated||!result.project)return res.status(503).json({success:false,message:'資料庫未確認儲存'});
+  return res.json({success:true,project:result.project});
+ }catch(err){console.warn('Other project settings unavailable',err.message);return res.status(503).json({success:false,message:'設定無法儲存，請確認管理員權限及資料庫版本'});}
+});
 // Invite codes are high-entropy bearer secrets: they are returned once, never stored in cleartext.
 const inviteAttempts=new Map();
 function limitProjectAccess(req,res,next){
