@@ -44,7 +44,7 @@ function createSheetsStore() {
    },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
-     if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
+     if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine","projectSettingsUpdate"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
      return call(action,payload);
    }
  };
