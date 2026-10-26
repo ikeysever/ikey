@@ -33,12 +33,22 @@ test('GAS device actions fail closed without trusted authorization', () => {
 
 test('GAS adapter uses explicit device action allowlist', () => {
  const source = read('gen3-auth/sheets-store.js');
- for(const action of ['factoryDeviceRegister','factoryDeviceCredentialGet','factoryDeviceBind']){
+ for(const action of ['factoryDeviceRegister','factoryDeviceCredentialGet','factoryDeviceBind','factoryDeviceList','factoryDeviceUpdate']){
   assert.ok(source.includes('"'+action+'"'), action + ' is not allowlisted');
  }
 });
 
 test('project device UI must not claim live device state without service', () => {
  const source = read('public/project-devices.js');
- assert.match(source, /裝置登錄與讀取 API 尚未啟用/);
+ assert.match(source, /\/api\/projects\/.*\/devices/);
+ assert.match(source, /不代表設備在線/);
+ assert.match(source, /\/devices\/bind/);
+ assert.match(source, /save-device-settings/);
+});
+
+test('device settings routes require admin role and validated payload', () => {
+ const source = read('server.js');
+ assert.match(source, /app\.patch\('\/api\/projects\/:id\/devices\/:deviceId',requireProjectUser,factoryRateLimit/);
+ assert.match(source, /factoryDeviceUpdate/);
+ assert.match(source, /heartbeat_interval_minutes<1/);
 });
