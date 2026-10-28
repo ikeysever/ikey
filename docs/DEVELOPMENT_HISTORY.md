@@ -134,3 +134,12 @@
 - **New adapter:** `lib/device-command-gateway.js` and `tests/device-command-gateway.test.js` provide an **unmounted** fail-closed interface for dedicated GAS actions, requiring injected verified actor/device/binding checks. GAS actions named in the adapter are proposed contracts and are **not yet implemented or deployed**. These new tests require a fresh CI result.
 - **Blocked:** Actual deployed GAS source/version, Sheets headers, credential migration, server-side verified project-admin membership and cross-instance atomic storage must be checked before production implementation. The current in-memory simulation still exists and is not physical control.
 - **Next:** Verify latest CI, implement dedicated GAS atomic actions with isolated test Sheets and audit logging, update authenticated server routes and firmware replay/outbox behavior, complete fault-injection and real-device tests, then obtain explicit deployment review.
+
+## 2026-10-28 — Isolated transaction-backed command state machine (not deployed)
+
+- User requested completing all remaining stages in one pass. Scope remained staging-only because actual GAS deployment/schema and physical ESP32 conditions are unverified; no production or hardware changes were authorized or performed.
+- Added `lib/atomic-command-service.js`: dependency-injected command state machine requiring a durable shared `transaction` implementation, project-admin check, device binding check, ID generation, token hashing and clock. It supports create, claim, report, readback, idempotency, expiry, event records and fail-closed validation. **It is not connected to real GAS or any production route.**
+- Added `tests/atomic-command-service.test.js`: covers duplicate create, conflicting idempotency, authorization, claim, duplicate/contradictory report, expiry and missing positive feedback.
+- **Unresolved:** The injected test transaction is not a GAS LockService/Sheets implementation. Real atomicity, durability, cross-process safety, credential migration, verified actor/device context, ESP32 NVS outbox and physical feedback are not established by these files. Do not deploy or treat test results as physical unlock validation.
+- **Verification:** CI result for these commits pending at time of writing.
+- **Next gate:** verify actual GAS and Sheets structure, implement dedicated locked persistent GAS actions and integration tests using isolated test Sheets; then integrate server/firmware and obtain separate physical/deployment approval.
