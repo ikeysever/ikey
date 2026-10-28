@@ -1,0 +1,64 @@
+name: iKey 3.1 ESP32 Staging Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'server.js'
+      - 'public/project-devices.js'
+      - 'public/project-devices.html'
+      - 'public/project-subpages.css'
+      - 'device-auth.js'
+      - 'device-command-simulation.js'
+      - 'firmware/**'
+      - 'gen3-auth/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/esp32-device-auth-tests.yml'
+  push:
+    branches:
+      - feature/esp32-device-auth-staging
+    paths:
+      - 'server.js'
+      - 'public/project-devices.js'
+      - 'public/project-devices.html'
+      - 'public/project-subpages.css'
+      - 'device-auth.js'
+      - 'device-command-simulation.js'
+      - 'firmware/**'
+      - 'gen3-auth/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/esp32-device-auth-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test device auth and command simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout staging source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Check backend JavaScript syntax
+        run: |
+          node --check server.js
+          node --check device-auth.js
+          node --check device-command-simulation.js
+          node --check public/project-devices.js
+      - name: Run automated tests
+        run: npm test
