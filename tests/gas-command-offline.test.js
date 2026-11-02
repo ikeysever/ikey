@@ -75,5 +75,39 @@ test('fault injection exposes partial-write recovery requirement',()=>{
  assert.equal(f.tables.DeviceCommandEvents.length,1);
  f.clearFault();
  assert.equal(f.create().duplicate,true);
- assert.equal(f.tables.DeviceCommandEvents.length,1);
+ assert.equal(f.tables.DeviceCommandEvents.length,2);
+ assert.equal(f.tables.DeviceCommandEvents[1][3],'created');
+});
+
+test('claim event is reconstructed after an injected event append failure',()=>{
+ const f=fixture(),a=f.create();
+ f.failAt(2);
+ assert.throws(()=>f.claim(),/INJECTED_WRITE_FAILURE/);
+ assert.equal(f.tables.DeviceCommands[1][7],'claimed');
+ f.clearFault();
+ assert.equal(f.claim(),null);
+ assert.deepEqual(f.tables.DeviceCommandEvents.slice(1).map(r=>r[3]),['created','claimed']);
+ assert.equal(f.report(a.command.command_id).status,'succeeded');
+});
+test('report event is reconstructed without repeating terminal transition',()=>{
+ const f=fixture(),a=f.create();f.claim();
+ f.failAt(2);
+ assert.throws(()=>f.report(a.command.command_id),/INJECTED_WRITE_FAILURE/);
+ assert.equal(f.tables.DeviceCommands[1][7],'succeeded');
+ f.clearFault();
+ assert.equal(f.report(a.command.command_id).duplicate,true);
+ assert.deepEqual(f.tables.DeviceCommandEvents.slice(1).map(r=>r[3]),['created','claimed','reported']);
+});
+test('failed reconciliation blocks new command processing',()=>{
+ const f=fixture();f.failAt(2);
+ assert.throws(()=>f.create(),/INJECTED_WRITE_FAILURE/);
+ f.failAt(1);
+ assert.throws(()=>f.claim(),/INJECTED_WRITE_FAILURE/);
+ assert.equal(f.tables.DeviceCommands[1][7],'pending');
+});
+test('sequential simulated contenders claim at most once',()=>{
+ const f=fixture();f.create();
+ const outcomes=Array.from({length:12},()=>f.claim());
+ assert.equal(outcomes.filter(Boolean).length,1);
+ assert.equal(f.tables.DeviceCommandEvents.slice(1).filter(r=>r[3]==='claimed').length,1);
 });
