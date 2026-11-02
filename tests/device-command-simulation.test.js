@@ -11,7 +11,9 @@ const deviceId = 'Y8R69EXB';
 
 function tokenFor(id = deviceId, now = Date.now()) {
   const payload = Buffer.from(JSON.stringify({
-    sub: id, exp: now + 10 * 60 * 1000, nonce: 'simulated-esp32'
+    iss: 'ikey-render', aud: 'ikey-device-api', sub: id,
+    iat: now, exp: now + 15 * 60 * 1000,
+    nonce: crypto.randomBytes(16).toString('base64url')
   })).toString('base64url');
   const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
   return payload + '.' + signature;
@@ -23,11 +25,9 @@ async function setup() {
   app.use(express.json());
   const calls = [];
   const authStore = {
-    async dbCall(action, query) {
-      calls.push({ action, query });
-      if (action !== 'db.select' || query.table !== 'Devices') throw new Error('unexpected storage call');
-      return { rows: query.where.device_id === deviceId
-        ? [{ device_id: deviceId, status: 'pre_registered' }] : [] };
+    async deviceAuthFindById(id) {
+      calls.push(id);
+      return id === deviceId ? { device_id: deviceId, status: 'pre_registered' } : null;
     }
   };
   const requireProjectUser = (req, res, next) => {
@@ -167,7 +167,7 @@ test('expired and tampered device tokens are rejected', async t => {
   const ctx = await setup();
   t.after(ctx.close);
   const expired = ctx.token;
-  ctx.advance(11 * 60 * 1000);
+  ctx.advance(16 * 60 * 1000);
   const expiredResponse = await ctx.request('/api/device/commands/next', {
     headers: { Authorization: 'Bearer ' + expired }
   });

@@ -20,7 +20,7 @@ The historical live-sheet audit observed a `Devices` tab but did not prove the d
 - missing token secret: HTTP 503 / `DEVICE_AUTH_NOT_CONFIGURED`
 - GAS/storage unavailable: HTTP 503 / `DEVICE_AUTH_UNAVAILABLE`
 
-`GET /api/device/me` requires `Authorization: Bearer <token>`. The server validates signature, issuer, audience, subject, issue time, expiry and nonce format, then rechecks device status. Responses use `Cache-Control: no-store`.
+`GET /api/device/me` requires `Authorization: Bearer <token>`. The server validates signature, issuer, audience, subject, issue time, expiry and nonce format, then rechecks device status. The in-memory simulation uses the same claims and the same dedicated device lookup adapter. Responses use `Cache-Control: no-store`.
 
 ## GAS storage contract
 

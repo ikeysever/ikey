@@ -156,3 +156,6 @@
 - **Tests:** Added HTTP API tests and static GAS contract checks. CI result pending after staging push.
 - **Not performed:** No workflow_dispatch, clasp sync, GAS deployment, Script Property read/write, spreadsheet creation/write, Render environment change/deploy, main modification or physical unlock.
 - **Remaining:** Create isolated staging spreadsheet and staging GAS project/property; configure a separate staging Render service and fresh secrets only after separate authorization; run real GAS↔Render integration tests.
+
+
+- **Simulation compatibility follow-up:** Updated the disabled-by-default in-memory command simulator to validate the same issuer/audience/time/nonce claims and use the same dedicated staging device lookup action. Updated its tests to match the current token contract; simulator remains memory-only and is not a physical-control backend.

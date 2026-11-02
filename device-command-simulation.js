@@ -29,8 +29,13 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
     if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) return null;
     try {
       const payload = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
-      if (!idPattern.test(payload.sub) || !Number.isSafeInteger(payload.exp) ||
-          payload.exp <= now() || payload.exp > now() + 15 * 60 * 1000) return null;
+      const time = now(), ttl = 15 * 60 * 1000;
+      if (payload.iss !== 'ikey-render' || payload.aud !== 'ikey-device-api' ||
+          !idPattern.test(payload.sub) || !Number.isSafeInteger(payload.iat) ||
+          !Number.isSafeInteger(payload.exp) || payload.iat > time + 30000 ||
+          payload.exp <= time || payload.exp - payload.iat !== ttl ||
+          payload.exp > time + ttl + 30000 ||
+          typeof payload.nonce !== 'string' || !/^[A-Za-z0-9_-]{22}$/.test(payload.nonce)) return null;
       return payload.sub;
     } catch { return null; }
   }
@@ -38,13 +43,9 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
   async function deviceIdFromRequest(req) {
     const header = req.get('Authorization') || '';
     const id = header.startsWith('Bearer ') ? verifyToken(header.slice(7)) : null;
-    if (!id || !authStore || typeof authStore.dbCall !== 'function') return null;
-    const result = await authStore.dbCall('db.select', {
-      table: 'Devices', where: { device_id: id }, limit: 1
-    });
-    if (!Array.isArray(result?.rows)) throw new Error('INVALID_DEVICE_LOOKUP');
-    const row = result.rows.find(item => item.device_id === id);
-    return row && row.status === 'pre_registered' ? id : null;
+    if (!id || !authStore || typeof authStore.deviceAuthFindById !== 'function') return null;
+    const row = await authStore.deviceAuthFindById(id);
+    return row && row.device_id === id && row.status === 'pre_registered' ? id : null;
   }
 
   function expireCommands() {
@@ -127,14 +128,9 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
       if (prior) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(prior) });
     }
     try {
-      if (!authStore || typeof authStore.dbCall !== 'function')
+      if (!authStore || typeof authStore.deviceAuthFindById !== 'function')
         return res.status(503).json({ success: false, code: 'DEVICE_LOOKUP_UNAVAILABLE' });
-      const result = await authStore.dbCall('db.select', {
-        table: 'Devices', where: { device_id: deviceId }, limit: 1
-      });
-      if (!Array.isArray(result?.rows))
-        return res.status(503).json({ success: false, code: 'DEVICE_LOOKUP_UNAVAILABLE' });
-      const device = result.rows.find(item => item.device_id === deviceId);
+      const device = await authStore.deviceAuthFindById(deviceId);
       if (!device || device.status !== 'pre_registered')
         return res.status(404).json({ success: false, code: 'DEVICE_NOT_REGISTERED' });
     } catch (error) {
