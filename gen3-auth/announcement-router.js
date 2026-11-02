@@ -240,7 +240,7 @@ function createAnnouncementRouter(store) {
       const current = await findById(id);
       if (!current || current.status === 'deleted') return res.status(404).json({ success: false, message: '找不到可編輯的公告' });
       const fields = validateInput(req.body, true);
-      const data = { ...fields, updated_by_user_id: String(req.announcementUser.user_id), updated_at: nowIso() };
+      const data = { ...fields, updated_at: nowIso() };
       if (current.status === 'published' && fields.scheduled_at && Date.parse(fields.scheduled_at) > Date.now()) {
         data.status = 'scheduled'; data.published_at = '';
       } else if (fields.scheduled_at !== undefined && fields.scheduled_at && Date.parse(fields.scheduled_at) > Date.now()) {
@@ -263,7 +263,7 @@ function createAnnouncementRouter(store) {
       const row = await findById(id);
       if (!row || row.status === 'deleted') return res.status(404).json({ success: false, message: '找不到可發布的公告' });
       const now = nowIso();
-      await update(id, { status: 'published', published_at: now, scheduled_at: '', updated_at: now, updated_by_user_id: String(req.announcementUser.user_id) });
+      await update(id, { status: 'published', published_at: now, scheduled_at: '', updated_at: now });
       return res.json({ success: true, status: 'published' });
     } catch (err) {
       console.warn('Announcement publish unavailable', err.message);
@@ -277,7 +277,7 @@ function createAnnouncementRouter(store) {
       const row = await findById(id);
       if (!row || row.status !== 'published') return res.status(404).json({ success: false, message: '找不到已發布公告' });
       const now = nowIso();
-      await update(id, { status: 'archived', archived_at: now, updated_at: now, updated_by_user_id: String(req.announcementUser.user_id) });
+      await update(id, { status: 'archived', archived_at: now, updated_at: now });
       return res.json({ success: true, status: 'archived' });
     } catch (err) {
       console.warn('Announcement unpublish unavailable', err.message);
@@ -291,7 +291,7 @@ function createAnnouncementRouter(store) {
       const row = await findById(id);
       if (!row || row.status !== 'deleted') return res.status(404).json({ success: false, message: '找不到回收站公告' });
       const now = nowIso();
-      await update(id, { status: 'draft', deleted_at: '', updated_at: now, updated_by_user_id: String(req.announcementUser.user_id) });
+      await update(id, { status: 'draft', deleted_at: '', updated_at: now });
       return res.json({ success: true, status: 'draft' });
     } catch (err) {
       console.warn('Announcement restore unavailable', err.message);
@@ -305,7 +305,7 @@ function createAnnouncementRouter(store) {
       const row = await findById(id);
       if (!row || row.status === 'deleted') return res.status(404).json({ success: false, message: '找不到公告' });
       const now = nowIso();
-      await update(id, { status: 'deleted', deleted_at: now, updated_at: now, updated_by_user_id: String(req.announcementUser.user_id) });
+      await update(id, { status: 'deleted', deleted_at: now, updated_at: now });
       return res.json({ success: true, status: 'deleted', soft_deleted: true });
     } catch (err) {
       console.warn('Announcement recycle unavailable', err.message);
