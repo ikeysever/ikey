@@ -33,8 +33,8 @@ static const char DEVICE_PASSWORD[] = "YOUR_DEVICE_PRE_REGISTRATION_PASSWORD";
 // Verified project UUID assigned by the server. Never accept this from a command body.
 static const char PROJECT_ID[] = "YOUR_VERIFIED_PROJECT_UUID";
 
-// Must be a separately approved staging host, never production for this test.
-// Example format only: https://your-staging-host.example
+// Configure the existing approved Render host only after server-side gates are verified.
+// No additional Render service is required. Never enable physical actuation for this test.
 static const char API_BASE_URL[] = "https://REPLACE-WITH-STAGING-HOST";
 
 // Paste the trusted root/intermediate CA PEM for the staging host here.
@@ -82,11 +82,10 @@ static constexpr uint32_t LOCAL_COMMAND_LIMIT_MS = 13000;
 static WiFiClientSecure tlsClient;
 static Preferences preferences;
 static String accessToken;
-static String lastCommandId;
 static String activeProjectId;
 // Keep a bounded persistent replay ledger. Hardware remains disabled by default.
 static constexpr uint8_t RECENT_COMMAND_COUNT = 8;
-static constexpr uint32_t MAX_CLOCK_SKEW_MS = 30000;
+
 static uint32_t lastAuthAt = 0;
 static uint32_t lastPollAt = 0;
 static bool configured = false;
@@ -261,6 +260,12 @@ static bool postCommandResult(const String& commandId, const char* result,
   const String path = "/api/device/projects/" + activeProjectId + "/commands/" + commandId + "/report";
   const bool ok = httpsRequest("POST", path, body, response, status);
   if (ok) {
+    // Only a valid positive acknowledgement may clear the durable outbox.
+    StaticJsonDocument<512> ack;
+    if (deserializeJson(ack, response) || ack["success"] != true) {
+      Serial.println("[REPORT] Invalid acknowledgement; keeping outbox.");
+      return false;
+    }
     preferences.remove("pending_report");
     preferences.remove("claim_token");
     Serial.printf("[REPORT] command=%s status=%s accepted by API\n",
@@ -398,7 +403,6 @@ static void processCommand(JsonVariantConst command) {
     Serial.println("[CMD] Durable storage failure; no actuation.");
     return;
   }
-  lastCommandId = commandId;
   commandRunning = true;
   relayOff();
 
@@ -433,6 +437,11 @@ static void retryPendingReport() {
   if (!validUuid(activeProjectId)) { relayOff(); return; }
   const String id = record.substring(0, separator);
   const String status = record.substring(separator + 1);
+  if (!validUuid(id) || !validClaimProof(preferences.getString("claim_token", ""))) {
+    relayOff();
+    Serial.println("[REPORT] Corrupt outbox; refusing new claims.");
+    return;
+  }
   if (status != "failed" && status != "succeeded") { relayOff(); return; }
   postCommandResult(id, status.c_str(), "recovered_pending_report");
 }
