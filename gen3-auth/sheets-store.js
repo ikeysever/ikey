@@ -42,6 +42,27 @@ function createSheetsStore() {
      if(!['db.health','db.schema','db.select','db.insert','db.update','db.delete'].includes(action))throw Error('GEN3_DB_ACTION_NOT_ALLOWED');
      return call(action,payload);
    },
+   // Safe test transport: deliberately restricted to non-actuating command lookup.
+   // It never enables the physical unlock routes or accepts create/claim/report.
+   // GAS must still validate the signature, nonce, actor and project binding.
+   commandProbe:async(payload)=>{
+     if(process.env.IKEY_COMMAND_PROBE_ENABLED!=='true')
+       throw Error('COMMAND_PROBE_DISABLED');
+     if(!payload||typeof payload!=='object'||Array.isArray(payload)||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.project_id)||
+        !/^[A-HJ-NP-Z2-9]{8}$/.test(payload.device_id)||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.actor_user_id)||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(payload.command_id)||
+        Object.keys(payload).sort().join(',')!=='actor_user_id,command_id,device_id,project_id')
+       throw Error('INVALID_COMMAND_PROBE');
+     const {signCommandAssertion}=require('../lib/command-trust-assertion');
+     const assertion=signCommandAssertion({
+       secret:process.env.IKEY_COMMAND_TRUST_SECRET,
+       action:'deviceCommandGet',project_id:payload.project_id,
+       device_id:payload.device_id,actor_user_id:payload.actor_user_id,payload
+     });
+     return call('deviceCommandGet',{...payload,command_assertion:assertion});
+   },
    // Dedicated command transport. Requires GAS dispatcher, schema and trusted
    // identity context to be separately verified before enabling HTTP routes.
    commandCall:async(action,payload)=>{
