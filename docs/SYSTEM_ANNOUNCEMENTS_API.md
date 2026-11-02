@@ -11,9 +11,7 @@ browser never receives `GEN3_APPS_SCRIPT_KEY` or the spreadsheet ID.
 
 ## Approved Google Sheets tables
 
-Run `gas/setup-system-announcement-tables.gs` manually in the existing Gen3
-Apps Script project only after reviewing the actual deployed `doPost` source
-and confirming `GEN3_SPREADSHEET_ID` points to the intended staging spreadsheet.
+Run `setupSystemAnnouncementTables()` only in an isolated staging Apps Script project. The function now requires `IKEY_ENVIRONMENT=staging`, `IKEY_STAGING_SPREADSHEET_ID`, and an exact match between that ID and `GEN3_SPREADSHEET_ID`. It refuses to run otherwise. The integrated source is `gen3-auth/Code.gs`; the setup script is also retained separately under `gas/` for review.
 The setup function creates missing sheets, writes headers only to a genuinely
 empty sheet, refuses mismatched existing headers, and adds both names to
 `IKEY_DB_ALLOWED_TABLES`. It does not clear or replace existing data.
@@ -88,9 +86,7 @@ the HTTP API imposes the stricter 10,000-character announcement content limit.
 1. Review and integrate the GAS dispatch into the actual existing Gen3 `doPost`
    after API-key validation. Do not add a second `doPost`.
 2. Run `setupSystemAnnouncementTables()` against the staging spreadsheet only.
-3. Deploy the Apps Script staging/test version and verify legacy auth actions
-   still work plus `db.health`, `db.schema`, `db.insert`, `db.select`,
-   and `db.update`.
+3. Configure a separate staging Apps Script project and staging spreadsheet; do not reuse the fixed script ID in the legacy `sync-apps-script.yml` workflow. Set `IKEY_ENVIRONMENT=staging`, `IKEY_STAGING_SPREADSHEET_ID`, and `GEN3_SPREADSHEET_ID` in that staging project. Use the new `sync-announcement-staging-apps-script.yml` workflow only after setting its two staging-only GitHub secrets. Deploy the staging Web App version and verify legacy auth actions still work plus `db.health`, `db.schema`, `db.insert`, `db.select`, and `db.update`.
 4. Configure the two staging Render environment variables:
    `GEN3_APPS_SCRIPT_URL`, `GEN3_APPS_SCRIPT_KEY` (existing staging values),
    and `ANNOUNCEMENTS_CRON_SECRET` (new random staging-only value).
@@ -102,8 +98,5 @@ the HTTP API imposes the stricter 10,000-character announcement content limit.
 
 ## Current limitation
 
-This repository branch contains the staging implementation and a guarded GAS
-sheet setup script. It does not prove that the live Apps Script source has been
-safely integrated, that the staging spreadsheet tables have been created, that
-Render staging secrets are configured, or that a Cron Job exists. Those steps
+The generic DB dispatcher and guarded migration are now integrated into the repository's `gen3-auth/Code.gs` source, and a separate manual staging-only sync workflow is provided. The connected Drive search surfaced the existing `iKey_Database` and historical backups, but no dedicated staging spreadsheet or separate staging Apps Script project. The migration has not been run. This does not prove that the staging spreadsheet tables have been created, that a staging Web App deployment exists, that Render staging secrets are configured, or that a Cron Job exists. Do not dispatch the legacy `sync-apps-script.yml` workflow from this branch: it contains a fixed non-staging script ID. Those steps
 must be completed and verified before calling the API operational.
