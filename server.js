@@ -217,6 +217,17 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
+// Reserved authenticated device command API. No physical action is possible
+// until durable GAS command storage, device authentication and replay safety pass.
+app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req)||req.projectUser.global_role!=='super_admin')
+  return res.status(403).json({success:false,code:'NOT_AUTHORIZED'});
+ if(!/^[A-HJ-NP-Z2-9]{8}$/.test(String(req.params.deviceId||'')))
+  return res.status(400).json({success:false,code:'INVALID_DEVICE_ID'});
+ return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY',
+  message:'裝置指令服務尚未啟用，未送出任何控制指令'});
+});
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
