@@ -1,0 +1,24 @@
+name: Device command safety tests
+on:
+  push:
+    branches:
+      - fix/device-command-safety-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gateway-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check lib/device-command-gateway.js
+          node --check tests/device-command-gateway-contract.test.js
+          node --check tests/device-command-retry-safety.test.js
+      - name: Run isolated gateway tests
+        run: node --test tests/device-command-gateway-contract.test.js tests/device-command-retry-safety.test.js
