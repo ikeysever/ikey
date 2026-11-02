@@ -92,7 +92,7 @@ function ikeyDbValues_(headers, data) {
   if (!keys.length || keys.some(k => headers.indexOf(k) < 0)) throw Error('DB_FIELD_DENIED');
   for (const key of keys) {
     const v=data[key];
-    if (!['string','number','boolean'].includes(typeof v) || String(v).length > 2000 || (typeof v === 'number' && !Number.isFinite(v))) throw Error('DB_VALUE_INVALID');
+    if (!['string','number','boolean'].includes(typeof v) || String(v).length > 12000 || (typeof v === 'number' && !Number.isFinite(v))) throw Error('DB_VALUE_INVALID');
     // Prevent spreadsheet formula injection in all text fields.
     if (typeof v === 'string' && /^[=+@\-\t\r]/.test(v)) throw Error('DB_FORMULA_DENIED');
   }
