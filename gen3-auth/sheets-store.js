@@ -50,7 +50,13 @@ function createSheetsStore() {
      if(!allowed.includes(action))throw Error('GEN3_COMMAND_ACTION_NOT_ALLOWED');
      if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED!=='true')
        throw Error('PHYSICAL_UNLOCK_DISABLED');
-     return call(action,payload);
+     const {signCommandAssertion}=require('../lib/command-trust-assertion');
+     const assertion=signCommandAssertion({
+       secret:process.env.IKEY_COMMAND_TRUST_SECRET,
+       action,project_id:payload?.project_id,device_id:payload?.device_id,
+       actor_user_id:payload?.actor_user_id
+     });
+     return call(action,{...payload,command_assertion:assertion});
    },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
