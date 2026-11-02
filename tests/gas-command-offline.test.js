@@ -7,7 +7,7 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const actor_user_id='11111111-1111-4111-8111-111111111111';
 const project_id='22222222-2222-4222-8222-222222222222';
-const device_id='ikey_unit-01';
+const device_id='ABCDEFGH';
 const token='a'.repeat(64);
 const HEADERS={
  Project_Devices:['binding_id','project_id','device_id','display_name','lock_mode','heartbeat_interval_minutes','auto_firmware_update','bound_by','bound_at','updated_at'],
@@ -35,6 +35,7 @@ function fixture({actor=true,device=true}={}){
   SpreadsheetApp:{openById:()=>({getSheetByName:name=>tables[name]?sheet(name):null})},
   LockService:{getScriptLock:()=>({tryLock:()=>{if(locked)return false;locked=true;return true;},releaseLock:()=>{locked=false;}})},
   Utilities:{getUuid:()=> '00000000-0000-4000-8000-'+String(++seq).padStart(12,'0'),DigestAlgorithm:{SHA_256:'SHA_256'},Charset:{UTF_8:'UTF_8'},computeDigest:(_,x)=>Array.from(crypto.createHash('sha256').update(x).digest()).map(b=>b>127?b-256:b)},
+  ikeyCommandTrustVerify_:()=>true, // Simulated verified assertion; signature tests live separately.
   ikeyVerifyCommandActorContext_:()=>actor,
   ikeyVerifyDeviceActor_:()=>actor,
   ikeyVerifyCommandDeviceContext_:()=>device,
