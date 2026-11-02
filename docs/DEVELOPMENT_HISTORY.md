@@ -153,9 +153,9 @@
 - **Render:** Device pre-registration, list and status use dedicated store methods. Device authentication uses a dedicated lookup action. No browser response contains `password_hash`.
 - **Token:** HMAC-SHA256 signed 15-minute bearer token with issuer, audience, subject, issue time, expiry and random nonce; constant-time signature verification; device status rechecked on identity verification; bounded per-IP/device attempts; dummy scrypt verification for unknown IDs.
 - **GAS:** Added exact staging schema, script-lock-protected unique registration, read-only lookup/list/status, and explicit setup/inspection helpers. The setup helper is not invoked by this commit.
-- **Tests:** Added HTTP API tests and static GAS contract checks. CI result pending after staging push.
+- **Tests:** Added HTTP API tests and static GAS contract checks. GitHub Actions passed: ESP32 Staging Tests run `41404795320` and ESP32 device safety run `41404795311` on commit `3971c7ed09864fd8ca9e54ea077b395b78f609da`.
 - **Not performed:** No workflow_dispatch, clasp sync, GAS deployment, Script Property read/write, spreadsheet creation/write, Render environment change/deploy, main modification or physical unlock.
 - **Remaining:** Create isolated staging spreadsheet and staging GAS project/property; configure a separate staging Render service and fresh secrets only after separate authorization; run real GAS↔Render integration tests.
 
-
 - **Simulation compatibility follow-up:** Updated the disabled-by-default in-memory command simulator to validate the same issuer/audience/time/nonce claims and use the same dedicated staging device lookup action. Updated its tests to match the current token contract; simulator remains memory-only and is not a physical-control backend.
+- **Verification:** After the simulator adapter update, both GitHub Actions workflows passed on commit `3971c7ed09864fd8ca9e54ea077b395b78f609da`: ESP32 Staging Tests run `41404795320` and ESP32 device safety run `41404795311`. No deployment occurred.

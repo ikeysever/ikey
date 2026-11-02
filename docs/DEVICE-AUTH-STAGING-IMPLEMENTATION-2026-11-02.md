@@ -42,3 +42,11 @@ Registration is serialized with Apps Script `LockService` and checks uniqueness 
 ## Automated tests
 
 `tests/device-auth-api.test.js` covers successful token issuance/identity verification, unknown device, wrong password, inactive device, malformed request, missing secret, storage failure, token tampering, rate limiting and static GAS contract checks. CI does not prove GAS deployment, spreadsheet configuration or ESP32 hardware authentication.
+
+
+## CI verification
+
+- Source commit: `3971c7ed09864fd8ca9e54ea077b395b78f609da`
+- ESP32 Staging Tests: [run 41404795320](https://github.com/ikeysever/ikey/actions/runs/41404795320) — passed.
+- ESP32 device safety tests: [run 41404795311](https://github.com/ikeysever/ikey/actions/runs/41404795311) — passed.
+- These workflows ran source-level tests only. No GAS deployment, spreadsheet write, Render deployment, or physical hardware test was performed.
