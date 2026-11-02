@@ -100,7 +100,6 @@ function ikeyDeviceCommandAction(action,p){
  const admin=['deviceCommandCreateAtomic','deviceCommandGet'].includes(action);
  const device=['deviceCommandClaimAtomic','deviceCommandReportAtomic'].includes(action);
  if(!admin&&!device)ikeyCmdFail_('COMMAND_ACTION_NOT_ALLOWED');
- if(admin)ikeyCmdRequireAdmin_(p);else ikeyCmdRequireDevice_(p);
  const lock=LockService.getScriptLock();
  if(!lock.tryLock(15000))ikeyCmdFail_('DEVICE_BUSY');
  try{
