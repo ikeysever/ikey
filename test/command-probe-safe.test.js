@@ -29,7 +29,7 @@ test('probe sends signed get-only request, never unlock',async()=>{
   return {ok:true,json:async()=>({ok:true,result:null})};
  };
  try{
-  assert.equal(await store.commandProbe(payload),null);
+  assert.equal(await store.commandProbe({...payload,device_id:'ABCDEFGH'}),null);
   assert.equal(captured.action,'deviceCommandGet');
   assert.equal(captured.payload.command_assertion.split('.').length,2);
   assert.equal(captured.payload.action,undefined);
