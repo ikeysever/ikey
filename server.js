@@ -217,15 +217,36 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
-// Read-only administrator account directory. Never expose credential material.
-app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
+// Account administration: every GAS operation independently validates the actor session.
+const {passwordHash}=require('./gen3-auth/core');
+function adminActorHash(req){
+ const raw=String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('ikey_gen3_session='))?.slice('ikey_gen3_session='.length);
+ return raw?hashToken(raw):null;
+}
+function adminGuard(req,res,next){
  if(req.projectUser.global_role!=='admin')return res.status(403).json({success:false,message:'需要管理員權限'});
+ if(req.method!=='GET'&&!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ next();
+}
+app.get('/api/admin/accounts',requireProjectUser,adminGuard,async(req,res)=>{
  try{
-  const result=await authStore.dbCall('db.select',{table:'Users',limit:200});
-  const rows=Array.isArray(result?.rows)?result.rows:[];
-  const accounts=rows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')})).filter(u=>u.user_id);
-  return res.json({success:true,accounts,limited:rows.length>=200});
+  const result=await authStore.adminCall('adminAccountList',{actor_session_hash:adminActorHash(req),limit:100});
+  return res.json({success:true,accounts:result.accounts,limited:result.limited});
  }catch(err){console.warn('Admin account directory unavailable',err.message);return res.status(503).json({success:false,message:'帳號清單目前無法取得'});}
+});
+const adminActions=Object.freeze({disable:'adminAccountSetStatus',restore:'adminAccountSetStatus',role:'adminAccountSetRole',logout:'adminAccountRevokeSessions',password:'adminAccountResetPassword'});
+app.post('/api/admin/accounts/action',requireProjectUser,adminGuard,async(req,res)=>{
+ const body=req.body||{},action=String(body.action||'');
+ if(!Object.prototype.hasOwnProperty.call(adminActions,action))return res.status(400).json({success:false,message:'不支援的操作'});
+ if(body.confirm!==true)return res.status(400).json({success:false,message:'請確認操作'});
+ const id=String(body.target_user_id||'');
+ if(!/^[0-9a-f-]{36}$/i.test(id)||id===req.projectUser.user_id)return res.status(400).json({success:false,message:'目標帳號無效'});
+ const payload={actor_session_hash:adminActorHash(req),target_user_id:id};
+ if(action==='disable'||action==='restore')payload.status=action==='disable'?'disabled':'active';
+ if(action==='role'){if(!['user','admin'].includes(body.role))return res.status(400).json({success:false,message:'角色無效'});payload.role=body.role;}
+ if(action==='password'){try{payload.password_hash=passwordHash(body.password);}catch{return res.status(400).json({success:false,message:'密碼須為 8 至 128 字元'});}}
+ try{const result=await authStore.adminCall(adminActions[action],payload);return res.json({success:true,result});}
+ catch(err){console.warn('Admin account action unavailable',action,err.message);return res.status(503).json({success:false,message:'操作未完成，請先確認後端設定及操作紀錄'});}
 });
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
