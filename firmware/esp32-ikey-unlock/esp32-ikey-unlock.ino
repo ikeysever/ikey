@@ -7,14 +7,14 @@
  *
  * Safety:
  *   - Relay is forced inactive on boot and every terminal/error path.
- *   - Each pulse <= 500 ms, pause >= 200 ms, maximum 10 attempts.
+ *   - Physical actuation disabled by default; max one 500ms pulse if separately approved.
  *   - Success is reported only when GPIO 25 confirms OPEN.
  *   - HTTPS certificate validation is mandatory; no setInsecure().
  *   - Configure Wi-Fi, device credentials, staging URL and CA certificate below.
  *
  * Arduino IDE library dependency: ArduinoJson (6.x or compatible 7.x).
- * IMPORTANT: Backend command API is an in-memory staging simulator. It must be
- * explicitly enabled and deployed to the staging host before web commands work.
+ * IMPORTANT: Uses the project-scoped GAS command API, not the in-memory simulator.
+ * No production deployment or hardware actuation is authorized by this firmware.
  */
 
 #include <Arduino.h>
@@ -84,8 +84,9 @@ static Preferences preferences;
 static String accessToken;
 static String lastCommandId;
 static String activeProjectId;
-static String pendingReport;
-static constexpr size_t MAX_PENDING_REPORT_BYTES = 512;
+// Keep a bounded persistent replay ledger. Hardware remains disabled by default.
+static constexpr uint8_t RECENT_COMMAND_COUNT = 8;
+static constexpr uint32_t MAX_CLOCK_SKEW_MS = 30000;
 static uint32_t lastAuthAt = 0;
 static uint32_t lastPollAt = 0;
 static bool configured = false;
@@ -106,6 +107,28 @@ static bool validUuid(const String& id) {
     if (i == 8 || i == 13 || i == 18 || i == 23) { if (c != '-') return false; }
     else if (!isxdigit(static_cast<unsigned char>(c))) return false;
   }
+  return true;
+}
+
+static bool previouslyExecuted(const String& id) {
+  for (uint8_t i = 0; i < RECENT_COMMAND_COUNT; ++i) {
+    if (preferences.getString(("cmd" + String(i)).c_str(), "") == id) return true;
+  }
+  return false;
+}
+
+static bool persistExecuted(const String& id) {
+  const uint8_t slot = preferences.getUChar("cmd_slot", 0) % RECENT_COMMAND_COUNT;
+  const String key = "cmd" + String(slot);
+  if (preferences.putString(key.c_str(), id) != id.length()) return false;
+  preferences.putUChar("cmd_slot", (slot + 1) % RECENT_COMMAND_COUNT);
+  return true;
+}
+
+static bool validClaimProof(const String& proof) {
+  if (proof.length() != 64) return false;
+  for (size_t i = 0; i < proof.length(); ++i)
+    if (!isxdigit(static_cast<unsigned char>(proof[i]))) return false;
   return true;
 }
 
@@ -199,12 +222,10 @@ static bool authenticateDevice(bool force = false) {
   serializeJson(requestDoc, body);
 
   // Auth endpoint does not require an existing bearer token.
-  const String previousToken = accessToken;
   accessToken = "";
   String response;
   int status = -1;
   if (!httpsRequest("POST", "/api/device/auth", body, response, status)) {
-    accessToken = previousToken;
     return false;
   }
 
@@ -338,7 +359,7 @@ static void processCommand(JsonVariantConst command) {
     Serial.println("[CMD] Busy; duplicate command ignored.");
     return;
   }
-  if (preferences.getString("last_cmd", "") == commandId) {
+  if (previouslyExecuted(commandId)) {
     Serial.println("[CMD] Duplicate command ID persisted in NVS; will not execute again.");
     relayOff();
     return;
@@ -348,7 +369,7 @@ static void processCommand(JsonVariantConst command) {
   // the command cannot be silently replayed and failure can still be reported.
   const char* claimToken = command["claim_token"] | "";
   const char* projectId = command["project_id"] | "";
-  if (strlen(claimToken) != 64 || strlen(projectId) != 36 ||
+  if (!validClaimProof(String(claimToken)) || !validUuid(String(projectId)) ||
       preferences.getString("pending_report", "").length() > 0) {
     relayOff();
     Serial.println("[CMD] Invalid claim or pending report; no actuation.");
@@ -359,11 +380,24 @@ static void processCommand(JsonVariantConst command) {
     Serial.println("[CMD] Project mismatch; no actuation.");
     return;
   }
+  const uint64_t deadline = command["deadline_at"] | 0ULL;
+  // The device does not execute commands without a verified synchronized wall clock.
+  const time_t epoch = time(nullptr);
+  const uint64_t nowMs = epoch > 1700000000 ? static_cast<uint64_t>(epoch) * 1000ULL : 0;
+  if (!nowMs || deadline <= nowMs || deadline > nowMs + 60000ULL) {
+    relayOff();
+    Serial.println("[CMD] Unsynchronized clock or expired claim; blocked.");
+    return;
+  }
   activeProjectId = PROJECT_ID;
-  preferences.putString("project_id", activeProjectId);
-  preferences.putString("claim_token", claimToken);
-  preferences.putString("pending_report", commandId + "|failed");
-  preferences.putString("last_cmd", commandId);
+  const String initialReport = commandId + "|failed";
+  if (preferences.putString("claim_token", claimToken) != strlen(claimToken) ||
+      preferences.putString("pending_report", initialReport) != initialReport.length() ||
+      !persistExecuted(commandId)) {
+    relayOff();
+    Serial.println("[CMD] Durable storage failure; no actuation.");
+    return;
+  }
   lastCommandId = commandId;
   commandRunning = true;
   relayOff();
@@ -381,7 +415,12 @@ static void processCommand(JsonVariantConst command) {
 
   // Only GPIO 25 feedback can authorize a successful result.
   const char* result = (opened && feedbackSaysOpen()) ? "succeeded" : "failed";
-  preferences.putString("pending_report", commandId + "|" + result);
+  const String finalReport = commandId + "|" + result;
+  if (preferences.putString("pending_report", finalReport) != finalReport.length()) {
+    relayOff();
+    Serial.println("[CMD] Result persistence failed; retained safe failure outbox.");
+    return;
+  }
   postCommandResult(commandId, result, detail.c_str());
 }
 
@@ -435,7 +474,10 @@ void setup() {
 
   Serial.begin(115200);
   delay(300);
-  preferences.begin("ikey-unlock", false);
+  if (!preferences.begin("ikey-unlock", false)) {
+    Serial.println("[FATAL] NVS unavailable; network commands disabled.");
+    while (true) { relayOff(); delay(1000); }
+  }
   activeProjectId = PROJECT_ID;
 
   Serial.println();
@@ -450,6 +492,7 @@ void setup() {
     Serial.println("[CONFIG] Web API disabled; relay will not run from network.");
   } else {
     tlsClient.setCACert(ROOT_CA);
+    configTime(0, 0, "pool.ntp.org", "time.google.com");
     ensureWiFi();
     authenticateDevice(true);
   }
