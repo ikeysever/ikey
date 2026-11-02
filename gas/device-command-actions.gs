@@ -103,6 +103,8 @@ function ikeyDeviceCommandAction(action,p){
  const lock=LockService.getScriptLock();
  if(!lock.tryLock(15000))ikeyCmdFail_('DEVICE_BUSY');
  try{
+  if(typeof ikeyCommandTrustVerify_!=='function'||ikeyCommandTrustVerify_(p.command_assertion,action,p)!==true)ikeyCmdFail_('COMMAND_ASSERTION_INVALID');
+  if(admin)ikeyCmdRequireAdmin_(p);else ikeyCmdRequireDevice_(p);
   ikeyCmdBound_(p);
   const commands=ikeyCmdSheet_('DeviceCommands',IKEY_COMMAND_HEADERS);
   const events=ikeyCmdSheet_('DeviceCommandEvents',IKEY_COMMAND_EVENT_HEADERS);
