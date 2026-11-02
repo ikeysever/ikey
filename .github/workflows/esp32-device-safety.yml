@@ -15,5 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci
-      - run: npm test
+      - name: Install dependencies without a lockfile
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Run device safety tests
+        run: npm test
