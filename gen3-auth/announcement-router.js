@@ -53,8 +53,8 @@ function parseOptionalDate(value, field) {
 }
 function validateInput(body, partial = false) {
   const source = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
-  const title = clean(source.title);
-  const content = clean(source.content);
+  const title = source.title === undefined && partial ? undefined : clean(source.title);
+  const content = source.content === undefined && partial ? undefined : clean(source.content);
   const category = source.category === undefined && partial ? undefined : clean(source.category || 'system');
   const priority = source.priority === undefined && partial ? undefined : clean(source.priority || 'normal');
   if (!partial || source.title !== undefined) {
