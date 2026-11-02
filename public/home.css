@@ -185,3 +185,8 @@ body.menu-open{overflow:hidden}
   body:not(.desktop-sidebar-collapsed) .menu-toggle,
   body.desktop-sidebar-collapsed .menu-toggle{left:18px;}
 }
+
+/* Project soft-delete action: visually separate destructive-but-reversible operation. */
+.project-soft-delete{padding:11px 16px;background:rgba(127,29,29,.28);color:#ffdada;border:1px solid #b45d68;border-radius:9px;font:inherit;font-size:14px;cursor:pointer}
+.project-soft-delete:hover,.project-soft-delete:focus-visible{background:rgba(153,27,27,.48);border-color:#ff8b94;outline:2px solid rgba(255,139,148,.22);outline-offset:2px}
+.project-soft-delete:disabled{opacity:.6;cursor:wait}
