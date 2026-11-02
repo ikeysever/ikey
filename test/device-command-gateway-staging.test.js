@@ -35,7 +35,7 @@ test('gateway rejects unauthorized actor, unbound device and unauthenticated cla
  assert.equal(calls.length,0,'no command reaches GAS when authorization fails');
 });
 test('mocked command lifecycle: create, idempotency, claim, report, expiry',async()=>{
- let now=1000000;
+ let now=Date.now();
  const commands=new Map(),byKey=new Map(),usedClaims=new Set();
  const call=async(action,p)=>{
   for(const cmd of commands.values())if(['pending','claimed'].includes(cmd.status)&&now>=cmd.deadline_at)cmd.status='timed_out';
