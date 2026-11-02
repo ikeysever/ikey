@@ -63,3 +63,11 @@ const result = action.indexOf('db.') === 0
 - 遷移檔會拒絕不相容的既有欄位，不清空或覆蓋資料，並將兩張新表加入 `IKEY_DB_ALLOWED_TABLES`。
 - 新增公告內容上限為 10,000 字；通用資料引擎欄位長度上限提高至 12,000 字，保留 API 較嚴格驗證。
 - 此遷移檔尚未在任何實際 Apps Script 專案執行；部署前仍須比對目前已部署的 `doPost` 與 staging spreadsheet。
+
+
+## 2026-11-02｜Gen3 GAS dispatcher integration (source only)
+
+- `gen3-auth/Code.gs` now dispatches authenticated `db.*` actions to the generic Sheets engine after the existing `GEN3_API_KEY` check; all existing Gen3 actions still route through `execute()`.
+- The guarded `setupSystemAnnouncementTables()` migration is included in the combined GAS source and requires `IKEY_ENVIRONMENT=staging` plus matching `IKEY_STAGING_SPREADSHEET_ID` and `GEN3_SPREADSHEET_ID`.
+- A separate manual GitHub Actions workflow targets only a script ID supplied via staging-only secrets and refuses the known fixed script ID used by the legacy workflow.
+- No Apps Script push, Web App deployment, spreadsheet mutation, or production configuration change was performed.
