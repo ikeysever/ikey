@@ -3,9 +3,9 @@
  const status=kind==='status'?(a.account_status==='active'?'disabled':'active'):undefined;
  let password;
  if(kind==='password'){
-  password=prompt('請輸入 '+a.username+' 的新密碼（至少 12 字元）');
+  password=prompt('請輸入 '+a.username+' 的新密碼（至少 8 字元）');
   if(password===null)return;
-  if(password.length<12||password.length>128){alert('密碼須為 12 至 128 字元');return}
+  if(password.length<8||password.length>128){alert('密碼須為 8 至 128 字元');return}
  }
  const label=kind==='status'?(status==='disabled'?'停用':'啟用'):kind==='revoke'?'強制登出':'重設密碼';
  if(!confirm('確認對 '+a.username+' 執行「'+label+'」？此操作會立即寫入正式資料庫。'))return;
