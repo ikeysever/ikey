@@ -45,3 +45,10 @@ test('rejects report acknowledgement for another command',async()=>{
 test('rejects ambiguous GAS report acknowledgement without explicit success',async()=>{
  await assert.rejects(gateway(null,{command:{command_id:id}}).report({device,project_id:project,command_id:id,claim_token:proof,status:'failed',feedback_observed:false}),/INVALID_REPORT_RESPONSE/);
 });
+
+test('empty GAS claim envelope is a normal no-command response',async()=>{
+ assert.equal(await gateway({command:null}).claim({device,project_id:project}),null);
+});
+test('missing GAS claim envelope fails closed',async()=>{
+ await assert.rejects(gateway({}).claim({device,project_id:project}),/INVALID_CLAIM_RESPONSE/);
+});
