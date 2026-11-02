@@ -3,6 +3,14 @@
  * A valid assertion proves Render issued the identity claim, not that the
  * claimed actor is authorized: command actions must still check permissions.
  */
+function ikeyCommandPayloadDigest_(p){
+ const clean=Object.assign({},p);
+ delete clean.command_assertion;
+ const sorted={};
+ Object.keys(clean).sort().forEach(k=>sorted[k]=clean[k]);
+ return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(sorted))
+  .map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
+}
 function ikeyCommandTrustVerify_(token,action,p){
  if(typeof token!=='string'||token.length>4096||typeof p!=='object'||!p)
   throw Error('COMMAND_ASSERTION_INVALID');
@@ -23,6 +31,7 @@ function ikeyCommandTrustVerify_(token,action,p){
  const now=Date.now();
  if(c.v!==1||c.aud!=='ikey-gas-command'||c.action!==action||
    c.project_id!==p.project_id||c.device_id!==p.device_id||
+   c.payload_sha256!==ikeyCommandPayloadDigest_(p)||
    !Number.isSafeInteger(c.iat)||!Number.isSafeInteger(c.exp)||
    c.iat>now+5000||c.exp<=now||c.exp-c.iat!==30000||
    typeof c.nonce!=='string'||!/^[a-f0-9]{32}$/.test(c.nonce))
