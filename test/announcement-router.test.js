@@ -137,3 +137,17 @@ test('invalid announcement input is rejected before any database write', async (
     assert.equal(store.tables.System_Announcements.length, 0);
   });
 });
+
+test('partial admin update preserves fields omitted from the request', async () => {
+  const row = published({ status: 'draft', published_at: '' });
+  await withApi('super_admin', async ({ base, store }) => {
+    const response = await fetch(base + '/api/admin/announcements/' + row.announcement_id, {
+      method: 'PUT', headers: { Cookie: adminCookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: '更新後標題' })
+    });
+    assert.equal(response.status, 200);
+    assert.equal(store.tables.System_Announcements[0].title, '更新後標題');
+    assert.equal(store.tables.System_Announcements[0].content, '公告內容');
+    assert.equal(store.tables.System_Announcements[0].category, 'system');
+  }, [row]);
+});
