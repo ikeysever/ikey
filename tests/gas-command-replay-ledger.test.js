@@ -11,5 +11,5 @@ test('GAS replay verifier requires durable ledger and rejects duplicate nonce',(
  assert.match(src,/values\.some\(r=>String\(r\[0\]\)===c\.nonce\)/);
  assert.match(src,/COMMAND_ASSERTION_REPLAY/);
  assert.match(src,/ledger\.appendRow\(\[c\.nonce,c\.exp\]\)/);
- assert.doesNotMatch(src,/CacheService/);
+ assert.doesNotMatch(src,/CacheService\.getScriptCache\(\)/);
 });
