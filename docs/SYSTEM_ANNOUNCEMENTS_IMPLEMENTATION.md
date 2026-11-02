@@ -67,3 +67,11 @@
 - 尚未建立 staging Cron Job。
 - 尚未執行完整 Node 測試與真實 staging API 測試。
 - 本次僅修改 `feature/system-announcements-staging-20261102`；未修改 `main)、未部署 Render 或 GAS 正式環境。
+
+
+### GAS source integration｜2026-11-02
+- 已將通用 `db.*` dispatcher 整合至分支內 `gen3-auth/Code.gs`：先完成既有 `GEN3_API_KEY` 驗證，再分派 `db.*`；原本 Gen3 action 仍走既有 `execute()`。
+- 已將公告表格遷移函式整合進 GAS source，並加上 `IKEY_ENVIRONMENT=staging` 與 `IKEY_STAGING_SPREADSHEET_ID === GEN3_SPREADSHEET_ID` 雙重保護。
+- 新增獨立 staging Apps Script 同步 workflow，要求獨立 staging GitHub secrets，並拒絕已知非 staging Script ID。
+- Drive 唯讀搜尋找到既有 `iKey_Database` 與歷史備份，未找到獨立 staging Spreadsheet 或獨立 staging Apps Script 專案。
+- 沒有執行任何 clasp push、GAS Web App 部署或 Spreadsheet 寫入；不得使用舊的固定 Script ID 同步 workflow。
