@@ -90,7 +90,7 @@
  $('announcement-cancel').addEventListener('click',closeEditor);
  $('announcement-save-draft').addEventListener('click',()=>save('draft'));
  $('announcement-save-publish').addEventListener('click',()=>save('publish'));
- $('announcement-save-schedule').addEventListener('click',()=>{if(!$('announcement-schedule').value){message('請先設定排程發布時間。');return;}save('schedule');});
+ $('announcement-save-schedule').addEventListener('click',()=>{const value=$('announcement-schedule').value;if(!value){message('請先設定排程發布時間。');return;}if(new Date(value).getTime()<=Date.now()){message('排程發布時間必須晚於現在。');return;}save('schedule');});
  $('announcement-search').addEventListener('input',render);$('announcement-category-filter').addEventListener('change',render);
  $('announcement-status-filter').addEventListener('change',e=>{filterStatus=e.target.value;render();});
  $('announcement-preview-close').addEventListener('click',()=>{$('announcement-preview').hidden=true;});
