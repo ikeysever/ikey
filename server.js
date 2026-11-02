@@ -219,11 +219,10 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
 });
 // Command HTTP routes are feature-gated and require authenticated project sessions.
 // GAS command actions must be deployed and verified separately before enabling.
+const requireDevice=require('./device-auth')(app,authStore);
 require('./lib/device-command-routes').mountCommandRoutes(app,{
- store:authStore,requireProjectUser,sameProjectOrigin
+ store:authStore,requireProjectUser,sameProjectOrigin,requireDevice
 });
-// ESP32 device-only authentication; does not enable physical control.
-require('./device-auth')(app, authStore);
 // Staging command simulation only. Disabled by default; it is in-memory and is NOT a physical-control backend.
 require('./device-command-simulation')(app, {
   enabled: process.env.IKEY_DEVICE_SIMULATION_ENABLED === 'true',
