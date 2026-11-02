@@ -42,6 +42,7 @@ function createSheetsStore() {
      if(!['db.health','db.schema','db.select','db.insert','db.update','db.delete'].includes(action))throw Error('GEN3_DB_ACTION_NOT_ALLOWED');
      return call(action,payload);
    },
+   adminAccountList:async actor_user_id=>call("adminAccountList",{actor_user_id}),
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
      if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
