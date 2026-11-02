@@ -119,6 +119,28 @@ app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
+app.delete('/api/projects/:projectId',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return res.status(400).json({success:false,message:'專案 ID 格式不正確'});
+ try{
+  const found=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(found?.rows||[]).find(row=>row.project_id===projectId);
+  if(!project)return res.status(404).json({success:false,message:'找不到專案'});
+  if(project.created_by_user_id!==req.projectUser.user_id)
+   return res.status(403).json({success:false,message:'只有專案建立者可以軟刪除專案'});
+  if(project.status==='deleted')return res.json({success:true,already_deleted:true});
+  const now=new Date().toISOString();
+  const updated=await authStore.dbCall('db.update',{table:'Projects',where:{project_id:projectId},data:{status:'deleted',updated_at:now}});
+  if(updated?.updated!==true && updated?.record?.status!=='deleted')
+   return res.status(503).json({success:false,message:'無法確認專案已軟刪除，請重新整理確認；未執行實體刪除'});
+  return res.json({success:true,project_id:projectId,status:'deleted'});
+ }catch(err){
+  console.warn('Project soft delete unavailable',err.message);
+  return res.status(503).json({success:false,message:'專案資料服務暫時無法完成軟刪除；資料未執行實體刪除'});
+ }
+});
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
