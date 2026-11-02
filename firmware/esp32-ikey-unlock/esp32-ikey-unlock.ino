@@ -81,6 +81,9 @@ static WiFiClientSecure tlsClient;
 static Preferences preferences;
 static String accessToken;
 static String lastCommandId;
+static String activeProjectId;
+static String pendingReport;
+static constexpr size_t MAX_PENDING_REPORT_BYTES = 512;
 static uint32_t lastAuthAt = 0;
 static uint32_t lastPollAt = 0;
 static bool configured = false;
@@ -214,15 +217,18 @@ static bool postCommandResult(const String& commandId, const char* result,
 
   StaticJsonDocument<384> doc;
   doc["status"] = result;
-  doc["detail"] = detail;
+  doc["feedback_observed"] = strcmp(result, "succeeded") == 0;
+  doc["claim_token"] = preferences.getString("claim_token", "");
   String body;
   serializeJson(doc, body);
 
   String response;
   int status = -1;
-  const String path = "/api/device/commands/" + commandId + "/result";
+  const String path = "/api/device/projects/" + activeProjectId + "/commands/" + commandId + "/report";
   const bool ok = httpsRequest("POST", path, body, response, status);
   if (ok) {
+    preferences.remove("pending_report");
+    preferences.remove("claim_token");
     Serial.printf("[REPORT] command=%s status=%s accepted by API\n",
                   commandId.c_str(), result);
   } else {
@@ -325,7 +331,20 @@ static void processCommand(JsonVariantConst command) {
     return;
   }
 
-  // Persist BEFORE driving hardware. A reset cannot cause this command ID to pulse twice.
+  // Save the claim and a failure outbox BEFORE any actuation. If reset occurs,
+  // the command cannot be silently replayed and failure can still be reported.
+  const char* claimToken = command["claim_token"] | "";
+  const char* projectId = command["project_id"] | "";
+  if (strlen(claimToken) != 64 || strlen(projectId) != 36 ||
+      preferences.getString("pending_report", "").length() > 0) {
+    relayOff();
+    Serial.println("[CMD] Invalid claim or pending report; no actuation.");
+    return;
+  }
+  activeProjectId = projectId;
+  preferences.putString("project_id", activeProjectId);
+  preferences.putString("claim_token", claimToken);
+  preferences.putString("pending_report", commandId + "|failed");
   preferences.putString("last_cmd", commandId);
   lastCommandId = commandId;
   commandRunning = true;
@@ -343,30 +362,46 @@ static void processCommand(JsonVariantConst command) {
                 detail.c_str());
 
   // Only GPIO 25 feedback can authorize a successful result.
-  if (opened && feedbackSaysOpen()) {
-    postCommandResult(commandId, "succeeded", detail.c_str());
-  } else {
-    postCommandResult(commandId, "failed", detail.c_str());
-  }
+  const char* result = (opened && feedbackSaysOpen()) ? "succeeded" : "failed";
+  preferences.putString("pending_report", commandId + "|" + result);
+  postCommandResult(commandId, result, detail.c_str());
+}
+
+static void retryPendingReport() {
+  const String record = preferences.getString("pending_report", "");
+  if (record.isEmpty()) return;
+  const int separator = record.indexOf('|');
+  if (separator < 16) { relayOff(); return; }
+  activeProjectId = preferences.getString("project_id", "");
+  if (activeProjectId.length() != 36) { relayOff(); return; }
+  const String id = record.substring(0, separator);
+  const String status = record.substring(separator + 1);
+  if (status != "failed" && status != "succeeded") { relayOff(); return; }
+  postCommandResult(id, status.c_str(), "recovered_pending_report");
 }
 
 static void pollCommands() {
   if (!authenticateDevice()) return;
-
-  String response;
-  int status = -1;
-  if (!httpsRequest("GET", "/api/device/commands/next", "", response, status)) {
-    if (status == 401) {
-      accessToken = "";
-      authenticateDevice(true);
-    }
+  // Never claim a new command while a previous result is unacknowledged.
+  if (!preferences.getString("pending_report", "").isEmpty()) {
+    retryPendingReport();
     return;
   }
-
+  activeProjectId = preferences.getString("project_id", "");
+  if (activeProjectId.length() != 36) {
+    Serial.println("[CMD] Verified project binding not configured; claim blocked.");
+    return;
+  }
+  String response;
+  int status = -1;
+  if (!httpsRequest("POST", "/api/device/projects/" + activeProjectId + "/commands/claim",
+                    "{}", response, status)) {
+    if (status == 401) { accessToken = ""; authenticateDevice(true); }
+    return;
+  }
   StaticJsonDocument<2048> doc;
-  const DeserializationError err = deserializeJson(doc, response);
-  if (err || doc["success"] != true) {
-    Serial.println("[API] Invalid command-poll response.");
+  if (deserializeJson(doc, response) || doc["success"] != true) {
+    Serial.println("[API] Invalid claim response.");
     return;
   }
   JsonVariantConst command = doc["command"];
@@ -383,6 +418,7 @@ void setup() {
   Serial.begin(115200);
   delay(300);
   preferences.begin("ikey-unlock", false);
+  activeProjectId = preferences.getString("project_id", "");
 
   Serial.println();
   Serial.println("iKey 3.1 ESP32 web unlock firmware (staging only)");
