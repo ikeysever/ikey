@@ -217,6 +217,16 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
+// Read-only administrator account directory. Never expose credential material.
+app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
+ if(req.projectUser.global_role!=='admin')return res.status(403).json({success:false,message:'需要管理員權限'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Users',limit:200});
+  const rows=Array.isArray(result?.rows)?result.rows:[];
+  const accounts=rows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')})).filter(u=>u.user_id);
+  return res.json({success:true,accounts,limited:rows.length>=200});
+ }catch(err){console.warn('Admin account directory unavailable',err.message);return res.status(503).json({success:false,message:'帳號清單目前無法取得'});}
+});
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
