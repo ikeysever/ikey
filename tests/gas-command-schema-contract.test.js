@@ -16,8 +16,8 @@ const expected={
  DeviceCommandNonces:['nonce','expires_at']
 };
 test('command and event schemas match declared deployment contract',()=>{
- assert.deepEqual(Array.from(ctx.IKEY_COMMAND_HEADERS),expected.DeviceCommands);
- assert.deepEqual(Array.from(ctx.IKEY_COMMAND_EVENT_HEADERS),expected.DeviceCommandEvents);
+ assert.deepEqual(Array.from(vm.runInContext('IKEY_COMMAND_HEADERS',ctx)),expected.DeviceCommands);
+ assert.deepEqual(Array.from(vm.runInContext('IKEY_COMMAND_EVENT_HEADERS',ctx)),expected.DeviceCommandEvents);
  for(const [name,headers] of Object.entries(expected)){
   assert.ok(docs.includes('`'+name+'`'),name);
   assert.ok(docs.includes('`'+headers.join(',')+'`'),name+' documented header mismatch');
