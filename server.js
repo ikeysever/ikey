@@ -217,6 +217,11 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
+// Command HTTP routes are feature-gated and require authenticated project sessions.
+// GAS command actions must be deployed and verified separately before enabling.
+require('./lib/device-command-routes').mountCommandRoutes(app,{
+ store:authStore,requireProjectUser,sameProjectOrigin
+});
 // ESP32 device-only authentication; does not enable physical control.
 require('./device-auth')(app, authStore);
 // Staging command simulation only. Disabled by default; it is in-memory and is NOT a physical-control backend.
