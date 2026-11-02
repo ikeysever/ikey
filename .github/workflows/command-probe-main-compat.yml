@@ -1,0 +1,27 @@
+name: iKey main-compatible command probe checks
+on:
+  push:
+    branches: [feature/command-probe-main-integration]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  command-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check server.js
+          node --check gen3-auth/sheets-store.js
+          node --check lib/command-trust-assertion.js
+      - name: Offline signed probe tests
+        run: node --test test/command-probe-safe.test.js
+      - name: Main branch compatibility regression tests
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npm test
