@@ -7,7 +7,7 @@ const device={authenticated:true,device_id:'ABCDEFGH'};
 const make=(call,extra={})=>createDeviceCommandGateway({call,verifyActor:async()=>true,verifyDeviceBinding:async()=>true,...extra});
 test('claim forwards random proof and returns it only to authenticated device',async()=>{
  let request;
- const api=make(async(action,p)=>{request={action,p};return {command_id:'33333333-3333-4333-8333-333333333333',status:'claimed'};});
+ const api=make(async(action,p)=>{request={action,p};return {command_id:'33333333-3333-4333-8333-333333333333',status:'claimed',action:'unlock',deadline_at:Date.now()+15000};});
  const result=await api.claim({device,project_id});
  assert.equal(request.action,'deviceCommandClaimAtomic');
  assert.equal(request.p.claim_token.length,64);
@@ -34,7 +34,7 @@ test('claim rejects malformed token generator output',async()=>{
 test('claim response uses allowlist and never leaks GAS internal fields',async()=>{
  const api=make(async()=>({
   command_id:'33333333-3333-4333-8333-333333333333',
-  status:'claimed',action:'unlock',deadline_at:15000,
+  status:'claimed',action:'unlock',deadline_at:Date.now()+15000,
   claim_token_hash:'secret-hash',idempotency_key:'secret-key',
   fingerprint:'private-fingerprint',credential_hash:'credential-secret',
   internal_metadata:{secret:true}
@@ -47,4 +47,15 @@ test('claim response uses allowlist and never leaks GAS internal fields',async()
   assert.equal(Object.hasOwn(result,key),false,key+' must not be returned');
  }
  assert.match(result.claim_token,/^[a-f0-9]{64}$/);
+});
+
+test('claim rejects expired and non-unlock GAS commands',async()=>{
+ for(const response of [
+  {status:'claimed',action:'unlock',deadline_at:Date.now()-1000},
+  {status:'claimed',action:'lock',deadline_at:Date.now()+15000},
+  {status:'pending',action:'unlock',deadline_at:Date.now()+15000}
+ ]){
+  const api=make(async()=>({command_id:'33333333-3333-4333-8333-333333333333',...response}));
+  await assert.rejects(api.claim({device,project_id}),/INVALID_CLAIM_RESPONSE/);
+ }
 });
