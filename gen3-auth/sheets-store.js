@@ -43,6 +43,10 @@ function createSheetsStore() {
      return call(action,payload);
    },
    adminAccountList:async actor_session_hash=>call("adminAccountList",{actor_session_hash,limit:100}),
+   adminAccountAction:async(action,payload)=>{
+     if(!["adminAccountSetStatus","adminAccountSetRole","adminAccountRevokeSessions","adminAccountResetPassword"].includes(action))throw Error("GEN3_ADMIN_ACTION_NOT_ALLOWED");
+     return call(action,payload);
+   },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
      if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
