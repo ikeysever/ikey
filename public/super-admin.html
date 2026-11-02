@@ -48,15 +48,38 @@
 <div class="accounts-tools"><input id="accounts-search" type="search" placeholder="搜尋帳號或顯示名稱…" aria-label="搜尋帳號"><select id="accounts-role" aria-label="角色篩選"><option value="">全部角色</option><option value="admin">管理員</option><option value="user">一般使用者</option></select><button id="accounts-refresh" type="button" class="device-btn">重新整理</button></div>
 <p id="accounts-status" class="accounts-status" role="status">尚未載入帳號</p>
 <div class="accounts-table-wrap"><table class="accounts-table"><thead><tr><th>帳號</th><th>顯示名稱</th><th>角色</th><th>帳號狀態</th><th>建立日期</th></tr></thead><tbody id="accounts-rows"></tbody></table></div>
-<div class="accounts-panel" style="margin-top:18px"><h2>帳號安全操作</h2><p>選擇帳號後可預備以下操作。正式執行需完成後端原子更新與稽核整合。</p>
+<div class="accounts-panel" style="margin-top:18px"><h2>帳號安全操作</h2><p>選擇帳號後可預備以下操作。所有操作均需再次確認，並由後端執行權限檢查與稽核。</p>
 <div class="accounts-tools"><select id="account-action" aria-label="管理操作"><option value="disable">停用帳號</option><option value="restore">恢復帳號</option><option value="role">變更帳號角色</option><option value="logout">強制登出</option><option value="password">重設密碼</option></select><input id="account-target" placeholder="輸入完整帳號名稱" autocomplete="off" aria-label="目標帳號"></div>
 <div class="accounts-tools"><select id="account-new-role" aria-label="新角色"><option value="user">一般使用者</option><option value="admin">管理員</option></select><input id="account-new-password" type="password" placeholder="管理員輸入新密碼（8–128 字元）" autocomplete="new-password" minlength="8" maxlength="128" aria-label="新密碼"></div>
-<button type="button" class="device-btn" id="account-action-review">檢查操作</button><p id="account-action-message" role="status" class="accounts-status">為避免影響正式帳號，目前不執行資料變更。</p></div>
+<button type="button" class="device-btn" id="account-action-review">檢查操作</button><p id="account-action-message" role="status" class="accounts-status">操作須經管理員驗證及再次確認；未部署 GAS 專用 API 前不會成功執行。</p></div>
 <script>
 (()=>{const action=document.getElementById('account-action'),target=document.getElementById('account-target'),role=document.getElementById('account-new-role'),password=document.getElementById('account-new-password'),message=document.getElementById('account-action-message');
 function update(){role.hidden=action.value!=='role';password.hidden=action.value!=='password';password.value=''}
 action.addEventListener('change',update);update();
-document.getElementById('account-action-review').addEventListener('click',()=>{const username=target.value.trim();if(!username){message.textContent='請先輸入目標帳號';return}if(action.value==='password'&&(password.value.length<8||password.value.length>128)){message.textContent='新密碼需為 8–128 字元';return}message.textContent='已完成輸入檢查：'+username+'。此操作尚未開放執行，必須先完成安全後端與測試。';password.value=''});
+document.getElementById('account-action-review').addEventListener('click',async()=>{
+ const username=target.value.trim().toLowerCase(),kind=action.value;
+ if(!username){message.textContent='請先輸入完整帳號名稱';return}
+ if(kind==='password'&&(password.value.length<8||password.value.length>128)){message.textContent='新密碼需為 8–128 字元';return}
+ const button=document.getElementById('account-action-review');button.disabled=true;
+ try{
+  const listRes=await fetch('/api/admin/accounts',{credentials:'same-origin',cache:'no-store'});
+  const list=await listRes.json();if(!listRes.ok||!list.success)throw Error(list.message||'無法確認帳號');
+  const matches=(list.accounts||[]).filter(a=>a.username.toLowerCase()===username);
+  if(matches.length!==1)throw Error('找不到唯一帳號；請確認完整帳號名稱與清單載入範圍');
+  const person=matches[0];
+  const label={disable:'停用帳號',restore:'恢復帳號',role:'變更角色',logout:'強制登出',password:'重設密碼'}[kind];
+  if(!window.confirm('確定要對 '+person.username+' 執行「'+label+'」嗎？此操作會修改帳號資料。')){message.textContent='已取消操作';return}
+  const payload={action:kind,target_user_id:person.user_id,confirm:true};
+  if(kind==='role')payload.role=role.value;
+  if(kind==='password')payload.password=password.value;
+  const response=await fetch('/api/admin/accounts/action',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const result=await response.json();
+  if(!response.ok||!result.success)throw Error(result.message||'操作失敗');
+  message.textContent='操作成功：'+label+'（'+person.username+'）';
+  document.getElementById('accounts-refresh').click();
+ }catch(error){message.textContent=error.message||'操作未完成'}
+ finally{password.value='';button.disabled=false}
+});
 })();
 </script>
 <p class="accounts-note">安全限制：帳號資料僅向已通過管理員驗證的使用者提供；密碼、雜湊及工作階段資訊不會傳送至此頁。</p></div></section>
