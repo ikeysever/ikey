@@ -39,3 +39,31 @@
 - 尚未將排序核心接入首頁公告 API 與超級管理員公告管理介面。
 - 公告資料表／欄位尚需依現有 GAS 與資料庫 Schema 唯讀盤點結果確認；本次不自行新增資料表或欄位。
 - 尚未執行正式環境驗收。
+
+
+## 2026-11-02｜第四階段：公告 API 與資料庫串接（staging）
+
+### 已完成的程式變更
+- 新增 `gen3-auth/announcement-router.js`，沿用既有 Gen3 HttpOnly session 與 `global_role === super_admin` 權限檢查。
+- 新增公開公告讀取、管理員 CRUD／發布／下架／回收站／還原，以及使用者公告已讀 API。
+- 已讀紀錄使用 `SHA-256(user_id:announcement_id)` 作為唯一 read_id，避免同一使用者重複寫入相同公告的已讀紀錄。
+- 新增受 Bearer secret 保護的排程發布端點，供 staging Cron Job 呼叫。
+- `server.js` 已掛載公告 Router；超級管理員公告頁及首頁公告閱讀頁已改用同源 API，不再使用 DEMO 記憶體資料。
+- 新增 GAS 安全遷移檔，僅建立兩張公告工作表並加入資料表 allowlist；既有資料表不會被覆寫。
+- 通用 Sheets 引擎文字欄位上限調整為 12,000 字，公告 API 仍限制內容最多 10,000 字。
+- 新增公告 API 文件與 Node 測試案例。
+
+### 安全與資料保護
+- 所有管理 API 需要有效登入 Session 與超級管理員角色。
+- 瀏覽器不接觸 Apps Script API Key 或 Spreadsheet ID。
+- 刪除採軟刪除；永久刪除不在本次 API 範圍。
+- GAS 遷移檔遇到既有欄位不一致會停止，不清除或覆蓋既有工作表。
+- 排程端點需設定 staging 專用 `ANNOUNCEMENTS_CRON_SECRET`；本次沒有建立 Render Cron Job。
+
+### 尚待驗證／阻塞
+- 尚未取得並比對目前實際部署中的 Gen3 GAS 完整原始碼；不可直接改寫現有 `doPost`。
+- 尚未在 staging Spreadsheet 執行 `setupSystemAnnouncementTables()`。
+- 尚未確認 staging Render 的 `GEN3_APPS_SCRIPT_URL`、`GEN3_APPS_SCRIPT_KEY` 與新排程密鑰設定。
+- 尚未建立 staging Cron Job。
+- 尚未執行完整 Node 測試與真實 staging API 測試。
+- 本次僅修改 `feature/system-announcements-staging-20261102`；未修改 `main)、未部署 Render 或 GAS 正式環境。
