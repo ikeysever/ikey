@@ -19,8 +19,6 @@ const safeRecord = row => ({
   category: String(row.category || 'other'),
   priority: String(row.priority || 'normal'),
   status: String(row.status || 'draft'),
-  created_by_user_id: String(row.created_by_user_id || ''),
-  updated_by_user_id: String(row.updated_by_user_id || ''),
   created_at: String(row.created_at || ''),
   updated_at: String(row.updated_at || ''),
   published_at: String(row.published_at || ''),
