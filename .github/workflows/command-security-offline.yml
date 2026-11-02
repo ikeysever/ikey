@@ -7,6 +7,8 @@ on:
       - 'lib/device-command-*.js'
       - 'lib/command-trust-assertion.js'
       - 'test/device-command-gateway-staging.test.js'
+      - 'test/command-probe-safe.test.js'
+      - 'gen3-auth/sheets-store.js'
       - 'scripts/test-command-signer-offline.js'
       - '.github/workflows/command-security-offline.yml'
   workflow_dispatch:
@@ -24,4 +26,4 @@ jobs:
       - name: Offline signer smoke test
         run: node scripts/test-command-signer-offline.js
       - name: Gateway mock lifecycle and authorization tests
-        run: node --test test/device-command-gateway-staging.test.js
+        run: node --test test/device-command-gateway-staging.test.js test/command-probe-safe.test.js
