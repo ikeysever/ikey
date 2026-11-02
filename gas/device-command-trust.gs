@@ -39,10 +39,18 @@ function ikeyCommandTrustVerify_(token,action,p){
  if(['deviceCommandCreateAtomic','deviceCommandGet'].includes(action)){
   if(c.actor_user_id!==p.actor_user_id)throw Error('COMMAND_ASSERTION_INVALID');
  }else if(c.actor_user_id!==null)throw Error('COMMAND_ASSERTION_INVALID');
- // Must run under a script lock in dispatcher before processing the action.
- const cache=CacheService.getScriptCache();
- const nonceKey='ikey-cmd-nonce-'+c.nonce;
- if(cache.get(nonceKey))throw Error('COMMAND_ASSERTION_REPLAY');
- cache.put(nonceKey,'1',60);
+ // Durable replay ledger: CacheService is best-effort and cannot be trusted alone.
+ // This function is called under the command action's script lock.
+ const spreadsheetId=PropertiesService.getScriptProperties().getProperty('GEN3_SPREADSHEET_ID');
+ if(!spreadsheetId)throw Error('COMMAND_REPLAY_STORAGE_UNAVAILABLE');
+ const ledger=SpreadsheetApp.openById(spreadsheetId).getSheetByName('DeviceCommandNonces');
+ if(!ledger)throw Error('COMMAND_REPLAY_STORAGE_UNAVAILABLE');
+ const headers=ledger.getRange(1,1,1,2).getDisplayValues()[0];
+ if(headers[0]!=='nonce'||headers[1]!=='expires_at')throw Error('COMMAND_REPLAY_SCHEMA_MISMATCH');
+ const last=ledger.getLastRow();
+ const values=last>1?ledger.getRange(2,1,last-1,2).getValues():[];
+ if(values.some(r=>String(r[0])===c.nonce))throw Error('COMMAND_ASSERTION_REPLAY');
+ // Keep used nonces until explicit retention maintenance; do not depend on cache eviction.
+ ledger.appendRow([c.nonce,c.exp]);
  return true;
 }
