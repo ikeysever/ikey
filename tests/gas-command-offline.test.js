@@ -111,3 +111,29 @@ test('sequential simulated contenders claim at most once',()=>{
  assert.equal(outcomes.filter(Boolean).length,1);
  assert.equal(f.tables.DeviceCommandEvents.slice(1).filter(r=>r[3]==='claimed').length,1);
 });
+
+test('expiry event append failure is repaired on next authorized call',()=>{
+ const f=fixture(),a=f.create();f.tick(15000);
+ f.failAt(2);
+ assert.throws(()=>f.run('deviceCommandGet',{command_id:a.command.command_id}),/INJECTED_WRITE_FAILURE/);
+ assert.equal(f.tables.DeviceCommands[1][7],'timed_out');
+ f.clearFault();
+ assert.equal(f.run('deviceCommandGet',{command_id:a.command.command_id}).status,'timed_out');
+ assert.deepEqual(f.tables.DeviceCommandEvents.slice(1).map(r=>r[3]),['created','timed_out']);
+});
+test('claim state write failure leaves command pending and can be retried',()=>{
+ const f=fixture();f.create();f.failAt(1);
+ assert.throws(()=>f.claim(),/INJECTED_WRITE_FAILURE/);
+ assert.equal(f.tables.DeviceCommands[1][7],'pending');
+ f.clearFault();
+ assert.equal(f.claim().status,'claimed');
+ assert.equal(f.tables.DeviceCommandEvents.slice(1).filter(r=>r[3]==='claimed').length,1);
+});
+test('wrong proof and contradictory terminal report do not mutate state',()=>{
+ const f=fixture(),a=f.create();f.claim();
+ assert.throws(()=>f.run('deviceCommandReportAtomic',{command_id:a.command.command_id,claim_token:'f'.repeat(64),status:'succeeded',feedback_observed:true}),/INVALID_CLAIM/);
+ assert.throws(()=>f.report(a.command.command_id,'succeeded',false),/INVALID_RESULT/);
+ assert.equal(f.report(a.command.command_id,'failed',false).status,'failed');
+ assert.throws(()=>f.report(a.command.command_id),/INVALID_TRANSITION/);
+ assert.equal(f.tables.DeviceCommandEvents.slice(1).filter(r=>r[3]==='reported').length,1);
+});
