@@ -223,6 +223,13 @@ const requireDevice=require('./device-auth')(app,authStore);
 require('./lib/device-command-routes').mountCommandRoutes(app,{
  store:authStore,requireProjectUser,sameProjectOrigin,requireDevice
 });
+// Website command entrypoint; never acknowledge physical success without device report.
+app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req)||req.projectUser.global_role!=='super_admin')
+  return res.status(403).json({success:false,code:'NOT_AUTHORIZED'});
+ return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY',message:'指令儲存及裝置綁定尚未完成'});
+});
 // Staging command simulation only. Disabled by default; it is in-memory and is NOT a physical-control backend.
 require('./device-command-simulation')(app, {
   enabled: process.env.IKEY_DEVICE_SIMULATION_ENABLED === 'true',
