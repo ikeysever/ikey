@@ -228,6 +228,32 @@ app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
  return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY',
   message:'裝置指令服務尚未啟用，未送出任何控制指令'});
 });
+// Opt-in, authenticated, non-actuating GAS signature probe. No create/claim/report.
+app.post('/api/admin/command-probe',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(process.env.IKEY_COMMAND_PROBE_ENABLED!=='true')
+  return res.status(404).json({success:false,code:'PROBE_DISABLED'});
+ if(!sameProjectOrigin(req)||req.projectUser.global_role!=='super_admin')
+  return res.status(403).json({success:false,code:'NOT_AUTHORIZED'});
+ if(!authStore||typeof authStore.commandProbe!=='function')
+  return res.status(503).json({success:false,code:'PROBE_UNAVAILABLE'});
+ const project_id=req.body?.project_id;
+ const device_id=req.body?.device_id;
+ if(!req.body||Object.keys(req.body).sort().join(',')!=='device_id,project_id')
+  return res.status(400).json({success:false,code:'INVALID_PROBE_INPUT'});
+ if(typeof project_id!=='string'||typeof device_id!=='string')
+  return res.status(400).json({success:false,code:'INVALID_PROBE_INPUT'});
+ try{
+  // GAS independently enforces project ownership and device binding.
+  // Random nonexistent command ID ensures this endpoint cannot fetch live commands.
+  await authStore.commandProbe({project_id,device_id,
+   actor_user_id:req.projectUser.user_id,command_id:randomUUID()});
+  return res.json({success:true,code:'PROBE_ACCEPTED'});
+ }catch(err){
+  console.warn('Command probe rejected',String(err.message||'').slice(0,90));
+  return res.status(409).json({success:false,code:'PROBE_REJECTED'});
+ }
+});
 // Read-only account directory. Authorize on the server, never trust UI role claims.
 app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
