@@ -11,6 +11,29 @@ function ikeyCommandPayloadDigest_(p){
  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(sorted))
   .map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
 }
+/**
+ * Explicit maintenance only; never called in the command execution path.
+ * Caller must run this while holding the same script lock as command processing.
+ * Expired nonces remain until they are at least 24h past expiry.
+ */
+function ikeyCommandNoncePruneLocked_(ledger,now,maxRows){
+ if(!ledger||!Number.isSafeInteger(now)||!Number.isSafeInteger(maxRows)||maxRows<1||maxRows>500)
+  throw Error('COMMAND_REPLAY_MAINTENANCE_INVALID');
+ const last=ledger.getLastRow();
+ if(last<2)return 0;
+ const values=ledger.getRange(2,1,last-1,2).getValues();
+ const cutoff=now-86400000;
+ const indexes=[];
+ for(let i=0;i<values.length;i++){
+  const expiry=values[i][1];
+  if(typeof expiry==='number'&&Number.isSafeInteger(expiry)&&expiry<cutoff){
+   indexes.push(i+2);
+   if(indexes.length>=maxRows)break;
+  }
+ }
+ for(let i=indexes.length-1;i>=0;i--)ledger.deleteRow(indexes[i]);
+ return indexes.length;
+}
 function ikeyCommandTrustVerify_(token,action,p){
  if(typeof token!=='string'||token.length>4096||typeof p!=='object'||!p)
   throw Error('COMMAND_ASSERTION_INVALID');
