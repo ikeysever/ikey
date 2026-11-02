@@ -158,10 +158,10 @@ app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
       const now=new Date().toISOString();
       const device={device_id,password_hash:hash,status:'pre_registered',created_by_user_id:req.projectUser.user_id,created_at:now,updated_at:now};
       try{
-        const result=await authStore.dbCall('db.insert',{table:'Devices',primary_key:'device_id',data:device});
-        if(result?.inserted===true&&result?.record?.device_id===device_id)
+        const result=await authStore.deviceAuthCreateAtomic(device);
+        if(result?.created===true&&result?.device_id===device_id)
           return res.status(201).json({success:true,device_id});
-        // Unknown storage response is not a verified insert.
+        if(result?.created===false)continue;
         return res.status(503).json({success:false,message:'無法確認裝置已建立，請聯絡管理員'});
       }catch(err){
         // Do not retry ambiguous storage failures: the insert may already have committed.
@@ -176,12 +176,9 @@ app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
 app.get('/api/devices',requireProjectUser,async(req,res)=>{
   if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
   try{
-    const result=await authStore.dbCall('db.select',{table:'Devices',where:{status:'pre_registered'},limit:100});
-    if(!Array.isArray(result?.rows))throw Error('INVALID_DEVICE_LIST');
-    const devices=result.rows.filter(r=>/^[A-HJ-NP-Z2-9]{8}$/.test(String(r.device_id||''))).map(r=>({
-      device_id:String(r.device_id),registration_status:'pre_registered',connection_status:'unverified'
-    }));
-    return res.json({success:true,devices,limited:result.rows.length===100});
+    const devices=await authStore.deviceAuthListPreRegistered(100);
+    if(!Array.isArray(devices))throw Error('INVALID_DEVICE_LIST');
+    return res.json({success:true,devices,limited:devices.length===100});
   }catch(err){
     console.warn('Device list unavailable',err.message);
     return res.status(503).json({success:false,message:'裝置清單暫時無法讀取'});
@@ -206,8 +203,7 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
   if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id))
     return res.status(400).json({success:false,message:'裝置 ID 格式不正確'});
   try{
-    const result=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:id},limit:1});
-    const row=(result?.rows||[]).find(item=>item.device_id===id);
+    const row=await authStore.deviceAuthGetById(id);
     if(!row)return res.status(404).json({success:false,message:'找不到此裝置'});
     // No stored credentials or personally identifying data in the response.
     return res.json({success:true,device_id:id,registration_status:row.status||'unknown',

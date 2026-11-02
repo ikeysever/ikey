@@ -143,3 +143,16 @@
 - **Unresolved:** The injected test transaction is not a GAS LockService/Sheets implementation. Real atomicity, durability, cross-process safety, credential migration, verified actor/device context, ESP32 NVS outbox and physical feedback are not established by these files. Do not deploy or treat test results as physical unlock validation.
 - **Verification:** CI result for these commits pending at time of writing.
 - **Next gate:** verify actual GAS and Sheets structure, implement dedicated locked persistent GAS actions and integration tests using isolated test Sheets; then integrate server/firmware and obtain separate physical/deployment approval.
+
+
+## 2026-11-02 — ESP32 device-auth API: isolated GAS storage adapter (staging only)
+
+- **Authorization:** User approved implementation only on `feature/esp32-device-auth-staging`; prohibited changes to `main`, deployed/production GAS, production database and production deployment.
+- **Audit:** Staging `device-auth.js` was mounted, but queried generic `db.select`, which the Gen3 GAS dispatcher did not implement. The generic DB engine is a separate source file. The historical live-sheet audit observed a `Devices` tab but did not prove the Gen3 deployment points to that workbook.
+- **Decision:** Do not reuse the live `Devices` tab or expose generic CRUD. Add four narrowly scoped server-to-GAS actions backed by `DeviceAuth_Devices` in a separately configured staging spreadsheet. No fallback to `GEN3_SPREADSHEET_ID`.
+- **Render:** Device pre-registration, list and status use dedicated store methods. Device authentication uses a dedicated lookup action. No browser response contains `password_hash`.
+- **Token:** HMAC-SHA256 signed 15-minute bearer token with issuer, audience, subject, issue time, expiry and random nonce; constant-time signature verification; device status rechecked on identity verification; bounded per-IP/device attempts; dummy scrypt verification for unknown IDs.
+- **GAS:** Added exact staging schema, script-lock-protected unique registration, read-only lookup/list/status, and explicit setup/inspection helpers. The setup helper is not invoked by this commit.
+- **Tests:** Added HTTP API tests and static GAS contract checks. CI result pending after staging push.
+- **Not performed:** No workflow_dispatch, clasp sync, GAS deployment, Script Property read/write, spreadsheet creation/write, Render environment change/deploy, main modification or physical unlock.
+- **Remaining:** Create isolated staging spreadsheet and staging GAS project/property; configure a separate staging Render service and fresh secrets only after separate authorization; run real GAS↔Render integration tests.

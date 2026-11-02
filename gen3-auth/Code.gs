@@ -6,7 +6,7 @@
  * WARNING: Apps Script Web Apps may redirect; do not log credentials.
  */
 const TABS = Object.freeze({
- users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History",settings:"Project_Settings",members:"Project_Members"
+ users:"Gen3_Users", sessions:"Auth_Sessions", audit:"Auth_Audit_Logs", tokens:"Auth_Tokens", requests:"Project_Requests", history:"Project_Review_History",settings:"Project_Settings",members:"Project_Members",deviceAuth:"DeviceAuth_Devices"
 });
 const HEADERS = Object.freeze({
  Gen3_Users:["user_id","password_hash","display_name","global_role","account_status","failed_login_attempts","locked_until","created_at","updated_at","username"],
@@ -16,7 +16,8 @@ const HEADERS = Object.freeze({
  Project_Requests:["request_id","project_id","user_id","request_type","request_status","reviewed_by","created_at","reviewed_at","project_name","project_description"],
  Project_Review_History:["history_id","request_id","actor_user_id","event_type","from_status","to_status","note","created_at"],
  Project_Settings:["request_id","purpose","theme","sound","mode","updated_at"],
- Project_Members:["request_id","member_user_id","member_role","created_at"]
+ Project_Members:["request_id","member_user_id","member_role","created_at"],
+ DeviceAuth_Devices:["device_id","password_hash","status","created_by_user_id","created_at","updated_at"]
 });
 const AUTH_TABS = [TABS.users, TABS.sessions, TABS.audit, TABS.tokens];
 function respond(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON)}
@@ -55,6 +56,68 @@ function locked(fn) {
  if(!lock.tryLock(25000))throw Error("DATABASE_BUSY");
  try{return fn()}finally{lock.releaseLock()}
 }
+
+const DEVICE_AUTH_ID_PATTERN_=/^[A-HJ-NP-Z2-9]{8}$/;
+const DEVICE_AUTH_USER_PATTERN_=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function deviceAuthSheet_(){
+ const id=PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID");
+ if(!id)throw Error("DEVICE_AUTH_STAGING_SPREADSHEET_NOT_CONFIGURED");
+ const tab=SpreadsheetApp.openById(id).getSheetByName(TABS.deviceAuth);
+ if(!tab)throw Error("DEVICE_AUTH_STAGING_SHEET_NOT_FOUND");
+ const expected=HEADERS[TABS.deviceAuth],actual=tab.getRange(1,1,1,expected.length).getDisplayValues()[0];
+ if(expected.some((v,i)=>actual[i]!==v))throw Error("DEVICE_AUTH_STAGING_SCHEMA_MISMATCH");
+ return tab;
+}
+function deviceAuthRows_(tab){
+ const headers=HEADERS[TABS.deviceAuth],last=tab.getLastRow();if(last<2)return [];
+ return tab.getRange(2,1,last-1,headers.length).getValues().map((row,i)=>({index:i+2,value:Object.fromEntries(headers.map((h,j)=>[h,String(row[j]??"")]))}));
+}
+function deviceAuthFindById_(p){
+ const id=String(p.device_id||"");if(!DEVICE_AUTH_ID_PATTERN_.test(id))throw Error("INVALID_DEVICE_ID");
+ const r=deviceAuthRows_(deviceAuthSheet_()).find(x=>x.value.device_id===id);return r?r.value:null;
+}
+function deviceAuthCreateAtomic_(p){
+ const d=p.device||{},keys=["created_at","created_by_user_id","device_id","password_hash","status","updated_at"];
+ if(!d||typeof d!=="object"||Array.isArray(d)||Object.keys(d).length!==keys.length||!keys.every(k=>Object.prototype.hasOwnProperty.call(d,k))||
+    !DEVICE_AUTH_ID_PATTERN_.test(String(d.device_id||""))||d.status!=="pre_registered"||
+    !/^scrypt:v1:[A-Za-z0-9_-]{22}:[A-Za-z0-9_-]{86}$/.test(String(d.password_hash||""))||
+    !DEVICE_AUTH_USER_PATTERN_.test(String(d.created_by_user_id||""))||
+    !Number.isFinite(Date.parse(d.created_at))||!Number.isFinite(Date.parse(d.updated_at)))throw Error("INVALID_DEVICE_RECORD");
+ const lock=LockService.getScriptLock();if(!lock.tryLock(15000))throw Error("DEVICE_AUTH_DATABASE_BUSY");
+ try{
+  const tab=deviceAuthSheet_();if(deviceAuthRows_(tab).some(r=>r.value.device_id===d.device_id))return {created:false,device_id:d.device_id};
+  const headers=HEADERS[TABS.deviceAuth],row=headers.map(h=>cellText(d[h]));
+  tab.getRange(tab.getLastRow()+1,1,1,headers.length).setValues([row]);SpreadsheetApp.flush();
+  return {created:true,device_id:d.device_id};
+ }finally{lock.releaseLock();}
+}
+function deviceAuthListPreRegistered_(p){
+ const limit=p.limit===undefined?100:Number(p.limit);if(!Number.isInteger(limit)||limit<1||limit>100)throw Error("INVALID_DEVICE_LIMIT");
+ return deviceAuthRows_(deviceAuthSheet_()).filter(r=>r.value.status==="pre_registered").slice(0,limit)
+  .map(r=>({device_id:r.value.device_id,status:r.value.status,created_at:r.value.created_at,updated_at:r.value.updated_at}));
+}
+function deviceAuthGetById_(p){
+ const id=String(p.device_id||"");if(!DEVICE_AUTH_ID_PATTERN_.test(id))throw Error("INVALID_DEVICE_ID");
+ const r=deviceAuthRows_(deviceAuthSheet_()).find(x=>x.value.device_id===id);
+ return r?{device_id:r.value.device_id,status:r.value.status,created_at:r.value.created_at,updated_at:r.value.updated_at}:null;
+}
+function setupDeviceAuthStagingSheet(spreadsheetId){
+ const configured=PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID");
+ if(!configured||spreadsheetId!==configured)throw Error("STAGING_SPREADSHEET_ID_MISMATCH");
+ const ss=SpreadsheetApp.openById(configured),name=TABS.deviceAuth,expected=HEADERS[name];
+ let tab=ss.getSheetByName(name),created=false;if(!tab){tab=ss.insertSheet(name);created=true;}
+ if(tab.getLastRow()===0)tab.getRange(1,1,1,expected.length).setValues([expected]);
+ const actual=tab.getRange(1,1,1,expected.length).getDisplayValues()[0];
+ if(expected.some((v,i)=>actual[i]!==v))throw Error("DEVICE_AUTH_STAGING_SCHEMA_MISMATCH");
+ return {created,ready:true,sheet:name};
+}
+function inspectDeviceAuthStagingSetup(){
+ const configured=Boolean(PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID"));
+ if(!configured)return {configured:false,ready:false,reason:"STAGING_SPREADSHEET_NOT_CONFIGURED"};
+ try{const tab=deviceAuthSheet_();return {configured:true,ready:true,sheet:TABS.deviceAuth,data_rows:Math.max(0,tab.getLastRow()-1)};}
+ catch(err){return {configured:true,ready:false,reason:String(err.message||"DEVICE_AUTH_SETUP_FAILED")};}
+}
+
 function execute(action,p) {
  if(['deviceCommandCreateAtomic','deviceCommandClaimAtomic',
      'deviceCommandReportAtomic','deviceCommandGet'].includes(action)){
@@ -62,6 +125,10 @@ function execute(action,p) {
   return ikeyDeviceCommandAction(action,p);
  }
  switch(action) {
+  case "deviceAuthFindById":return deviceAuthFindById_(p);
+  case "deviceAuthCreateAtomic":return deviceAuthCreateAtomic_(p);
+  case "deviceAuthListPreRegistered":return deviceAuthListPreRegistered_(p);
+  case "deviceAuthGetById":return deviceAuthGetById_(p);
   case "registerAtomic":return locked(()=>{
    const u=p.user||{},username=String(u.username||"").trim().toLowerCase();
    if(!/^[a-z][a-z0-9_]{3,23}$/.test(username))throw Error("INVALID_USERNAME");
