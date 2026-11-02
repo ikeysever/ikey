@@ -1,0 +1,19 @@
+name: ESP32 device command safety tests
+on:
+  push:
+    branches:
+      - feature/esp32-device-auth-staging
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  device-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm test
