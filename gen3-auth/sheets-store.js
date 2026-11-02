@@ -37,6 +37,7 @@ function createSheetsStore() {
    touchSession:async(session_id,expires_at,last_seen_at)=>call("touchSession",{session_id,expires_at,last_seen_at}),
    revokeSession:async(session_id,reason)=>call("revokeSession",{session_id,reason}),
    audit:async event=>call("audit",{event}),
+   adminCall:async(action,payload)=>{if(!["adminAccountList","adminAccountSetStatus","adminAccountSetRole","adminAccountRevokeSessions","adminAccountResetPassword"].includes(action))throw Error("ADMIN_ACTION_DENIED");return call(action,payload);},
    // Generic data operations: allowlist lives in Render and GAS; no browser access.
    dbCall:async(action,payload)=>{
      if(!['db.health','db.schema','db.select','db.insert','db.update','db.delete'].includes(action))throw Error('GEN3_DB_ACTION_NOT_ALLOWED');
