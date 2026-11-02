@@ -224,7 +224,7 @@ require('./lib/device-command-routes').mountCommandRoutes(app,{
  store:authStore,requireProjectUser,sameProjectOrigin,requireDevice
 });
 // Website command entrypoint; never acknowledge physical success without device report.
-app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
+app.post('/api/devices/:deviceId/commands',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  if(!sameProjectOrigin(req)||req.projectUser.global_role!=='super_admin')
   return res.status(403).json({success:false,code:'NOT_AUTHORIZED'});
