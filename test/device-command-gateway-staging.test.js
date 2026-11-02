@@ -38,6 +38,7 @@ test('mocked command lifecycle: create, idempotency, claim, report, expiry',asyn
  let now=1000000;
  const commands=new Map(),byKey=new Map(),usedClaims=new Set();
  const call=async(action,p)=>{
+  for(const cmd of commands.values())if(['pending','claimed'].includes(cmd.status)&&now>=cmd.deadline_at)cmd.status='timed_out';
   if(action==='deviceCommandCreateAtomic'){
    const key=p.device_id+':'+p.idempotency_key;
    if(byKey.has(key))return {duplicate:true,command:commands.get(byKey.get(key))};
@@ -77,6 +78,6 @@ test('mocked command lifecycle: create, idempotency, claim, report, expiry',asyn
  const next=await gateway.create({...base,idempotency_key:'test-idem-002',timeout_ms:1000});
  now+=1001;
  assert.equal(await gateway.claim({device,project_id:PROJECT}),null);
- assert.equal((await gateway.get({actor,project_id:PROJECT,device_id:DEVICE,command_id:next.command_id})).status,'pending','mock does not automatically reconcile expiry');
+ assert.equal((await gateway.get({actor,project_id:PROJECT,device_id:DEVICE,command_id:next.command_id})).status,'timed_out');
 });
 // NOTE: mock tests do not establish GAS nonce replay safety or live Render/GAS integration.
