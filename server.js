@@ -266,6 +266,42 @@ app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
   return res.json({success:true,accounts,limited:Boolean(result?.limited)});
  }catch(err){console.warn('Admin directory unavailable',err.message);return res.status(503).json({success:false,message:'帳號資料服務尚未就緒'});}
 });
+// Mutations require an authenticated super-admin, same-origin request, and explicit confirmation.
+app.post('/api/admin/accounts/action',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
+ if(!sameProjectOrigin(req)||req.get('sec-fetch-site')==='cross-site')return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const {action,target_user_id,status,password,confirm}=req.body||{};
+ const permitted=['adminAccountSetStatus','adminAccountRevokeSessions','adminAccountResetPassword'];
+ if(!permitted.includes(action)||confirm!==true)return res.status(400).json({success:false,message:'操作未確認或不允許'});
+ if(typeof target_user_id!=='string'||!/^[0-9a-f-]{36}$/i.test(target_user_id))return res.status(400).json({success:false,message:'帳號識別碼無效'});
+ if(target_user_id===req.projectUser.user_id)return res.status(403).json({success:false,message:'不可操作自己的帳號'});
+ // Fail closed for protected super-admin targets even if the UI is bypassed.
+ try {
+  const directory=await authStore.adminAccountList(req.projectSessionHash);
+  const entries=Array.isArray(directory?.accounts)?directory.accounts:[];
+  const target=entries.find(u=>u.user_id===target_user_id);
+  if(!target)return res.status(409).json({success:false,message:'無法確認目標帳號，操作已取消'});
+  if(target.global_role==='super_admin')return res.status(403).json({success:false,message:'不可操作超級管理員帳號'});
+ }catch{return res.status(503).json({success:false,message:'無法驗證目標帳號，操作已取消'});}
+ const payload={actor_session_hash:req.projectSessionHash,target_user_id};
+ if(action==='adminAccountSetStatus'){
+  if(!['active','disabled'].includes(status))return res.status(400).json({success:false,message:'帳號狀態無效'});
+  payload.status=status;
+ }
+ if(action==='adminAccountResetPassword'){
+  if(typeof password!=='string'||password.length<12||password.length>128)return res.status(400).json({success:false,message:'密碼長度須為 12 至 128 字元'});
+  payload.password_hash=require('./gen3-auth/core').passwordHash(password);
+ }
+ try{
+  // GAS independently validates the actor, target, and audit trail.
+  const result=await authStore.adminAccountAction(action,payload);
+  return res.json({success:true,target:result.target,revoked_sessions:result.revoked_sessions});
+ }catch(err){
+  console.warn('Admin account mutation failed',action,String(err.message||'').slice(0,120));
+  return res.status(409).json({success:false,message:'操作未完成，請確認帳號狀態及管理權限'});
+ }
+});
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
