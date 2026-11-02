@@ -54,7 +54,7 @@ function createSheetsStore() {
      const assertion=signCommandAssertion({
        secret:process.env.IKEY_COMMAND_TRUST_SECRET,
        action,project_id:payload?.project_id,device_id:payload?.device_id,
-       actor_user_id:payload?.actor_user_id
+       actor_user_id:payload?.actor_user_id,payload
      });
      return call(action,{...payload,command_assertion:assertion});
    },
