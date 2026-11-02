@@ -5,7 +5,7 @@
 <title>iKey 3.1｜超級管理員</title><link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
 <link rel="stylesheet" href="/home.css?v=20261026-sidebar-align4"><script src="/home.js?v=20261026-desktop-sidebar-hotfix" defer></script>
 <script src="/app-shell-register.js?v=20261026-local1" defer>
-</script></head>
+</script><style>.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:24px}.admin-tile{display:flex;flex-direction:column;gap:12px;min-height:125px;padding:24px;border:1px solid #36536c;border-radius:16px;background:rgba(20,31,52,.78);color:#f8fafc;text-decoration:none}.admin-tile strong{font-size:20px}.admin-tile small{color:#a6b2c5}.admin-tile[href]:hover{border-color:#63d8e8}.admin-tile.pending{opacity:.7}@media(max-width:600px){.admin-grid{grid-template-columns:1fr}}</style></head>
 <body>
 <button id="menu-toggle" class="menu-toggle" type="button" aria-label="開啟選單" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button>
 <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
@@ -15,5 +15,14 @@
 <div class="side-bottom"><a class="account-link" href="/account.html">帳號管理</a><button id="logout" class="logout-button" type="button">登出</button></div></aside>
 <main><header class="hero"><div class="eyebrow">iKey · GENERATION 3.1</div><h1>超級管理員</h1><p>系統管理控制台</p></header>
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
-<section id="account-empty-page" class="card" hidden aria-label="超級管理員頁面"><h2>管理控制台準備中</h2><p>已建立超級管理員頁面。管理功能及權限驗證將在後續階段確認與實作。</p><p>目前此頁不提供任何管理操作。</p></section>
+<section id="account-empty-page" class="card" hidden aria-label="系統管理控制台">
+<h2>系統管理控制台</h2><p>選擇要管理的功能。尚未接入的模組只顯示規劃入口，不執行資料操作。</p>
+<div class="admin-grid">
+<a href="/device-admin.html" class="admin-tile"><strong>▣ 裝置管理</strong><small>管理設備、註冊與設定</small></a>
+<div class="admin-tile pending"><strong>♙ 帳號與權限</strong><small>功能規劃中</small></div>
+<div class="admin-tile pending"><strong>▤ 資料管理</strong><small>功能規劃中</small></div>
+<div class="admin-tile pending"><strong>◉ 系統狀態</strong><small>功能規劃中</small></div>
+<div class="admin-tile pending"><strong>☷ 操作紀錄</strong><small>功能規劃中</small></div>
+<div class="admin-tile pending"><strong>⚙ 系統設定</strong><small>功能規劃中</small></div>
+</div></section>
 </main></div></body></html>
