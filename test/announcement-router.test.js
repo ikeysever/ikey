@@ -70,6 +70,7 @@ test('public list exposes only published, non-expired announcements and sorts by
     const response = await fetch(base + '/api/announcements');
     const data = await response.json();
     assert.equal(response.status, 200);
+    assert.equal(data.announcements[0].created_by_user_id, undefined);
     assert.deepEqual(data.announcements.map(x => x.announcement_id), [
       '22222222-2222-4222-8222-222222222222',
       '11111111-1111-4111-8111-111111111111'
