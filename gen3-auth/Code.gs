@@ -56,6 +56,11 @@ function locked(fn) {
  try{return fn()}finally{lock.releaseLock()}
 }
 function execute(action,p) {
+ if(['deviceCommandCreateAtomic','deviceCommandClaimAtomic',
+     'deviceCommandReportAtomic','deviceCommandGet'].includes(action)){
+  if(typeof ikeyDeviceCommandAction!=='function')throw Error('COMMAND_HANDLER_NOT_INSTALLED');
+  return ikeyDeviceCommandAction(action,p);
+ }
  switch(action) {
   case "registerAtomic":return locked(()=>{
    const u=p.user||{},username=String(u.username||"").trim().toLowerCase();
