@@ -264,7 +264,7 @@ app.post('/api/admin/accounts/action',requireProjectUser,async(req,res)=>{
   payload.status=status;
  }
  if(action==='adminAccountResetPassword'){
-  if(typeof password!=='string'||password.length<12||password.length>128)return res.status(400).json({success:false,message:'密碼長度須為 12 至 128 字元'});
+  if(typeof password!=='string'||password.length<8||password.length>128)return res.status(400).json({success:false,message:'密碼長度須為 8 至 128 字元'});
   payload.password_hash=require('./gen3-auth/core').passwordHash(password);
  }
  try{
