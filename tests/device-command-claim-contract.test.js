@@ -30,3 +30,21 @@ test('claim rejects malformed token generator output',async()=>{
  await assert.rejects(api.claim({device,project_id}),/INVALID_CLAIM_TOKEN/);
  assert.equal(calls,0);
 });
+
+test('claim response uses allowlist and never leaks GAS internal fields',async()=>{
+ const api=make(async()=>({
+  command_id:'33333333-3333-4333-8333-333333333333',
+  status:'claimed',action:'unlock',deadline_at:15000,
+  claim_token_hash:'secret-hash',idempotency_key:'secret-key',
+  fingerprint:'private-fingerprint',credential_hash:'credential-secret',
+  internal_metadata:{secret:true}
+ }));
+ const result=await api.claim({device,project_id});
+ assert.equal(result.command_id,'33333333-3333-4333-8333-333333333333');
+ assert.equal(result.status,'claimed');
+ assert.equal(result.action,'unlock');
+ for(const key of ['claim_token_hash','idempotency_key','fingerprint','credential_hash','internal_metadata']){
+  assert.equal(Object.hasOwn(result,key),false,key+' must not be returned');
+ }
+ assert.match(result.claim_token,/^[a-f0-9]{64}$/);
+});
