@@ -42,6 +42,16 @@ function createSheetsStore() {
      if(!['db.health','db.schema','db.select','db.insert','db.update','db.delete'].includes(action))throw Error('GEN3_DB_ACTION_NOT_ALLOWED');
      return call(action,payload);
    },
+   // Dedicated command transport. Requires GAS dispatcher, schema and trusted
+   // identity context to be separately verified before enabling HTTP routes.
+   commandCall:async(action,payload)=>{
+     const allowed=['deviceCommandCreateAtomic','deviceCommandClaimAtomic',
+       'deviceCommandReportAtomic','deviceCommandGet'];
+     if(!allowed.includes(action))throw Error('GEN3_COMMAND_ACTION_NOT_ALLOWED');
+     if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED!=='true')
+       throw Error('PHYSICAL_UNLOCK_DISABLED');
+     return call(action,payload);
+   },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
      if(!["projectDraftSave","projectRequestsMine","projectRequestSubmit","projectReviewHistoryMine","projectCreate","projectListMine"].includes(action))throw Error("GEN3_PROJECT_ACTION_NOT_ALLOWED");
