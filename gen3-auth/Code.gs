@@ -59,9 +59,16 @@ function locked(fn) {
 
 const DEVICE_AUTH_ID_PATTERN_=/^[A-HJ-NP-Z2-9]{8}$/;
 const DEVICE_AUTH_USER_PATTERN_=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-function deviceAuthSheet_(){
- const id=PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID");
+function deviceAuthStagingSpreadsheetId_(){
+ const props=PropertiesService.getScriptProperties();
+ const id=props.getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID");
  if(!id)throw Error("DEVICE_AUTH_STAGING_SPREADSHEET_NOT_CONFIGURED");
+ const gen3Id=props.getProperty("GEN3_SPREADSHEET_ID");
+ if(gen3Id&&id===gen3Id)throw Error("DEVICE_AUTH_STAGING_SPREADSHEET_MUST_BE_ISOLATED");
+ return id;
+}
+function deviceAuthSheet_(){
+ const id=deviceAuthStagingSpreadsheetId_();
  const tab=SpreadsheetApp.openById(id).getSheetByName(TABS.deviceAuth);
  if(!tab)throw Error("DEVICE_AUTH_STAGING_SHEET_NOT_FOUND");
  const expected=HEADERS[TABS.deviceAuth],actual=tab.getRange(1,1,1,expected.length).getDisplayValues()[0];
@@ -102,8 +109,8 @@ function deviceAuthGetById_(p){
  return r?{device_id:r.value.device_id,status:r.value.status,created_at:r.value.created_at,updated_at:r.value.updated_at}:null;
 }
 function setupDeviceAuthStagingSheet(spreadsheetId){
- const configured=PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID");
- if(!configured||spreadsheetId!==configured)throw Error("STAGING_SPREADSHEET_ID_MISMATCH");
+ const configured=deviceAuthStagingSpreadsheetId_();
+ if(spreadsheetId!==configured)throw Error("STAGING_SPREADSHEET_ID_MISMATCH");
  const ss=SpreadsheetApp.openById(configured),name=TABS.deviceAuth,expected=HEADERS[name];
  let tab=ss.getSheetByName(name),created=false;if(!tab){tab=ss.insertSheet(name);created=true;}
  if(tab.getLastRow()===0)tab.getRange(1,1,1,expected.length).setValues([expected]);

@@ -55,4 +55,5 @@ test('GAS device actions use isolated staging storage and locked unique creation
  assert.match(s,/function deviceAuthCreateAtomic_/);assert.match(s,/LockService\.getScriptLock\(\)/);
  for(const a of ['deviceAuthFindById','deviceAuthCreateAtomic','deviceAuthListPreRegistered','deviceAuthGetById'])assert.match(s,new RegExp('case "'+a+'"'));
  assert.match(s,/STAGING_SPREADSHEET_ID_MISMATCH/);
+ assert.match(s,/DEVICE_AUTH_STAGING_SPREADSHEET_MUST_BE_ISOLATED/);
 });
