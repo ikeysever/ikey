@@ -17,6 +17,22 @@
 <div id="loading" class="loading" role="status">正在驗證登入狀態…</div>
 <section id="account-empty-page" class="device-page" hidden>
 <style>
+.admin-dashboard{margin:30px 0 22px}.admin-dashboard h2{font-size:24px;margin:0 0 8px;color:#f8fafc}.admin-dashboard p{color:#a6b2c5;margin:0 0 18px}
+.admin-dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.admin-dashboard-card{font:inherit;text-align:left;display:flex;flex-direction:column;gap:9px;min-height:110px;border:1px solid #3c5770;border-radius:14px;background:rgba(20,31,52,.78);padding:20px;color:#f8fafc}
+.admin-dashboard-card strong{font-size:19px}.admin-dashboard-card small{color:#a6b2c5}.admin-dashboard-card:not(:disabled){cursor:pointer}.admin-dashboard-card:not(:disabled):hover{border-color:#63d8e8}.admin-dashboard-card:disabled{opacity:.65}
+#device-management-region[hidden]{display:none}
+</style>
+<div class="admin-dashboard"><h2>系統管理控制台</h2><p>選擇管理項目，裝置管理功能維持原有操作。</p><div class="admin-dashboard-grid">
+<button class="admin-dashboard-card" id="admin-open-devices" type="button"><strong>▣ 裝置管理</strong><small>裝置搜尋、預註冊及設定</small></button>
+<button class="admin-dashboard-card" type="button" disabled><strong>♙ 帳號與權限</strong><small>規劃中</small></button>
+<button class="admin-dashboard-card" type="button" disabled><strong>▤ 資料管理</strong><small>規劃中</small></button>
+<button class="admin-dashboard-card" type="button" disabled><strong>◉ 系統狀態</strong><small>規劃中</small></button>
+<button class="admin-dashboard-card" type="button" disabled><strong>☷ 操作紀錄</strong><small>規劃中</small></button>
+<button class="admin-dashboard-card" type="button" disabled><strong>⚙ 系統設定</strong><small>規劃中</small></button>
+</div></div>
+<div id="device-management-region" hidden><button class="device-btn" id="admin-back-dashboard" type="button">← 返回系統管理控制台</button>
+<style>
 .device-page{margin-top:36px}.device-page button,.device-page input{font:inherit}.device-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line)}.device-heading{font-weight:700;white-space:nowrap;margin-right:8px}.device-search{flex:1;min-width:190px;padding:12px 15px;border:1px solid #4c647c;border-radius:10px;background:rgba(20,31,52,.65);color:white}.device-btn{padding:11px 14px;border:1px solid #54738c;border-radius:10px;background:#233852;color:#f1f7ff;cursor:pointer}.device-btn:disabled{opacity:.45;cursor:not-allowed}.device-btn.primary{background:#25445f}.device-btn.danger{background:#6c2432;border-color:#bc5264;color:#fff}.device-btn.danger:disabled{opacity:.5}.device-switch{display:flex;border:1px solid #52647b;border-radius:9px;overflow:hidden}.device-switch button{border:0;border-radius:0}.device-switch button[aria-pressed=true]{background:#3a536c}.device-results{min-height:160px}.device-empty{padding:42px 10px;text-align:center;color:#9db1c7}.device-row{display:flex;align-items:center;gap:18px;padding:20px 12px;border-bottom:1px solid var(--line)}.device-symbol{color:#8ebbd4;font-size:21px}.device-info{flex:1;min-width:0}.device-info strong{display:block}.device-info small{display:block;color:#92a8c1;margin-top:5px}.device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px;margin-top:16px}.device-grid .device-row{border:1px solid var(--line);border-radius:14px;flex-wrap:wrap}.device-grid .device-row .device-btn{width:100%}.device-panel{margin:20px 0;padding:22px;border:1px solid var(--line);border-radius:15px;background:rgba(20,31,52,.72)}.device-panel[hidden]{display:none}.device-panel h3{margin:0 0 12px}.device-panel label{display:block;margin:12px 0 6px;color:#bed0e1}.device-panel input{padding:12px 14px;background:#101d30;border:1px solid #50667d;border-radius:9px;color:white;width:100%;max-width:460px}.device-message{color:#b8dce9;overflow-wrap:anywhere}.device-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.device-caption{color:#94a9bf;font-size:13px}@media(max-width:760px){.device-toolbar{align-items:stretch}.device-search{flex-basis:100%}.device-row{gap:10px;flex-wrap:wrap}}
 </style>
 <div class="device-toolbar">
@@ -90,5 +106,7 @@ el('device-create-form').addEventListener('submit',async e=>{e.preventDefault();
 loadDevices();
 })();
 </script>
+</div>
+<script>document.getElementById("admin-open-devices").addEventListener("click",()=>{document.querySelector(".admin-dashboard").hidden=true;document.getElementById("device-management-region").hidden=false});document.getElementById("admin-back-dashboard").addEventListener("click",()=>{document.querySelector(".admin-dashboard").hidden=false;document.getElementById("device-management-region").hidden=true});</script>
 </section>
 </main></div></body></html>
