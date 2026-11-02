@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220">
 <title>iKey 3.1｜超級管理員</title><link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
-<link rel="stylesheet" href="/home.css?v=20261026-sidebar-align4"><link rel="stylesheet" href="/announcements-admin.css?v=20261102-ui1"><script src="/home.js?v=20261026-desktop-sidebar-hotfix" defer></script><script src="/announcements-admin.js?v=20261102-ui1" defer></script>
+<link rel="stylesheet" href="/home.css?v=20261026-sidebar-align4"><link rel="stylesheet" href="/announcements-admin.css?v=20261102-api1"><script src="/home.js?v=20261026-desktop-sidebar-hotfix" defer></script><script src="/announcements-admin.js?v=20261102-api1" defer></script>
 <script src="/app-shell-register.js?v=20261026-local1" defer>
 </script></head>
 <body>
@@ -35,7 +35,7 @@
 <div id="announcement-management-region" class="announcement-region" hidden>
 <button class="device-btn" id="announcement-back-dashboard" type="button">← 返回系統管理控制台</button>
 <div class="announcement-head"><div><h2>系統公告管理</h2><p class="announcement-note">管理公告內容、分類、優先級與發布狀態。</p></div><button id="announcement-new" class="announcement-btn primary" type="button">＋ 新增公告</button></div>
-<p class="announcement-note">前端介面預覽模式：目前使用示範資料，尚未連接後端或資料庫。所有操作只在本頁暫存，重新整理後還原。</p>
+<p class="announcement-note">公告資料由 iKey 後端 API 管理；新增、編輯、發布、下架與回收站操作會寫入資料庫。</p>
 <div class="announcement-toolbar">
 <input id="announcement-search" type="search" maxlength="120" placeholder="搜尋公告標題或內容…" aria-label="搜尋公告">
 <select id="announcement-category-filter" aria-label="依分類篩選"><option value="">全部分類</option><option value="system">系統公告</option><option value="maintenance">維護通知</option><option value="feature">功能更新</option><option value="administrative">行政公告</option><option value="other">其他</option></select>
