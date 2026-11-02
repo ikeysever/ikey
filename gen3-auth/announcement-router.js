@@ -181,6 +181,39 @@ function createAnnouncementRouter(store) {
     }
   });
 
+  // Render Cron Job entry point. Configure a secret of at least 32 characters and
+  // invoke this route on a schedule (for example once per minute). No browser session
+  // or public endpoint can trigger scheduled publishing.
+  router.post('/internal/announcements/publish-due', async (req, res) => {
+    const expected = process.env.ANNOUNCEMENTS_CRON_SECRET || '';
+    const supplied = String(req.get('authorization') || '').replace(/^Bearer\\s+/i, '');
+    const expectedBuffer = Buffer.from(expected);
+    const suppliedBuffer = Buffer.from(supplied);
+    if (expectedBuffer.length < 32 || expectedBuffer.length !== suppliedBuffer.length ||
+        !crypto.timingSafeEqual(expectedBuffer, suppliedBuffer)) {
+      return res.status(401).json({ success: false, message: '未授權的排程請求' });
+    }
+    try {
+      const scheduled = await selectByStatus('scheduled');
+      const now = Date.now();
+      const updated = [];
+      for (const row of scheduled) {
+        if (!row.scheduled_at || Date.parse(row.scheduled_at) > now) continue;
+        if (row.expires_at && Date.parse(row.expires_at) <= now) {
+          await update(row.announcement_id, { status: 'archived', archived_at: nowIso(), updated_at: nowIso() });
+        } else {
+          const publishedAt = new Date(row.scheduled_at).toISOString();
+          await update(row.announcement_id, { status: 'published', published_at: publishedAt, scheduled_at: '', updated_at: nowIso() });
+        }
+        updated.push(row.announcement_id);
+      }
+      return res.json({ success: true, processed: updated.length, announcement_ids: updated });
+    } catch (err) {
+      console.warn('Announcement schedule worker failed', err.message);
+      return res.status(503).json({ success: false, message: '公告排程處理失敗' });
+    }
+  });
+
   const admin = express.Router();
   admin.use(requireUser, requireSuperAdmin);
   admin.get('/', async (req, res) => {
