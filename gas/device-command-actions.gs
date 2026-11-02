@@ -15,7 +15,7 @@ const IKEY_COMMAND_EVENT_HEADERS=[
 ];
 function ikeyCmdFail_(code){throw Error(code);}
 function ikeyCmdUuid_(x){return typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x);}
-function ikeyCmdDeviceId_(x){return typeof x==='string'&&/^[A-Za-z0-9_-]{6,64}$/.test(x);}
+function ikeyCmdDeviceId_(x){return typeof x==='string'&&/^[A-HJ-NP-Z2-9]{8}$/.test(x);}
 function ikeyCmdSheet_(name,headers){
  const id=PropertiesService.getScriptProperties().getProperty('GEN3_SPREADSHEET_ID');
  if(!id)ikeyCmdFail_('DEVICE_STORAGE_NOT_CONFIGURED');
