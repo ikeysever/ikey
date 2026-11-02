@@ -43,6 +43,10 @@ function createSheetsStore() {
      return call(action,payload);
    },
    adminAccountList:async actor_session_hash=>call("adminAccountList",{actor_session_hash,limit:100}),
+   adminAccountAction:async(action,payload)=>{
+     if(!["adminAccountSetStatus","adminAccountRevokeSessions","adminAccountResetPassword"].includes(action))throw Error("GEN3_ADMIN_ACTION_NOT_ALLOWED");
+     return call(action,payload);
+   },
    // Safe test transport: deliberately restricted to non-actuating command lookup.
    // It never enables the physical unlock routes or accepts create/claim/report.
    // GAS must still validate the signature, nonce, actor and project binding.
