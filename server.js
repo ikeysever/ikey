@@ -233,7 +233,7 @@ app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
  try{
-  const result=await authStore.dbCall('db.select',{table:'Users',limit:100});
+  const result=await authStore.dbCall('db.select',{table:'Gen3_Users',limit:100});
   if(!Array.isArray(result?.rows))throw Error('INVALID_USER_LIST');
   const accounts=result.rows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')}));
   return res.json({success:true,accounts,limited:result.rows.length===100});
