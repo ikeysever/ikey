@@ -8,7 +8,7 @@ const project_id='22222222-2222-4222-8222-222222222222';
 function gateway({admin=true,bound=true}={}){
  const calls=[];
  const api=createDeviceCommandGateway({
-  call:async(action,payload)=>{calls.push({action,payload});return {ok:true};},
+  call:async(action,payload)=>{calls.push({action,payload});return action==='deviceCommandClaimAtomic'?{command_id:'33333333-3333-4333-8333-333333333333'}:{ok:true};},
   verifyActor:async()=>admin,verifyDeviceBinding:async()=>bound
  });
  return {api,calls};
