@@ -108,7 +108,7 @@ async function requireProjectUser(req,res,next){
     if(!raw||raw.length>256)return res.status(401).json({success:false,message:'請先登入'});
     const resolved=await authStore.resolveSession(hashToken(raw));
     if(!resolved||resolved.session.revoked_at||Date.parse(resolved.session.expires_at)<=Date.now()||!active(resolved.user))return res.status(401).json({success:false,message:'登入已失效'});
-    req.projectUser=resolved.user;next();
+    req.projectUser=resolved.user;req.projectSessionHash=hashToken(raw);next();
   }catch{return res.status(503).json({success:false,message:'無法驗證登入狀態'});}
 }
 function sameProjectOrigin(req){
@@ -233,7 +233,7 @@ app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
  try{
-  const result=await authStore.adminAccountList(req.projectUser.user_id);
+  const result=await authStore.adminAccountList(req.projectSessionHash);
   const userRows=Array.isArray(result)?result:(Array.isArray(result?.accounts)?result.accounts:null);
   if(!userRows)throw Error('INVALID_ADMIN_ACCOUNT_LIST');
   const accounts=userRows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')}));
