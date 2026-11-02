@@ -181,7 +181,7 @@ app.get('/api/devices',requireProjectUser,async(req,res)=>{
     const devices=result.rows.filter(r=>/^[A-HJ-NP-Z2-9]{8}$/.test(String(r.device_id||''))).map(r=>({
       device_id:String(r.device_id),registration_status:'pre_registered',connection_status:'unverified'
     }));
-    return res.json({success:true,devices,limited:result.rows.length===100});
+    return res.json({success:true,devices,limited:Boolean(result?.limited)});
   }catch(err){
     console.warn('Device list unavailable',err.message);
     return res.status(503).json({success:false,message:'裝置清單暫時無法讀取'});
@@ -233,9 +233,10 @@ app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
  try{
-  const result=await authStore.dbCall('db.select',{table:'Gen3_Users',limit:100});
-  if(!Array.isArray(result?.rows))throw Error('INVALID_USER_LIST');
-  const accounts=result.rows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')}));
+  const result=await authStore.adminAccountList(req.projectUser.user_id);
+  const userRows=Array.isArray(result)?result:(Array.isArray(result?.accounts)?result.accounts:null);
+  if(!userRows)throw Error('INVALID_ADMIN_ACCOUNT_LIST');
+  const accounts=userRows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')}));
   return res.json({success:true,accounts,limited:result.rows.length===100});
  }catch(err){console.warn('Admin directory unavailable',err.message);return res.status(503).json({success:false,message:'帳號資料服務尚未就緒'});}
 });
