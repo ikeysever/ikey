@@ -132,9 +132,12 @@ app.delete('/api/projects/:projectId',requireProjectUser,async(req,res)=>{
    return res.status(403).json({success:false,message:'只有專案建立者可以軟刪除專案'});
   if(project.status==='deleted')return res.json({success:true,already_deleted:true});
   const now=new Date().toISOString();
-  const updated=await authStore.dbCall('db.update',{table:'Projects',where:{project_id:projectId},data:{status:'deleted',updated_at:now}});
-  if(updated?.updated!==true && updated?.record?.status!=='deleted')
-   return res.status(503).json({success:false,message:'無法確認專案已軟刪除，請重新整理確認；未執行實體刪除'});
+  await authStore.dbCall('db.update',{table:'Projects',where:{project_id:projectId},data:{status:'deleted',updated_at:now}});
+  // Verify persisted state with a fresh read; do not trust an undocumented update response shape.
+  const verified=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const saved=(verified?.rows||[]).find(row=>row.project_id===projectId);
+  if(saved?.status!=='deleted')
+   return res.status(503).json({success:false,message:'尚未確認軟刪除狀態，請重新整理確認；未執行實體刪除'});
   return res.json({success:true,project_id:projectId,status:'deleted'});
  }catch(err){
   console.warn('Project soft delete unavailable',err.message);
