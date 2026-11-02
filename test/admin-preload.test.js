@@ -21,7 +21,9 @@ test('account preloading deduplicates pending requests and permits retry after f
  assert.match(admin,/finally\{loadingPromise=null\}/);
 });
 test('preloaded account data is reused by inline full account-management view',()=>{
- assert.match(admin,/id="admin-open-accounts" type="button"/);\n assert.match(admin,/el\('admin-open-accounts'\)\.onclick=\(\)=>\{home\.hidden=true;region\.hidden=false;load\(\)\}/);\n assert.match(admin,/function mutate\(a,kind\)/);
+ assert.match(admin,/id="admin-open-accounts" type="button"/);
+ assert.match(admin,/el\('admin-open-accounts'\)\.onclick=\(\)=>\{home\.hidden=true;region\.hidden=false;load\(\)\}/);
+ assert.match(admin,/function mutate\(a,kind\)/);
  assert.match(accounts,/adminAccountSetStatus/);
  assert.match(accounts,/adminAccountRevokeSessions/);
  assert.match(accounts,/adminAccountResetPassword/);
