@@ -1,0 +1,27 @@
+name: iKey command security offline tests
+on:
+  push:
+    branches:
+      - feature/esp32-device-auth-staging
+    paths:
+      - 'lib/device-command-*.js'
+      - 'lib/command-trust-assertion.js'
+      - 'test/device-command-gateway-staging.test.js'
+      - 'scripts/test-command-signer-offline.js'
+      - '.github/workflows/command-security-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-command-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Offline signer smoke test
+        run: node scripts/test-command-signer-offline.js
+      - name: Gateway mock lifecycle and authorization tests
+        run: node --test test/device-command-gateway-staging.test.js
