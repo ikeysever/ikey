@@ -228,6 +228,17 @@ app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
  return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY',
   message:'裝置指令服務尚未啟用，未送出任何控制指令'});
 });
+// Read-only account directory. Authorize on the server, never trust UI role claims.
+app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Users',limit:100});
+  if(!Array.isArray(result?.rows))throw Error('INVALID_USER_LIST');
+  const accounts=result.rows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')}));
+  return res.json({success:true,accounts,limited:result.rows.length===100});
+ }catch(err){console.warn('Admin directory unavailable',err.message);return res.status(503).json({success:false,message:'帳號資料服務尚未就緒'});}
+});
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
