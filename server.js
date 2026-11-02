@@ -228,7 +228,24 @@ app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
  res.set('Cache-Control','no-store');
  if(!sameProjectOrigin(req)||req.projectUser.global_role!=='super_admin')
   return res.status(403).json({success:false,code:'NOT_AUTHORIZED'});
- return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY',message:'指令儲存及裝置綁定尚未完成'});
+ if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED!=='true'||process.env.IKEY_GAS_COMMAND_TRUST_VERIFIED!=='true')
+  return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY'});
+ const id=String(req.params.deviceId||'').toUpperCase();
+ const {idempotency_key,action,timeout_ms}=req.body||{};
+ if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)||action!=='unlock'||!Number.isSafeInteger(timeout_ms)||timeout_ms<1000||timeout_ms>60000||
+  typeof idempotency_key!=='string'||!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotency_key))
+  return res.status(400).json({success:false,code:'INVALID_REQUEST'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Project_Devices',where:{device_id:id},limit:2});
+  if(!Array.isArray(result?.rows)||result.rows.length!==1)
+   return res.status(409).json({success:false,code:'DEVICE_BINDING_REQUIRED'});
+  const gateway=require('./lib/device-command-routes').buildCommandGateway(authStore);
+  const created=await gateway.create({actor:req.projectUser,project_id:result.rows[0].project_id,device_id:id,idempotency_key,action,timeout_ms});
+  return res.status(created?.duplicate?200:202).json({success:true,result:created});
+ }catch(err){
+  console.warn('Command creation unavailable',err.message);
+  return res.status(503).json({success:false,code:'COMMAND_UNAVAILABLE'});
+ }
 });
 // Staging command simulation only. Disabled by default; it is in-memory and is NOT a physical-control backend.
 require('./device-command-simulation')(app, {
