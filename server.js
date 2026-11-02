@@ -250,6 +250,14 @@ app.post('/api/admin/accounts/action',requireProjectUser,async(req,res)=>{
  if(!permitted.includes(action)||confirm!==true)return res.status(400).json({success:false,message:'操作未確認或不允許'});
  if(typeof target_user_id!=='string'||!/^[0-9a-f-]{36}$/i.test(target_user_id))return res.status(400).json({success:false,message:'帳號識別碼無效'});
  if(target_user_id===req.projectUser.user_id)return res.status(403).json({success:false,message:'不可操作自己的帳號'});
+ // Fail closed for protected super-admin targets even if the UI is bypassed.
+ try {
+  const directory=await authStore.adminAccountList(req.projectSessionHash);
+  const entries=Array.isArray(directory?.accounts)?directory.accounts:[];
+  const target=entries.find(u=>u.user_id===target_user_id);
+  if(!target)return res.status(409).json({success:false,message:'無法確認目標帳號，操作已取消'});
+  if(target.global_role==='super_admin')return res.status(403).json({success:false,message:'不可操作超級管理員帳號'});
+ }catch{return res.status(503).json({success:false,message:'無法驗證目標帳號，操作已取消'});}
  const payload={actor_session_hash:req.projectSessionHash,target_user_id};
  if(action==='adminAccountSetStatus'){
   if(!['active','disabled'].includes(status))return res.status(400).json({success:false,message:'帳號狀態無效'});
