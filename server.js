@@ -237,7 +237,7 @@ app.get('/api/admin/accounts',requireProjectUser,async(req,res)=>{
   const userRows=Array.isArray(result)?result:(Array.isArray(result?.accounts)?result.accounts:null);
   if(!userRows)throw Error('INVALID_ADMIN_ACCOUNT_LIST');
   const accounts=userRows.map(u=>({user_id:String(u.user_id||''),username:String(u.username||''),display_name:String(u.display_name||''),global_role:String(u.global_role||'user'),account_status:String(u.account_status||'unknown'),created_at:String(u.created_at||'')}));
-  return res.json({success:true,accounts,limited:result.rows.length===100});
+  return res.json({success:true,accounts,limited:Boolean(result?.limited)});
  }catch(err){console.warn('Admin directory unavailable',err.message);return res.status(503).json({success:false,message:'帳號資料服務尚未就緒'});}
 });
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
