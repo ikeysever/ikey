@@ -54,3 +54,12 @@ const result = action.indexOf('db.') === 0
 ```
 
 既有 `execute()`、`TABS`、`HEADERS`、登入流程及 V14 診斷程式完全保留。原程式 Script Property `GEN3_SPREADSHEET_ID` 可直接沿用；新增 `IKEY_DB_ALLOWED_TABLES=Projects`（可選，預設 Projects）。注意：V14 標示需與實際 V13 編輯器程式比對後才可部署。這是原始碼相容性檢查，尚未測試正式 GAS。
+
+
+## 2026-11-02｜公告資料表擴充（staging）
+
+- 新增受控遷移檔 `setup-system-announcement-tables.gs`，在既有 Gen3 Apps Script 專案執行，不新增第二個 `doPost`。
+- 只建立 `System_Announcements`、`System_Announcement_Reads` 兩張表；既有表格欄位不變。
+- 遷移檔會拒絕不相容的既有欄位，不清空或覆蓋資料，並將兩張新表加入 `IKEY_DB_ALLOWED_TABLES`。
+- 新增公告內容上限為 10,000 字；通用資料引擎欄位長度上限提高至 12,000 字，保留 API 較嚴格驗證。
+- 此遷移檔尚未在任何實際 Apps Script 專案執行；部署前仍須比對目前已部署的 `doPost` 與 staging spreadsheet。
