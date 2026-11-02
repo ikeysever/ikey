@@ -9,7 +9,7 @@ const decode=token=>JSON.parse(Buffer.from(token.split('.')[0],'base64url').toSt
 test('Create/Get sign authenticated actor; Claim/Report sign device-only context',async()=>{
  const calls=[];
  const gateway=createDeviceCommandGateway({
-  call:async(action,payload)=>{calls.push({action,payload});if(action==='deviceCommandClaimAtomic')return null;return {};},
+  call:async(action,payload)=>{calls.push({action,payload});if(action==='deviceCommandClaimAtomic')return null;if(action==='deviceCommandCreateAtomic')return {command:{command_id:project_id}};return {};},
   verifyActor:async()=>true,verifyDeviceBinding:async()=>true
  });
  await gateway.create({actor,project_id,device_id,idempotency_key:'idempotency-001',action:'unlock',timeout_ms:15000});
