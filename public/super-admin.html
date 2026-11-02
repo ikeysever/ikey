@@ -45,7 +45,7 @@
 <div id="device-help" class="device-panel" hidden><p class="device-caption">目前支援以 8 碼裝置 ID 查詢；目前列出已預註冊裝置，其他狀態與進階篩選待串接。</p></div>
 <div id="device-create-panel" class="device-panel" hidden><h3>新增裝置</h3><p class="device-caption">系統建立 8 碼裝置 ID；裝置名稱於綁定專案時設定。</p><form id="device-create-form"><label for="device-password">裝置密碼</label><input id="device-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="至少 8 個字元"><div class="device-tools" style="margin-top:14px"><button id="device-submit" class="device-btn primary" type="submit">建立裝置</button><button id="device-cancel" class="device-btn" type="button">取消</button></div></form><p id="device-create-status" class="device-message" role="status" aria-live="polite"></p></div>
 <div id="device-results" class="device-results" aria-live="polite"><p class="device-empty">正在載入裝置清單…</p></div>
-<div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button class="device-btn" disabled title="尚未完成安全控制 API 與 ESP32 回報">開鎖測試（待串接）</button><button id="device-delete" class="device-btn danger" type="button">刪除裝置</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div><p id="device-delete-status" class="device-message" role="status" aria-live="polite"></p></div>
+<div id="device-detail" class="device-panel" hidden><h3>裝置設定</h3><p id="device-detail-status" class="device-message"></p><div class="device-tools"><button id="device-unlock-test" class="device-btn primary" type="button">開鎖測試</button><button id="device-delete" class="device-btn danger" type="button">刪除裝置</button><button id="device-close-detail" class="device-btn" type="button">關閉</button></div><p id="device-delete-status" class="device-message" role="status" aria-live="polite"></p></div>
 <script>
 (()=>{
 const el=id=>document.getElementById(id),results=el('device-results'),search=el('device-search');let view='list',found=null,devices=[],requested=0,listError='',limited=false,selectedDeviceId=null,loading=true;
@@ -87,6 +87,25 @@ el('device-advanced').addEventListener('click',()=>{const open=el('device-help')
 el('device-new').addEventListener('click',()=>{const open=el('device-create-panel').hidden;show('device-create-panel',open);el('device-new').setAttribute('aria-expanded',String(open));if(open)el('device-password').focus()});
 el('device-cancel').addEventListener('click',()=>{show('device-create-panel',false);el('device-new').setAttribute('aria-expanded','false')});
 el('device-close-detail').addEventListener('click',()=>{selectedDeviceId=null;show('device-detail',false)});
+// Real command API: server is authoritative; never report success from a click alone.
+el('device-unlock-test').addEventListener('click',async()=>{
+ const id=selectedDeviceId,status=el('device-detail-status'),btn=el('device-unlock-test');
+ if(!id)return;
+ btn.disabled=true;
+ status.textContent='正在向伺服器建立開鎖指令…';
+ try{
+  const key='ui-'+crypto.randomUUID();
+  const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/commands',{
+   method:'POST',credentials:'same-origin',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({action:'unlock',timeout_ms:15000,idempotency_key:key})
+  });
+  const data=await response.json();
+  if(!response.ok||data.success!==true)throw Error(data.message||data.code||'指令建立失敗');
+  if(selectedDeviceId===id)status.textContent='指令已建立，等待 ESP32 領取與回報。指令 ID：'+(data.result?.command_id||'待查詢');
+ }catch(err){if(selectedDeviceId===id)status.textContent='無法建立指令：'+(err.message||'未知錯誤')}
+ finally{btn.disabled=false}
+});
 el('device-delete').addEventListener('click',async()=>{
  const id=selectedDeviceId,status=el('device-delete-status'),btn=el('device-delete');
  if(!id)return;
