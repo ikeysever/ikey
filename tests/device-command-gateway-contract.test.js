@@ -41,3 +41,7 @@ test('rejects negative GAS acknowledgement',async()=>{
 test('rejects report acknowledgement for another command',async()=>{
  await assert.rejects(gateway(null,{command:{command_id:'123e4567-e89b-42d3-a456-426614174099'}}).report({device,project_id:project,command_id:id,claim_token:proof,status:'failed',feedback_observed:false}),/INVALID_REPORT_RESPONSE/);
 });
+
+test('rejects ambiguous GAS report acknowledgement without explicit success',async()=>{
+ await assert.rejects(gateway(null,{command:{command_id:id}}).report({device,project_id:project,command_id:id,claim_token:proof,status:'failed',feedback_observed:false}),/INVALID_REPORT_RESPONSE/);
+});
