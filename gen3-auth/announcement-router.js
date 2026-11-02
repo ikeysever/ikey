@@ -273,8 +273,14 @@ function createAnnouncementRouter(store) {
       const current = await findById(id);
       if (!current || current.status === 'deleted') return res.status(404).json({ success: false, message: '找不到可編輯的公告' });
       const fields = validateInput(req.body, true);
+      const requestedStatus = req.body?.status;
+      if (requestedStatus !== undefined && requestedStatus !== 'draft') {
+        return res.status(400).json({ success: false, message: '不允許直接設定此公告狀態' });
+      }
       const data = { ...fields, updated_at: nowIso() };
-      if (current.status === 'published' && fields.scheduled_at && Date.parse(fields.scheduled_at) > Date.now()) {
+      if (requestedStatus === 'draft') {
+        data.status = 'draft'; data.published_at = ''; data.scheduled_at = '';
+      } else if (current.status === 'published' && fields.scheduled_at && Date.parse(fields.scheduled_at) > Date.now()) {
         data.status = 'scheduled'; data.published_at = '';
       } else if (fields.scheduled_at !== undefined && fields.scheduled_at && Date.parse(fields.scheduled_at) > Date.now()) {
         data.status = 'scheduled';
