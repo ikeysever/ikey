@@ -5,8 +5,12 @@
 // header row, the function stops before changing either sheet.
 function setupSystemAnnouncementTables() {
   const props = PropertiesService.getScriptProperties();
+  const environment = props.getProperty('IKEY_ENVIRONMENT');
+  const stagingId = props.getProperty('IKEY_STAGING_SPREADSHEET_ID');
   const spreadsheetId = props.getProperty('GEN3_SPREADSHEET_ID');
-  if (!spreadsheetId) throw new Error('GEN3_SPREADSHEET_ID is not configured');
+  if (environment !== 'staging' || !stagingId || !spreadsheetId || spreadsheetId !== stagingId) {
+    throw new Error('STAGING_ONLY: Set IKEY_ENVIRONMENT=staging and make GEN3_SPREADSHEET_ID match IKEY_STAGING_SPREADSHEET_ID. No sheet was changed.');
+  }
   const definitions = [
     {
       name: 'System_Announcements',
