@@ -45,12 +45,29 @@ function ikeyCmdSafe_(r){
 function ikeyCmdEvent_(sheet,commandId,deviceId,type,now){
  sheet.appendRow([Utilities.getUuid(),commandId,deviceId,type,now,'']);
 }
+function ikeyCmdReconcileEvents_(events,rows){
+ // Rebuild missing audit entries from durable command state under script lock.
+ // This is an idempotent best-effort repair, not a multi-sheet ACID transaction.
+ const n=events.getLastRow()-1;
+ const existing=n>0?events.getRange(2,1,n,IKEY_COMMAND_EVENT_HEADERS.length).getValues():[];
+ const seen=new Set(existing.map(r=>String(r[1])+'|'+String(r[3])));
+ rows.forEach(r=>{
+  const id=String(r[0]),device=String(r[2]),status=String(r[7]);
+  const expected=[['created',Number(r[8])]];
+  if(['claimed','succeeded','failed','timed_out'].includes(status)&&r[10]!=='')expected.push(['claimed',Number(r[10])]);
+  if(['succeeded','failed'].includes(status)&&r[11]!=='')expected.push(['reported',Number(r[11])]);
+  if(status==='timed_out'&&r[11]!=='')expected.push(['timed_out',Number(r[11])]);
+  expected.forEach(([type,at])=>{
+   const key=id+'|'+type;
+   if(!seen.has(key)){ikeyCmdEvent_(events,id,device,type,at);seen.add(key);}
+  });
+ });
+}
 function ikeyCmdExpire_(commands,events,rows,now){
  let count=0;
  rows.forEach((r,i)=>{
   if(['pending','claimed'].includes(String(r[7]))&&now>=Number(r[9])){
-   commands.getRange(i+2,8).setValue('timed_out');
-   commands.getRange(i+2,12).setValue(now);
+   commands.getRange(i+2,8,1,5).setValues([['timed_out',r[8],r[9],r[10],now]]);
    r[7]='timed_out';r[11]=now;
    ikeyCmdEvent_(events,String(r[0]),String(r[2]),'timed_out',now);count++;
   }
@@ -92,6 +109,7 @@ function ikeyDeviceCommandAction(action,p){
   const events=ikeyCmdSheet_('DeviceCommandEvents',IKEY_COMMAND_EVENT_HEADERS);
   const rows=ikeyCmdRows_(commands),now=Date.now();
   ikeyCmdExpire_(commands,events,rows,now);
+  ikeyCmdReconcileEvents_(events,rows);
   if(action==='deviceCommandCreateAtomic'){
    if(!ikeyCmdUuid_(p.actor_user_id)||p.action!=='unlock'||
       typeof p.idempotency_key!=='string'||!/^[A-Za-z0-9._:-]{8,128}$/.test(p.idempotency_key)||
@@ -115,9 +133,7 @@ function ikeyDeviceCommandAction(action,p){
    const i=rows.findIndex(r=>String(r[1])===p.project_id&&String(r[2])===p.device_id&&String(r[7])==='pending');
    if(i<0)return null;
    const r=rows[i],hash=ikeyCmdHash_(p.claim_token);
-   commands.getRange(i+2,8).setValue('claimed');
-   commands.getRange(i+2,11).setValue(now);
-   commands.getRange(i+2,13).setValue(hash);
+   commands.getRange(i+2,8,1,6).setValues([['claimed',r[8],r[9],now,r[11],hash]]);
    r[7]='claimed';r[10]=now;r[12]=hash;
    ikeyCmdEvent_(events,String(r[0]),p.device_id,'claimed',now);
    return ikeyCmdSafe_(r);
@@ -132,9 +148,7 @@ function ikeyDeviceCommandAction(action,p){
    if(!r[12]||ikeyCmdHash_(p.claim_token)!==String(r[12]))ikeyCmdFail_('INVALID_CLAIM');
    if(String(r[7])===p.status&&r[13]===p.feedback_observed)return {duplicate:true,status:p.status};
    if(String(r[7])!=='claimed')ikeyCmdFail_('INVALID_TRANSITION');
-   commands.getRange(i+2,8).setValue(p.status);
-   commands.getRange(i+2,12).setValue(now);
-   commands.getRange(i+2,14,1,2).setValues([[p.feedback_observed,p.status]]);
+   commands.getRange(i+2,8,1,8).setValues([[p.status,r[8],r[9],r[10],now,r[12],p.feedback_observed,p.status]]);
    ikeyCmdEvent_(events,p.command_id,p.device_id,'reported',now);
    return {duplicate:false,status:p.status};
   }
