@@ -74,6 +74,23 @@ module.exports = function mountDeviceAuth(app, authStore) {
       return res.status(503).json({ success: false, code: 'DEVICE_AUTH_UNAVAILABLE' });
     }
   });
+  // Verify bearer proof and current device record on every command request.
+  async function requireDevice(req,res,next){
+    res.set('Cache-Control','no-store');
+    if(!secret||Buffer.byteLength(secret,'utf8')<32||!authStore)
+      return res.status(503).json({success:false,code:'DEVICE_AUTH_NOT_CONFIGURED'});
+    const header=req.get('Authorization')||'';
+    const id=header.startsWith('Bearer ')?validateToken(header.slice(7)):null;
+    if(!id)return res.status(401).json({success:false,code:'UNAUTHORIZED'});
+    try{
+      const result=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:id},limit:1});
+      if(!Array.isArray(result?.rows))throw Error('INVALID_DB_RESPONSE');
+      const row=result.rows.find(item=>item.device_id===id&&item.status==='pre_registered');
+      if(!row)return res.status(401).json({success:false,code:'UNAUTHORIZED'});
+      req.verifiedDevice=Object.freeze({authenticated:true,device_id:id});
+      next();
+    }catch(_err){return res.status(503).json({success:false,code:'DEVICE_AUTH_UNAVAILABLE'});}
+  }
   // Command routes are mounted exactly once by server.js with the super-admin middleware.
 
   app.get('/api/device/me', async (req, res) => {
@@ -97,4 +114,5 @@ module.exports = function mountDeviceAuth(app, authStore) {
       return res.status(503).json({ success: false, code: 'DEVICE_AUTH_UNAVAILABLE' });
     }
   });
+  return requireDevice;
 };
