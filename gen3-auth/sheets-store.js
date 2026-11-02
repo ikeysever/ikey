@@ -48,13 +48,16 @@ function createSheetsStore() {
    commandProbe:async(payload)=>{
      if(process.env.IKEY_COMMAND_PROBE_ENABLED!=='true')
        throw Error('COMMAND_PROBE_DISABLED');
-     if(!payload||typeof payload!=='object'||Array.isArray(payload)||
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.project_id)||
-        !/^[A-HJ-NP-Z2-9]{8}$/.test(payload.device_id)||
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.actor_user_id)||
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(payload.command_id)||
-        (Object.keys(payload).length!==4||!['actor_user_id','command_id','device_id','project_id'].every(k=>Object.prototype.hasOwnProperty.call(payload,k))))
-       throw Error('INVALID_COMMAND_PROBE');
+     if(!payload||typeof payload!=='object'||Array.isArray(payload))
+       throw Error('INVALID_COMMAND_PROBE_OBJECT');
+     const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+     if(!uuid.test(payload.project_id))throw Error('INVALID_COMMAND_PROBE_PROJECT');
+     if(!/^[A-HJ-NP-Z2-9]{8}$/.test(payload.device_id))throw Error('INVALID_COMMAND_PROBE_DEVICE');
+     if(!uuid.test(payload.actor_user_id))throw Error('INVALID_COMMAND_PROBE_ACTOR');
+     if(!uuid.test(payload.command_id))throw Error('INVALID_COMMAND_PROBE_COMMAND');
+     if(Object.keys(payload).length!==4||
+       !['actor_user_id','command_id','device_id','project_id'].every(k=>Object.prototype.hasOwnProperty.call(payload,k)))
+       throw Error('INVALID_COMMAND_PROBE_FIELDS');
      const {signCommandAssertion}=require('../lib/command-trust-assertion');
      const assertion=signCommandAssertion({
        secret:process.env.IKEY_COMMAND_TRUST_SECRET,
