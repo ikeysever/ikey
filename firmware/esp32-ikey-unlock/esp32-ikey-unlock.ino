@@ -68,7 +68,9 @@ static constexpr uint8_t RELAY_INACTIVE_LEVEL =
 
 static constexpr uint32_t RELAY_ON_MS = 500;
 static constexpr uint32_t RELAY_OFF_MS = 200;
-static constexpr uint8_t MAX_ATTEMPTS = 10;
+// Fail closed until electrical safety and feedback wiring are physically verified.
+static constexpr bool PHYSICAL_UNLOCK_APPROVED = false;
+static constexpr uint8_t MAX_ATTEMPTS = 1;
 static constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
 static constexpr uint32_t API_POLL_INTERVAL_MS = 2000;
 static constexpr uint32_t HTTP_TIMEOUT_MS = 5000;
@@ -250,6 +252,11 @@ static bool waitForFeedbackOrTime(uint32_t durationMs, uint32_t commandStarted,
 static bool executeUnlock(const String& commandId, const uint32_t commandStarted,
                           uint8_t& attempts, String& detail) {
   attempts = 0;
+  if (!PHYSICAL_UNLOCK_APPROVED) {
+    relayOff();
+    detail = "physical_unlock_not_approved";
+    return false;
+  }
   bool opened = feedbackSaysOpen();
   if (opened) {
     detail = "open_feedback_already_active";
@@ -380,8 +387,8 @@ void setup() {
   Serial.println();
   Serial.println("iKey 3.1 ESP32 web unlock firmware (staging only)");
   Serial.println("GPIO23 relay: HIGH=energized; GPIO25 HIGH=lock open");
-  Serial.println("Safety: 500ms ON / 200ms OFF / max 10 attempts.");
-  Serial.println("Serial 'u' local test remains available.");
+  Serial.println("Safety: physical unlock disabled by default; max 1 attempt when approved.");
+  Serial.println("Serial actuation commands are disabled.");
 
   configured = configLooksReady();
   if (!configured) {
@@ -397,18 +404,8 @@ void setup() {
 }
 
 void loop() {
-  // Optional supervised local test. Network commands remain authenticated only.
-  while (Serial.available() > 0) {
-    const char c = static_cast<char>(Serial.read());
-    if ((c == 'u' || c == 'U') && !commandRunning) {
-      uint8_t attempts = 0;
-      String detail;
-      const bool opened = executeUnlock("local-serial-test", millis(), attempts, detail);
-      relayOff();
-      Serial.printf("[LOCAL TEST] attempts=%u result=%s detail=%s\n",
-                    attempts, opened ? "succeeded" : "failed", detail.c_str());
-    }
-  }
+  // Serial input must never actuate a lock in deployable firmware.
+  while (Serial.available() > 0) { Serial.read(); }
 
   if (configured && static_cast<uint32_t>(millis() - lastPollAt) >= API_POLL_INTERVAL_MS) {
     lastPollAt = millis();
