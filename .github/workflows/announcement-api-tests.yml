@@ -1,0 +1,25 @@
+name: iKey announcement API tests
+
+on:
+  pull_request:
+    branches:
+      - feature/super-admin-dashboard-live-20261102
+  push:
+    branches:
+      - feature/system-announcements-staging-20261102
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm install --ignore-scripts
+      - run: npm test
