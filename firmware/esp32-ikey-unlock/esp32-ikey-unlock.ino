@@ -30,6 +30,8 @@ static const char WIFI_SSID[] = "YOUR_WIFI_OR_PHONE_HOTSPOT";
 static const char WIFI_PASSWORD[] = "YOUR_WIFI_PASSWORD";
 static const char DEVICE_ID[] = "YOUR_8_CHAR_DEVICE_ID";
 static const char DEVICE_PASSWORD[] = "YOUR_DEVICE_PRE_REGISTRATION_PASSWORD";
+// Verified project UUID assigned by the server. Never accept this from a command body.
+static const char PROJECT_ID[] = "YOUR_VERIFIED_PROJECT_UUID";
 
 // Must be a separately approved staging host, never production for this test.
 // Example format only: https://your-staging-host.example
@@ -97,6 +99,16 @@ static bool feedbackSaysOpen() {
   return digitalRead(FEEDBACK_PIN) == FEEDBACK_OPEN_LEVEL;
 }
 
+static bool validUuid(const String& id) {
+  if (id.length() != 36) return false;
+  for (size_t i = 0; i < 36; ++i) {
+    const char c = id[i];
+    if (i == 8 || i == 13 || i == 18 || i == 23) { if (c != '-') return false; }
+    else if (!isxdigit(static_cast<unsigned char>(c))) return false;
+  }
+  return true;
+}
+
 static bool configLooksReady() {
   const String url = API_BASE_URL;
   const String ca = ROOT_CA;
@@ -105,6 +117,7 @@ static bool configLooksReady() {
          strlen(WIFI_PASSWORD) > 0 &&
          String(DEVICE_ID) != "YOUR_8_CHAR_DEVICE_ID" &&
          strlen(DEVICE_ID) == 8 &&
+         validUuid(String(PROJECT_ID)) &&
          String(DEVICE_PASSWORD) != "YOUR_DEVICE_PRE_REGISTRATION_PASSWORD" &&
          url.startsWith("https://") &&
          !url.endsWith("REPLACE-WITH-STAGING-HOST") &&
@@ -310,11 +323,11 @@ static bool executeUnlock(const String& commandId, const uint32_t commandStarted
 static void processCommand(JsonVariantConst command) {
   if (command.isNull()) return;
   const char* commandIdValue = command["command_id"] | "";
-  const char* commandName = command["command"] | "";
+  const char* commandName = command["action"] | "";
   const char* commandDeviceId = command["device_id"] | "";
   const String commandId(commandIdValue);
 
-  if (commandId.length() < 16 || commandId.length() > 64 ||
+  if (!validUuid(commandId) ||
       strcmp(commandName, "unlock") != 0 ||
       strcmp(commandDeviceId, DEVICE_ID) != 0) {
     Serial.println("[CMD] Invalid command payload; ignored with relay OFF.");
@@ -341,7 +354,12 @@ static void processCommand(JsonVariantConst command) {
     Serial.println("[CMD] Invalid claim or pending report; no actuation.");
     return;
   }
-  activeProjectId = projectId;
+  if (String(projectId) != String(PROJECT_ID)) {
+    relayOff();
+    Serial.println("[CMD] Project mismatch; no actuation.");
+    return;
+  }
+  activeProjectId = PROJECT_ID;
   preferences.putString("project_id", activeProjectId);
   preferences.putString("claim_token", claimToken);
   preferences.putString("pending_report", commandId + "|failed");
@@ -372,8 +390,8 @@ static void retryPendingReport() {
   if (record.isEmpty()) return;
   const int separator = record.indexOf('|');
   if (separator < 16) { relayOff(); return; }
-  activeProjectId = preferences.getString("project_id", "");
-  if (activeProjectId.length() != 36) { relayOff(); return; }
+  activeProjectId = PROJECT_ID;
+  if (!validUuid(activeProjectId)) { relayOff(); return; }
   const String id = record.substring(0, separator);
   const String status = record.substring(separator + 1);
   if (status != "failed" && status != "succeeded") { relayOff(); return; }
@@ -387,8 +405,8 @@ static void pollCommands() {
     retryPendingReport();
     return;
   }
-  activeProjectId = preferences.getString("project_id", "");
-  if (activeProjectId.length() != 36) {
+  activeProjectId = PROJECT_ID;
+  if (!validUuid(activeProjectId)) {
     Serial.println("[CMD] Verified project binding not configured; claim blocked.");
     return;
   }
@@ -418,7 +436,7 @@ void setup() {
   Serial.begin(115200);
   delay(300);
   preferences.begin("ikey-unlock", false);
-  activeProjectId = preferences.getString("project_id", "");
+  activeProjectId = PROJECT_ID;
 
   Serial.println();
   Serial.println("iKey 3.1 ESP32 web unlock firmware (staging only)");
