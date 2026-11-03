@@ -36,3 +36,14 @@ test('candidate has no write or deploy operations',()=>{
  const codeOnly=source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,'');
  assert.doesNotMatch(codeOnly,/\b(?:setValues?|appendRow|deleteRows?|insertRows?|clearContent|doPost|UrlFetchApp|ScriptApp)\s*\(/);
 });
+
+test('dispatcher handles auth lookup and does not invoke existing action handler',()=>{
+ let calls=0;
+ const sheet={getLastColumn:()=>headers.length,getLastRow:()=>2,getRange:r=>({getDisplayValues:()=>r===1?[headers]:[row]})};
+ const context={PropertiesService:{getScriptProperties:()=>({getProperty:()=> 'mock-sheet'})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet})}};
+ vm.createContext(context);vm.runInContext(source,context,{timeout:1000});
+ const result=context.ikeyDeviceAuthDispatchCandidate_('deviceAuthFindById',{device_id:id},()=>{calls++;throw Error('fallback called')});
+ assert.equal(result.device_id,id);assert.equal(calls,0);
+ const other=context.ikeyDeviceAuthDispatchCandidate_('factoryDeviceList',{},()=>{calls++;return 'existing';});
+ assert.equal(other,'existing');assert.equal(calls,1);
+});
