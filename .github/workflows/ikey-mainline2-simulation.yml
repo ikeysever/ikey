@@ -1,0 +1,57 @@
+name: iKey Mainline 2 - Isolated Simulation
+
+on:
+  pull_request:
+    branches:
+      - feature/esp32-device-auth-staging
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ikey-mainline2-simulation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulation:
+    if: >-
+      github.ref == 'refs/heads/feature/esp32-device-auth-staging' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.base.ref == 'feature/esp32-device-auth-staging' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      IKEY_DEVICE_SIMULATION_ENABLED: 'true'
+      IKEY_PHYSICAL_UNLOCK_ENABLED: 'false'
+      IKEY_GAS_COMMAND_TRUST_VERIFIED: 'false'
+      IKEY_COMMAND_PROBE_ENABLED: 'false'
+      GEN3_APPS_SCRIPT_URL: ''
+      GEN3_APPS_SCRIPT_KEY: ''
+      IKEY_DEVICE_TOKEN_SECRET: ''
+      IKEY_COMMAND_TRUST_SECRET: ''
+    steps:
+      - name: Checkout tested revision without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies without lifecycle scripts
+        run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+      - name: Verify production integration is disabled
+        shell: bash
+        run: |
+          test "$IKEY_PHYSICAL_UNLOCK_ENABLED" = 'false'
+          test "$IKEY_GAS_COMMAND_TRUST_VERIFIED" = 'false'
+          test -z "$GEN3_APPS_SCRIPT_URL"
+          test -z "$GEN3_APPS_SCRIPT_KEY"
+          test -z "$IKEY_DEVICE_TOKEN_SECRET"
+          test -z "$IKEY_COMMAND_TRUST_SECRET"
+      - name: Run only isolated in-memory simulation tests
+        run: node --test tests/device-command-simulation.test.js
