@@ -64,3 +64,13 @@ test('GAS refuses actor idempotency collision',()=>{
  h.dispatch('deviceCommandCreateAtomic',p);
  assert.throws(()=>h.dispatch('deviceCommandCreateAtomic',{...p,actor_user_id:'123e4567-e89b-42d3-a456-426614174002'}),/COMMAND_IDEMPOTENCY_CONFLICT/);
 });
+
+test('expired pending command cannot be claimed and is marked expired',()=>{
+ const h=harness();
+ const p={project_id:project,device_id:device,actor_user_id:actor,action:'unlock',idempotency_key:'test-key-expired',timeout_ms:1000};
+ h.dispatch('deviceCommandCreateAtomic',p);
+ h.rows[1][8]=String(Date.now()-1000);
+ const claimed=h.dispatch('deviceCommandClaimAtomic',{project_id:project,device_id:device,claim_token:'a'.repeat(64)});
+ assert.equal(claimed,null);
+ assert.equal(h.rows[1][5],'expired');
+});
