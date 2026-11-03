@@ -28,7 +28,7 @@ function ikeyCommandEqual_(a,b) {
 }
 function ikeyCommandVerifyAssertionCandidate_(action,payload) {
   const allowed=['deviceCommandCreateAtomic','deviceCommandGet',
-    'deviceCommandClaimAtomic','deviceCommandReportAtomic'];
+    'deviceCommandClaimAtomic','deviceCommandReportAtomic','deviceCommandExpireAtomic'];
   if(!allowed.includes(action))throw Error('COMMAND_ACTION_NOT_ALLOWED');
   if(!payload||typeof payload!=='object'||Array.isArray(payload))
     throw Error('INVALID_COMMAND_CONTEXT');
