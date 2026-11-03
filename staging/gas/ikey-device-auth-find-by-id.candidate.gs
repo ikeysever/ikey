@@ -2,7 +2,7 @@
  * iKey 3.1 Mainline 2 - GAS device-auth contract candidate.
  * STAGING ONLY. Do not paste/deploy before reviewing the actual GAS project.
  * Read-only: does not create, update, or delete spreadsheet rows.
- * This function is deliberately NOT wired into doPost().
+ * Integration: add the guarded branch documented below to the existing doPost dispatcher.
  *
  * Expected existing Script Property: GEN3_SPREADSHEET_ID.
  * Expected sheet: Devices
@@ -44,4 +44,23 @@ function ikeyDeviceAuthFindByIdCandidate_(payload) {
     return null;
   }
   return matched;
+}
+
+/**
+ * Minimal integration into existing doPost(e), AFTER api_key validation and
+ * payload normalization, BEFORE its existing action dispatch expression:
+ *
+ *   const result = action === 'deviceAuthFindById'
+ *     ? ikeyDeviceAuthFindByIdCandidate_(payload)
+ *     : action.startsWith('db.')
+ *       ? ikeyDbDispatch_(action, payload)
+ *       : ...existing branches unchanged...;
+ *
+ * Do not register this action under IKEY_DEVICE_ACTIONS: that list dispatches
+ * to ikeyFactoryDeviceAction and uses a different factory-device schema.
+ * Keep existing return respond({ok:true,result}) and error handling unchanged.
+ */
+function ikeyDeviceAuthDispatchCandidate_(action, payload, fallback) {
+  if (action === 'deviceAuthFindById') return ikeyDeviceAuthFindByIdCandidate_(payload);
+  return fallback();
 }
