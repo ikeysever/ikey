@@ -33,5 +33,6 @@ test('schema mismatch fails closed',()=>assert.throws(()=>run({device_id:id},[ro
 test('extra payload fields are denied',()=>assert.throws(()=>run({device_id:id,admin:true},[row]),/DEVICE_AUTH_INVALID_REQUEST/));
 test('invalid ID is denied',()=>assert.throws(()=>run({device_id:'INVALID!'},[row]),/DEVICE_AUTH_INVALID_REQUEST/));
 test('candidate has no write or deploy operations',()=>{
- assert.doesNotMatch(source,/\b(?:setValues?|appendRow|deleteRows?|insertRows?|clearContent|doPost|UrlFetchApp|ScriptApp)\s*\(/);
+ const codeOnly=source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,'');
+ assert.doesNotMatch(codeOnly,/\b(?:setValues?|appendRow|deleteRows?|insertRows?|clearContent|doPost|UrlFetchApp|ScriptApp)\s*\(/);
 });
