@@ -67,8 +67,11 @@ function ikeyCommandDispatchCandidate_(action,payload) {
       return {command_id:found.r[0],status:found.r[5]==='pending'||found.r[5]==='claimed'?'expired':found.r[5]};
     }
     if(action==='deviceCommandClaimAtomic'){
+      // Mark overdue pending commands expired before considering a new claim.
+      for(const overdue of entries.filter(e=>same(e)&&e.r[5]==='pending'&&Number(e.r[8])<=now))
+        write(overdue,6,'expired');
       const pending=entries.find(e=>same(e)&&e.r[5]==='pending'&&Number(e.r[8])>now);
-      if(!pending)return null;
+      if(!pending){SpreadsheetApp.flush();return null;}
       if(typeof payload.claim_token!=='string'||!/^[0-9a-f]{64}$/.test(payload.claim_token))
         throw Error('COMMAND_INVALID_CLAIM_TOKEN');
       const tokenHash=ikeyCommandDigest_({claim_token:payload.claim_token});
