@@ -37,14 +37,31 @@ function createSheetsStore() {
    touchSession:async(session_id,expires_at,last_seen_at)=>call("touchSession",{session_id,expires_at,last_seen_at}),
    revokeSession:async(session_id,reason)=>call("revokeSession",{session_id,reason}),
    audit:async event=>call("audit",{event}),
+   deviceAuthFindById:async device_id=>{
+     if(typeof device_id!=='string'||!/^[A-HJ-NP-Z2-9]{8}$/.test(device_id))throw Error('INVALID_DEVICE_ID');
+     return call('deviceAuthFindById',{device_id});
+   },
+   deviceAuthCreateAtomic:async device=>{
+     const keys=['created_at','created_by_user_id','device_id','password_hash','status','updated_at'];
+     if(!device||typeof device!=='object'||Array.isArray(device)||Object.keys(device).length!==keys.length||
+        !keys.every(k=>Object.prototype.hasOwnProperty.call(device,k))||
+        !/^[A-HJ-NP-Z2-9]{8}$/.test(device.device_id||'')||device.status!=='pre_registered'||
+        !/^scrypt:v1:[A-Za-z0-9_-]{22}:[A-Za-z0-9_-]{86}$/.test(device.password_hash||'')||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(device.created_by_user_id||''))
+       throw Error('INVALID_DEVICE_RECORD');
+     return call('deviceAuthCreateAtomic',{device});
+   },
+   deviceAuthListPreRegistered:async limit=>{
+     const n=limit===undefined?100:limit;if(!Number.isInteger(n)||n<1||n>100)throw Error('INVALID_DEVICE_LIMIT');
+     return call('deviceAuthListPreRegistered',{limit:n});
+   },
+   deviceAuthGetById:async device_id=>{
+     if(typeof device_id!=='string'||!/^[A-HJ-NP-Z2-9]{8}$/.test(device_id))throw Error('INVALID_DEVICE_ID');
+     return call('deviceAuthGetById',{device_id});
+   },
    // Generic data operations: allowlist lives in Render and GAS; no browser access.
    dbCall:async(action,payload)=>{
      if(!['db.health','db.schema','db.select','db.insert','db.update','db.delete'].includes(action))throw Error('GEN3_DB_ACTION_NOT_ALLOWED');
-     return call(action,payload);
-   },
-   adminAccountList:async actor_session_hash=>call("adminAccountList",{actor_session_hash,limit:100}),
-   adminAccountAction:async(action,payload)=>{
-     if(!["adminAccountSetStatus","adminAccountRevokeSessions","adminAccountResetPassword"].includes(action))throw Error("GEN3_ADMIN_ACTION_NOT_ALLOWED");
      return call(action,payload);
    },
    // Safe test transport: deliberately restricted to non-actuating command lookup.
@@ -70,6 +87,22 @@ function createSheetsStore() {
        device_id:payload.device_id,actor_user_id:payload.actor_user_id,payload
      });
      return call('deviceCommandGet',{...payload,command_assertion:assertion});
+   },
+   // Dedicated command transport. Requires GAS dispatcher, schema and trusted
+   // identity context to be separately verified before enabling HTTP routes.
+   commandCall:async(action,payload)=>{
+     const allowed=['deviceCommandCreateAtomic','deviceCommandClaimAtomic',
+       'deviceCommandReportAtomic','deviceCommandGet'];
+     if(!allowed.includes(action))throw Error('GEN3_COMMAND_ACTION_NOT_ALLOWED');
+     if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED!=='true')
+       throw Error('PHYSICAL_UNLOCK_DISABLED');
+     const {signCommandAssertion}=require('../lib/command-trust-assertion');
+     const assertion=signCommandAssertion({
+       secret:process.env.IKEY_COMMAND_TRUST_SECRET,
+       action,project_id:payload?.project_id,device_id:payload?.device_id,
+       actor_user_id:payload?.actor_user_id,payload
+     });
+     return call(action,{...payload,command_assertion:assertion});
    },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
