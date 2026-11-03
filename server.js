@@ -97,6 +97,8 @@ app.get('/api/auth/status', async (_req, res) => {
   }
 });
 app.use('/api/auth', createRouter(authStore));
+// Device login and token introspection: fail closed when secret or GAS storage is unavailable.
+require('./device-auth')(app, authStore);
 // Project operations are always scoped to the authenticated account on the server.
 const { hashToken, active } = require('./gen3-auth/core');
 const { randomUUID } = require('node:crypto');
