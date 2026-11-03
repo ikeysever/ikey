@@ -10,7 +10,7 @@
  */
 function ikeyCommandDispatchCandidate_(action,payload) {
   const allowed=['deviceCommandCreateAtomic','deviceCommandClaimAtomic',
-    'deviceCommandReportAtomic','deviceCommandGet'];
+    'deviceCommandReportAtomic','deviceCommandGet','deviceCommandExpireAtomic'];
   if(!allowed.includes(action))throw Error('COMMAND_ACTION_NOT_ALLOWED');
   // Signature and durable nonce replay protection are mandatory, including reads.
   ikeyCommandAuthorizeCandidate_(action,payload);
@@ -44,13 +44,27 @@ function ikeyCommandDispatchCandidate_(action,payload) {
          !Number.isSafeInteger(payload.timeout_ms)||payload.timeout_ms<1000||
          payload.timeout_ms>60000)throw Error('COMMAND_INVALID_REQUEST');
       const old=entries.find(e=>same(e)&&e.r[6]===payload.idempotency_key);
-      if(old)return {command:{command_id:old.r[0],status:old.r[5]},duplicate:true};
+      if(old){
+        if(old.r[3]!==payload.actor_user_id||old.r[4]!==payload.action)
+          throw Error('COMMAND_IDEMPOTENCY_CONFLICT');
+        return {command:{command_id:old.r[0],status:old.r[5]},duplicate:true};
+      }
       const command_id=Utilities.getUuid();
       sheet.appendRow([command_id,payload.project_id,payload.device_id,
         payload.actor_user_id,'unlock','pending',payload.idempotency_key,
         new Date(now).toISOString(),String(now+payload.timeout_ms),'','','','','']);
       SpreadsheetApp.flush();
       return {command:{command_id,status:'pending'},duplicate:false};
+    }
+    if(action==='deviceCommandExpireAtomic'){
+      if(!uid.test(payload.command_id||''))throw Error('COMMAND_INVALID_REQUEST');
+      const found=entries.find(e=>same(e)&&e.r[0]===payload.command_id);
+      if(!found)return null;
+      if(Number(found.r[8])>now)return {command_id:found.r[0],status:found.r[5]};
+      if(found.r[5]==='pending'||found.r[5]==='claimed'){
+        write(found,6,'expired');SpreadsheetApp.flush();
+      }
+      return {command_id:found.r[0],status:found.r[5]==='pending'||found.r[5]==='claimed'?'expired':found.r[5]};
     }
     if(action==='deviceCommandClaimAtomic'){
       const pending=entries.find(e=>same(e)&&e.r[5]==='pending'&&Number(e.r[8])>now);
