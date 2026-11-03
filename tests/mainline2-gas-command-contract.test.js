@@ -25,3 +25,15 @@ test('GAS command candidate verifies signed assertion and nonce before mutation'
  assert.match(gas,/LockService\.getScriptLock/);
  assert.match(gas,/COMMAND_STORE_NOT_CONFIGURED/);
 });
+
+test('expiry is signed on both sides and handled by GAS',()=>{
+ const signer=fs.readFileSync('lib/command-trust-assertion.js','utf8');
+ const verifier=fs.readFileSync('staging/gas/ikey-command-trust-verifier.candidate.gs','utf8');
+ for(const source of [signer,verifier,gas,gateway])
+  assert.match(source,/deviceCommandExpireAtomic/);
+ assert.match(gas,/write\(found,6,'expired'\)/);
+});
+test('idempotency collisions across actors are rejected',()=>{
+ assert.match(gas,/COMMAND_IDEMPOTENCY_CONFLICT/);
+ assert.match(gas,/old\.r\[3\]!==payload\.actor_user_id/);
+});
