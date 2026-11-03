@@ -44,22 +44,24 @@ function ikeyCommandDispatchCandidate_(action,payload) {
          !Number.isSafeInteger(payload.timeout_ms)||payload.timeout_ms<1000||
          payload.timeout_ms>60000)throw Error('COMMAND_INVALID_REQUEST');
       const old=entries.find(e=>same(e)&&e.r[6]===payload.idempotency_key);
-      if(old)return {command_id:old.r[0],status:old.r[5],duplicate:true};
+      if(old)return {command:{command_id:old.r[0],status:old.r[5]},duplicate:true};
       const command_id=Utilities.getUuid();
       sheet.appendRow([command_id,payload.project_id,payload.device_id,
         payload.actor_user_id,'unlock','pending',payload.idempotency_key,
         new Date(now).toISOString(),String(now+payload.timeout_ms),'','','','','']);
       SpreadsheetApp.flush();
-      return {command_id,status:'pending',duplicate:false};
+      return {command:{command_id,status:'pending'},duplicate:false};
     }
     if(action==='deviceCommandClaimAtomic'){
       const pending=entries.find(e=>same(e)&&e.r[5]==='pending'&&Number(e.r[8])>now);
       if(!pending)return null;
-      const token=Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');
-      write(pending,6,'claimed');write(pending,10,token);write(pending,11,new Date(now).toISOString());
+      if(typeof payload.claim_token!=='string'||!/^[0-9a-f]{64}$/.test(payload.claim_token))
+        throw Error('COMMAND_INVALID_CLAIM_TOKEN');
+      const tokenHash=ikeyCommandDigest_({claim_token:payload.claim_token});
+      write(pending,6,'claimed');write(pending,10,tokenHash);write(pending,11,new Date(now).toISOString());
       SpreadsheetApp.flush();
-      return {command_id:pending.r[0],action:'unlock',claim_token:token,
-        expires_at:Number(pending.r[8])};
+      return {command:{command_id:pending.r[0],action:'unlock',status:'claimed',
+        deadline_at:Number(pending.r[8])}};
     }
     if(action==='deviceCommandGet'){
       if(!uid.test(payload.command_id||'')||!uid.test(payload.actor_user_id||''))
@@ -81,7 +83,7 @@ function ikeyCommandDispatchCandidate_(action,payload) {
       if(!found)throw Error('COMMAND_NOT_FOUND');
       if(found.r[5]==='succeeded'||found.r[5]==='failed')
         throw Error('COMMAND_ALREADY_REPORTED');
-      if(found.r[5]!=='claimed'||found.r[9]!==payload.claim_token)
+      if(found.r[5]!=='claimed'||found.r[9]!==ikeyCommandDigest_({claim_token:payload.claim_token}))
         throw Error('COMMAND_CLAIM_MISMATCH');
       if(Number(found.r[8])<=now)throw Error('COMMAND_EXPIRED');
       write(found,6,payload.status);write(found,12,payload.status);
