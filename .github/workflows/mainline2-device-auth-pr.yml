@@ -5,6 +5,8 @@ on:
       - 'server.js'
       - 'device-auth.js'
       - 'gen3-auth/**'
+      - 'lib/device-command-*.js'
+      - 'lib/command-trust-assertion.js'
       - 'tests/mainline2-render-route-mount.test.js'
       - 'tests/mainline2-gas-nonce.test.js'
       - 'tests/mainline2-gas-command-contract.test.js'
