@@ -20,3 +20,13 @@ test('no physical unlock enabled by mounting auth routes',()=>{
  assert.doesNotMatch(device,/IKEY_PHYSICAL_UNLOCK_ENABLED\s*=\s*['"]true/);
  assert.match(server,/COMMAND_BACKEND_NOT_READY/);
 });
+
+test('command routes mounted with authentication and fail-closed flags',()=>{
+ assert.match(server,/mountCommandRoutes\(app/);
+ assert.match(server,/requireProjectUser, sameProjectOrigin, requireDevice/);
+ const routes=fs.readFileSync('lib/device-command-routes.js','utf8');
+ assert.match(routes,/IKEY_PHYSICAL_UNLOCK_ENABLED/);
+ assert.match(routes,/IKEY_GAS_COMMAND_TRUST_VERIFIED/);
+ assert.match(routes,/deviceRoot\+'\/claim'/);
+ assert.match(routes,/deviceRoot\+'\/\:commandId\/report'/);
+});
