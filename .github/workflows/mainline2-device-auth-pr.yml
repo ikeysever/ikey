@@ -8,6 +8,7 @@ on:
       - 'tests/mainline2-render-route-mount.test.js'
       - 'tests/mainline2-gas-nonce.test.js'
       - 'tests/mainline2-gas-command-contract.test.js'
+      - 'tests/mainline2-gas-command-lifecycle.test.js'
       - 'staging/gas/**'
       - '.github/workflows/mainline2-device-auth-pr.yml'
   workflow_dispatch:
