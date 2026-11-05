@@ -131,13 +131,16 @@ function createSheetsStore() {
      if(Object.keys(payload).length!==4||
        !['actor_user_id','command_id','device_id','project_id'].every(k=>Object.prototype.hasOwnProperty.call(payload,k)))
        throw Error('INVALID_COMMAND_PROBE_FIELDS');
+     if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED==='true')throw Error('SANDBOX_COMMAND_PHYSICAL_UNLOCK_FORBIDDEN');
+     if(process.env.IKEY_SANDBOX_COMMAND_TEST_ENABLED!=='true')throw Error('SANDBOX_COMMAND_DISABLED');
+     const target=sandboxCommandTarget();
      const {signCommandAssertion}=require('../lib/command-trust-assertion');
      const assertion=signCommandAssertion({
-       secret:process.env.IKEY_COMMAND_TRUST_SECRET,
+       secret:target.trust,
        action:'deviceCommandGet',project_id:payload.project_id,
        device_id:payload.device_id,actor_user_id:payload.actor_user_id,payload
      });
-     return call('deviceCommandGet',{...payload,command_assertion:assertion});
+     return sandboxCommandCall('deviceCommandGet',{...payload,command_assertion:assertion});
    },
    // Dedicated command transport. Requires GAS dispatcher, schema and trusted
    // identity context to be separately verified before enabling HTTP routes.
