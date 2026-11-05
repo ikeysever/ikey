@@ -23,7 +23,7 @@ test('GAS never stores plaintext claim token',()=>{
 test('GAS command candidate verifies signed assertion and nonce before mutation',()=>{
  assert.match(gas,/ikeyCommandAuthorizeCandidate_\(action,payload\)/);
  assert.match(gas,/LockService\.getScriptLock/);
- assert.match(gas,/COMMAND_STORE_NOT_CONFIGURED/);
+ assert.ok(gas.includes('ikeyBoundCommandSheetCandidate_()'));
 });
 
 test('expiry is signed on both sides and handled by GAS',()=>{
