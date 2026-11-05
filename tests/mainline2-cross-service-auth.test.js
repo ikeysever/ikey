@@ -19,7 +19,7 @@ function fixture({admin=true,bound=true,registered=true}={}){
  verifyActor:auth.verifyActor,verifyDeviceBinding:auth.verifyDeviceBinding});
  return {gateway,calls:()=>calls};
 }
-async function create(f){return f.gateway.create({actor:{user_id:user,status:'active',is_active:true},project_id:project,device_id:device,idempotency_key:'sample-key-123'});}
+async function create(f){return f.gateway.create({actor:{user_id:user,account_status:'active'},project_id:project,device_id:device,idempotency_key:'sample-key-123'});}
 test('authorized admin and bound device reaches GAS call',async()=>{const f=fixture();await create(f);assert.equal(f.calls(),1);});
 for(const [name,opts] of [['non-admin',{admin:false}],['unbound',{bound:false}],['unregistered',{registered:false}]]){
  test(name+' cannot reach GAS',async()=>{const f=fixture(opts);await assert.rejects(create(f));assert.equal(f.calls(),0);});
