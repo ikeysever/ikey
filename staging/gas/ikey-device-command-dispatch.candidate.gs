@@ -1,7 +1,7 @@
 /**
  * iKey 3.1 command actions — isolated GAS staging candidate.
  * Requires the trust verifier and nonce store candidates in this directory.
- * Must run against a SANDBOX spreadsheet (IKEY_COMMAND_SPREADSHEET_ID).
+ * Must run only in the pinned Bound Sandbox spreadsheet.
  * DeviceCommands header:
  * command_id,project_id,device_id,actor_user_id,action,status,
  * idempotency_key,created_at,expires_at,claim_token,claimed_at,
@@ -17,10 +17,7 @@ function ikeyCommandDispatchCandidate_(action,payload) {
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(10000))throw Error('COMMAND_STORE_LOCK_BUSY');
   try {
-    const id=PropertiesService.getScriptProperties().getProperty('IKEY_COMMAND_SPREADSHEET_ID');
-    if(!id)throw Error('COMMAND_STORE_NOT_CONFIGURED');
-    const sheet=SpreadsheetApp.openById(id).getSheetByName('DeviceCommands');
-    if(!sheet)throw Error('COMMAND_SHEET_MISSING');
+    const sheet=ikeyBoundCommandSheetCandidate_();
     const columns=['command_id','project_id','device_id','actor_user_id','action','status',
       'idempotency_key','created_at','expires_at','claim_token','claimed_at',
       'result_status','feedback_observed','reported_at'];
