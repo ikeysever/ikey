@@ -22,7 +22,7 @@ test('isolated Bound Sandbox doPost passes parsed request only to sandbox comman
  const response=post({postData:{contents:JSON.stringify(request)}});
  assert.equal(response.mime,'application/json');
  assert.deepEqual(JSON.parse(response.text),{ok:true,result:{status:'pending'}});
- assert.deepEqual(calls,[request]);
+ assert.deepEqual(JSON.parse(JSON.stringify(calls)),[request]);
 });
 test('malformed and missing request bodies fail closed without invoking sandbox adapter',()=>{
  const {post,calls}=setup();
