@@ -26,10 +26,14 @@ test('valid sandbox request dispatches command after key check',()=>{
  assert.equal(run(valid).ok,true);
  assert.deepEqual(calls,[['command','deviceCommandGet']]);
 });
-test('legacy route is preserved after sandbox authentication',()=>{
+test('sandbox credentials cannot access legacy GAS routes',()=>{
  const {run,calls}=setup();
- assert.equal(run({...valid,action:'health'}).result.legacy,true);
- assert.deepEqual(calls,[['legacy','health']]);
+ for(const action of ['health','db.get','login','deviceCommandUnknown']){
+  const response=run({...valid,action});
+  assert.equal(response.ok,false);
+  assert.equal(response.error,'SANDBOX_COMMAND_ACTION_NOT_ALLOWED');
+ }
+ assert.deepEqual(calls,[]);
 });
 for(const [name,props,request,expected] of [
  ['disabled',{IKEY_SANDBOX_COMMAND_HTTP_ENABLED:'false'},valid,'SANDBOX_COMMAND_DISABLED'],
@@ -47,6 +51,11 @@ for(const [name,props,request,expected] of [
   assert.equal(calls.length,0);
  });
 }
+test('command action succeeds without a legacy dispatch handler',()=>{
+ const {run,calls}=setup();
+ assert.equal(run(valid).ok,true);
+ assert.deepEqual(calls,[['command','deviceCommandGet']]);
+});
 test('dispatcher errors are sanitized',()=>{
  const {run}=setup({},()=>{throw Error('INTERNAL_SECRET_DETAIL')});
  const result=run(valid);
