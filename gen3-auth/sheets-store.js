@@ -5,6 +5,57 @@ function createSheetsStore() {
  const key=process.env.GEN3_APPS_SCRIPT_KEY;
  if(!url || !/^https:\/\/script\.google\.com\//.test(url) || !key || key.length<32)
    throw Error("GEN3_STORAGE_NOT_CONFIGURED");
+ // Isolated command-only transport. Never falls back to the GEN3 storage URL.
+ function sandboxCommandTarget() {
+   const raw=process.env.IKEY_SANDBOX_COMMAND_GAS_URL;
+   const secret=process.env.IKEY_SANDBOX_COMMAND_GAS_KEY;
+   const deployment=process.env.IKEY_SANDBOX_COMMAND_GAS_DEPLOYMENT_ID;
+   const trust=process.env.IKEY_SANDBOX_COMMAND_TRUST_SECRET;
+   if(!raw||!secret||!deployment||!trust||
+      Buffer.byteLength(secret,'utf8')<32||Buffer.byteLength(trust,'utf8')<32)
+     throw Error('SANDBOX_COMMAND_NOT_CONFIGURED');
+   if(secret===key||trust===process.env.IKEY_COMMAND_TRUST_SECRET)
+     throw Error('SANDBOX_COMMAND_SECRET_NOT_ISOLATED');
+   if(!/^[A-Za-z0-9_-]{20,}$/.test(deployment))
+     throw Error('SANDBOX_COMMAND_DEPLOYMENT_INVALID');
+   let parsed;
+   try { parsed=new URL(raw); } catch {throw Error('SANDBOX_COMMAND_URL_INVALID');}
+   if(parsed.protocol!=='https:'||parsed.hostname!=='script.google.com'||
+      parsed.port||parsed.username||parsed.password||parsed.search||parsed.hash||
+      parsed.pathname!=='/macros/s/'+deployment+'/exec'||
+      parsed.href===new URL(url).href)
+     throw Error('SANDBOX_COMMAND_TARGET_REJECTED');
+   return {url:parsed.href,key:secret,trust};
+ }
+ async function sandboxCommandCall(action,payload) {
+   const target=sandboxCommandTarget();
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),15000);
+   try {
+     // Apps Script may redirect its JSON response to googleusercontent.com.
+     // Follow only that exact HTTPS host, never send credentials in a redirect.
+     let response=await fetch(target.url,{
+       method:'POST',redirect:'manual',signal:controller.signal,
+       headers:{'Content-Type':'text/plain;charset=utf-8'},
+       body:JSON.stringify({api_key:target.key,action,payload})
+     });
+     if([301,302,303,307,308].includes(response.status)){
+       const location=response.headers.get('location');
+       let destination;
+       try {destination=new URL(location);}catch{throw Error('SANDBOX_COMMAND_REDIRECT_REJECTED');}
+       if(destination.protocol!=='https:'||
+          destination.hostname!=='script.googleusercontent.com'||
+          destination.port||destination.username||destination.password)
+         throw Error('SANDBOX_COMMAND_REDIRECT_REJECTED');
+       response=await fetch(destination.href,{method:'GET',redirect:'manual',signal:controller.signal});
+     }
+     if(!response.ok||[301,302,303,307,308].includes(response.status))
+       throw Error('SANDBOX_COMMAND_HTTP_ERROR');
+     const data=await response.json();
+     if(!data||data.ok!==true)throw Error('SANDBOX_COMMAND_REJECTED');
+     return data.result;
+   } finally {clearTimeout(timer);}
+ }
  async function call(action,payload={}) {
    const controller=new AbortController();
    const started=Date.now();
@@ -94,15 +145,19 @@ function createSheetsStore() {
      const allowed=['deviceCommandCreateAtomic','deviceCommandClaimAtomic',
        'deviceCommandReportAtomic','deviceCommandGet'];
      if(!allowed.includes(action))throw Error('GEN3_COMMAND_ACTION_NOT_ALLOWED');
-     if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED!=='true')
-       throw Error('PHYSICAL_UNLOCK_DISABLED');
+     // This staging transport cannot enable physical unlock or production routes.
+     if(process.env.IKEY_PHYSICAL_UNLOCK_ENABLED==='true')
+       throw Error('SANDBOX_COMMAND_PHYSICAL_UNLOCK_FORBIDDEN');
+     if(process.env.IKEY_SANDBOX_COMMAND_TEST_ENABLED!=='true')
+       throw Error('SANDBOX_COMMAND_DISABLED');
+     const target=sandboxCommandTarget();
      const {signCommandAssertion}=require('../lib/command-trust-assertion');
      const assertion=signCommandAssertion({
-       secret:process.env.IKEY_COMMAND_TRUST_SECRET,
+       secret:target.trust,
        action,project_id:payload?.project_id,device_id:payload?.device_id,
        actor_user_id:payload?.actor_user_id,payload
      });
-     return call(action,{...payload,command_assertion:assertion});
+     return sandboxCommandCall(action,{...payload,command_assertion:assertion});
    },
    // Trusted server-to-Apps-Script project actions; unsupported actions fail closed.
    projectCall:async(action,payload)=>{
