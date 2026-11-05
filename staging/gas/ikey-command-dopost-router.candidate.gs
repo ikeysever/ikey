@@ -25,3 +25,41 @@ function ikeyCommandRouteCandidate_(action,payload,legacyDispatch) {
     return ikeyCommandDispatchCandidate_(action,payload);
   return legacyDispatch(action,payload);
 }
+
+/**
+ * Sandbox-only HTTP entry adapter. Invoke from the existing doPost AFTER
+ * identifying the isolated sandbox deployment; do not replace production
+ * doPost or forward the sandbox key to legacy handlers.
+ *
+ * @param {Object} request Parsed JSON body {api_key, action, payload}.
+ * @param {Function} legacyDispatch Existing trusted dispatch(action,payload).
+ * @returns {Object} {ok,result} or {ok:false,error}; no secret disclosure.
+ */
+function ikeySandboxCommandHttpCandidate_(request,legacyDispatch) {
+  if(!request||typeof request!=='object'||Array.isArray(request))
+    return {ok:false,error:'INVALID_REQUEST'};
+  const action=request.action;
+  if(typeof action!=='string'||!action||action.length>128)
+    return {ok:false,error:'INVALID_ACTION'};
+  if(typeof legacyDispatch!=='function')
+    return {ok:false,error:'LEGACY_DISPATCH_NOT_CONFIGURED'};
+  const props=PropertiesService.getScriptProperties();
+  if(props.getProperty('IKEY_SANDBOX_COMMAND_HTTP_ENABLED')!=='true')
+    return {ok:false,error:'SANDBOX_COMMAND_DISABLED'};
+  const expected=props.getProperty('IKEY_SANDBOX_COMMAND_GAS_KEY');
+  if(!expected||Utilities.newBlob(expected).getBytes().length<32)
+    return {ok:false,error:'SANDBOX_COMMAND_KEY_NOT_CONFIGURED'};
+  if(typeof request.api_key!=='string'||
+     !ikeyCommandEqual_(request.api_key,expected))
+    return {ok:false,error:'UNAUTHORIZED'};
+  if(!request.payload||typeof request.payload!=='object'||
+     Array.isArray(request.payload))
+    return {ok:false,error:'INVALID_PAYLOAD'};
+  try {
+    return {ok:true,result:ikeyCommandRouteCandidate_(
+      action,request.payload,legacyDispatch)};
+  } catch(e) {
+    // Never return raw exception strings that might expose internal details.
+    return {ok:false,error:'SANDBOX_COMMAND_FAILED'};
+  }
+}
