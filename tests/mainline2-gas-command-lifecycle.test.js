@@ -3,6 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
+const adapter=fs.readFileSync('staging/gas/ikey-command-bound-sandbox-store.candidate.gs','utf8');
 const source=fs.readFileSync('staging/gas/ikey-device-command-dispatch.candidate.gs','utf8');
 const project='123e4567-e89b-42d3-a456-426614174000';
 const actor='123e4567-e89b-42d3-a456-426614174001';
@@ -21,14 +22,14 @@ function harness(){
  };
  const context={
   Date,
-  PropertiesService:{getScriptProperties:()=>({getProperty:()=> 'sandbox-only'})},
-  SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet}),flush:()=>{}},
+  PropertiesService:{getScriptProperties:()=>({getProperty:k=>k==='IKEY_SANDBOX_COMMAND_HTTP_ENABLED'?'true':'sandbox-only'})},
+  SpreadsheetApp:{getActiveSpreadsheet:()=>({getId:()=> 'sandbox-only',getSheetByName:()=>sheet}),flush:()=>{}},
   LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
   Utilities:{getUuid:()=> '123e4567-e89b-42d3-a456-426614174099'},
   ikeyCommandAuthorizeCandidate_:()=>{nonceCalls++;},
   ikeyCommandDigest_:v=>'hash:'+v.claim_token
  };
- vm.createContext(context);vm.runInContext(source,context);
+ vm.createContext(context);vm.runInContext(adapter,context);vm.runInContext(source,context);
  return {dispatch:context.ikeyCommandDispatchCandidate_,rows,nonceCalls:()=>nonceCalls};
 }
 test('GAS create -> claim -> report -> get lifecycle executes on mock sheet',()=>{
