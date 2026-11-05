@@ -3,6 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
+const adapter=fs.readFileSync('staging/gas/ikey-command-bound-sandbox-store.candidate.gs','utf8');
 const source=fs.readFileSync('staging/gas/ikey-command-nonce-store.candidate.gs','utf8');
 function harness({locked=true,configured=true,sheetExists=true}={}){
  const rows=[['nonce','expires_at','created_at']];
@@ -14,11 +15,11 @@ function harness({locked=true,configured=true,sheetExists=true}={}){
  };
  const context={
    Date,LockService:{getScriptLock:()=>({tryLock:()=>{if(!locked||held)return false;held=true;return true;},releaseLock:()=>{held=false;}})},
-   PropertiesService:{getScriptProperties:()=>({getProperty:()=>configured?'sandbox-sheet':''})},
-   SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheetExists?sheet:null}),flush:()=>{}},
+   PropertiesService:{getScriptProperties:()=>({getProperty:k=>k==='IKEY_SANDBOX_COMMAND_HTTP_ENABLED'?'true':configured?'sandbox-sheet':''})},
+   SpreadsheetApp:{getActiveSpreadsheet:()=>({getId:()=> 'sandbox-sheet',getSheetByName:()=>sheetExists?sheet:null}),flush:()=>{}},
    ikeyCommandVerifyAssertionCandidate_:()=>({nonce:'a'.repeat(32),exp:Date.now()+30000})
  };
- vm.createContext(context);vm.runInContext(source,context);
+ vm.createContext(context);vm.runInContext(adapter,context);vm.runInContext(source,context);
  return {context,rows};
 }
 test('durably records nonce and rejects replay',()=>{
@@ -36,7 +37,7 @@ test('fails closed when lock is unavailable',()=>{
 });
 test('fails closed when store is unconfigured',()=>{
  const {context}=harness({configured:false});
- assert.throws(()=>context.ikeyCommandReserveNonceCandidate_({nonce:'a'.repeat(32),exp:Date.now()+30000}),/COMMAND_NONCE_STORE_NOT_CONFIGURED/);
+ assert.throws(()=>context.ikeyCommandReserveNonceCandidate_({nonce:'a'.repeat(32),exp:Date.now()+30000}),/SANDBOX_SPREADSHEET_NOT_CONFIGURED/);
 });
 test('rejects expired nonce',()=>{
  const {context}=harness();
