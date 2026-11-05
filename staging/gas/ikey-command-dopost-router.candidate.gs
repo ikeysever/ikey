@@ -32,7 +32,7 @@ function ikeyCommandRouteCandidate_(action,payload,legacyDispatch) {
  * doPost or forward the sandbox key to legacy handlers.
  *
  * @param {Object} request Parsed JSON body {api_key, action, payload}.
- * @param {Function} legacyDispatch Existing trusted dispatch(action,payload).
+ * @param {Function} legacyDispatch Unused compatibility argument; never called by sandbox adapter.
  * @returns {Object} {ok,result} or {ok:false,error}; no secret disclosure.
  */
 function ikeySandboxCommandHttpCandidate_(request,legacyDispatch) {
@@ -41,8 +41,9 @@ function ikeySandboxCommandHttpCandidate_(request,legacyDispatch) {
   const action=request.action;
   if(typeof action!=='string'||!action||action.length>128)
     return {ok:false,error:'INVALID_ACTION'};
-  if(typeof legacyDispatch!=='function')
-    return {ok:false,error:'LEGACY_DISPATCH_NOT_CONFIGURED'};
+  // Sandbox credentials must never authorize legacy GAS operations.
+  if(IKEY_COMMAND_ACTIONS_CANDIDATE_.indexOf(action)===-1)
+    return {ok:false,error:'SANDBOX_COMMAND_ACTION_NOT_ALLOWED'};
   const props=PropertiesService.getScriptProperties();
   if(props.getProperty('IKEY_SANDBOX_COMMAND_HTTP_ENABLED')!=='true')
     return {ok:false,error:'SANDBOX_COMMAND_DISABLED'};
@@ -56,8 +57,7 @@ function ikeySandboxCommandHttpCandidate_(request,legacyDispatch) {
      Array.isArray(request.payload))
     return {ok:false,error:'INVALID_PAYLOAD'};
   try {
-    return {ok:true,result:ikeyCommandRouteCandidate_(
-      action,request.payload,legacyDispatch)};
+    return {ok:true,result:ikeyCommandDispatchCandidate_(action,request.payload)};
   } catch(e) {
     // Never return raw exception strings that might expose internal details.
     return {ok:false,error:'SANDBOX_COMMAND_FAILED'};
