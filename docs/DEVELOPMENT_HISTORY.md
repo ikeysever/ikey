@@ -35,3 +35,24 @@
 
 ### 記錄原則
 後續每次重大修改都補上日期、需求、設計決策、檔案路徑、PR／Commit、測試與部署狀態、已知限制、待辦與交接資訊；以可核對的事實為準。
+
+## 2026-11-06｜iBOX 專案裝置管理：第一階段唯讀串接（staging）
+
+### 範圍與決策
+- 新版實體設備為 iBOX（電池、ESP32、電子鎖），透過 Wi-Fi/HTTPS 主動連接既有 Render；GAS/Google Sheets 仍是資料後端。大型鑰匙櫃、RFID、指紋不再是必要功能。
+- 本次只建立專案裝置清單的安全唯讀路徑；不提供綁定、指令建立、實際開鎖，也不部署正式環境。
+- 跨主線：M1 網站、M2 Render、M4 GAS/Sheets、M6 安全與測試。此階段僅有 staging 實作證據，正式驗收進度尚不加分。
+
+### 實作與追蹤
+- 分支：`feature/ibox-project-device-read-staging`，PR #100（Draft）。
+- `server.js`：新增 `GET /api/projects/:projectId/devices`，需要登入並核對專案建立者；從 Devices 讀取 project_id 對應記錄，僅回傳安全欄位，連線狀態固定標為 unverified、control_ready=false。當 GAS schema 未就緒、結果截斷或存取失敗時拒絕回傳假清單。
+- `public/project-devices.js`：使用專案裝置 API 顯示經後端讀取的卡片；錯誤時明確顯示不可驗證。
+- `test/ibox-project-inventory.test.js`：新增靜態安全與接線測試。
+- 首次 CI 的 npm test 失敗，原因為既有 `test/project-subpages-api.test.js` 禁止專案裝置 API 的舊假設；已調整為驗證新 API 並重新觸發 CI。
+
+### 待驗證與下一步
+1. 確認最新 PR CI 成功；失敗則查 log 修正。
+2. 核實正式 GAS Devices schema 是否包含 project_id、device_name、status，以及 db.select 的過濾語義。未核實前不得宣稱可讀取正式裝置。
+3. 完成安全的出廠憑證驗證、專案綁定及裝置心跳，再逐步串接既有指令生命週期。
+4. 未修改 main、未部署 Render/GAS、未啟用實體電子鎖。
+
