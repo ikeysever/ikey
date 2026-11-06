@@ -238,8 +238,11 @@ app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,re
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
-const { passwordHash } = require('./gen3-auth/core');
 app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  // Fail closed until the GAS factory registry deployment is independently verified.
+  if(process.env.IKEY_FACTORY_REGISTRATION_ENABLED!=='true')
+    return res.status(503).json({success:false,code:'FACTORY_REGISTRATION_DISABLED'});
   if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
   if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
   const password=req.body?.password;
@@ -247,26 +250,24 @@ app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
     return res.status(400).json({success:false,message:'裝置密碼須為 8 至 128 字元'});
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   try{
-    const hash=passwordHash(password);
-    for(let attempt=0;attempt<3;attempt++){
-      const bytes=randomBytes(8);
-      const device_id=Array.from(bytes,b=>alphabet[b%alphabet.length]).join('');
-      const now=new Date().toISOString();
-      const device={device_id,password_hash:hash,status:'pre_registered',created_by_user_id:req.projectUser.user_id,created_at:now,updated_at:now};
-      try{
-        const result=await authStore.dbCall('db.insert',{table:'Devices',primary_key:'device_id',data:device});
-        if(result?.inserted===true&&result?.record?.device_id===device_id)
-          return res.status(201).json({success:true,device_id});
-        // Unknown storage response is not a verified insert.
-        return res.status(503).json({success:false,message:'無法確認裝置已建立，請聯絡管理員'});
-      }catch(err){
-        // Do not retry ambiguous storage failures: the insert may already have committed.
-        console.warn('Device pre-registration storage unavailable',err.message);
-        return res.status(503).json({success:false,message:'裝置資料服務尚未就緒，請勿重複提交'});
-      }
-    }
-    return res.status(503).json({success:false,message:'無法產生裝置 ID'});
-  }catch(err){console.warn('Device pre-registration failed',err.name);return res.status(503).json({success:false,message:'裝置建立失敗'});}
+    // GAS expects scrypt-n16384-r8-p1, hex-encoded 32-byte salt and 64-byte hash.
+    const crypto=require('node:crypto');
+    const salt=crypto.randomBytes(32);
+    const credential_salt=salt.toString('hex');
+    const credential_hash=crypto.scryptSync(password,salt,64,
+      {N:16384,r:8,p:1,maxmem:64*1024*1024}).toString('hex');
+    const device_id=Array.from(randomBytes(8),b=>alphabet[b%alphabet.length]).join('');
+    const result=await authStore.factoryDeviceCall('factoryDeviceRegister',{
+      actor_user_id:req.projectUser.user_id,device_id,
+      credential_kdf:'scrypt-n16384-r8-p1',credential_salt,credential_hash
+    });
+    if(result?.registered===true)return res.status(201).json({success:true,device_id});
+    // A collision or unknown result is never silently treated as successful.
+    return res.status(503).json({success:false,code:'FACTORY_REGISTRATION_NOT_CONFIRMED'});
+  }catch(err){
+    console.warn('Factory device registration unavailable',String(err.message||'unknown').slice(0,80));
+    return res.status(503).json({success:false,code:'FACTORY_REGISTRATION_UNAVAILABLE'});
+  }
 });
 // Read-only device list: limited to preregistered records; no secrets returned.
 app.get('/api/devices',requireProjectUser,async(req,res)=>{
