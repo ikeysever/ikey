@@ -45,6 +45,27 @@
   }catch(e){error.hidden=false;error.textContent=e.message||'無法載入裝置管理';}
  };
  get('add-device').addEventListener('click',()=>get('add-dialog').showModal());
+ get('verify-bind-device').addEventListener('click',async()=>{
+  const button=get('verify-bind-device');
+  const device_id=get('factory-device-id').value.trim().toUpperCase();
+  const password=get('factory-device-password').value;
+  if(!/^[A-HJ-NP-Z2-9]{8}$/.test(device_id)||password.length<8||password.length>128){
+   status.textContent='請確認出廠裝置 ID 與密碼格式。';return;
+  }
+  button.disabled=true;
+  try{
+   const response=await fetch('/api/projects/'+encodeURIComponent(id)+'/devices/bind',{
+    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({device_id,password})
+   });
+   const result=await response.json();
+   if(!response.ok||!result.success)throw Error('裝置驗證或綁定未成功，請確認裝置資料及權限。');
+   get('add-dialog').close();
+   status.textContent='裝置綁定成功，正在重新載入清單。';
+   await load();
+  }catch(e){status.textContent=e.message||'裝置綁定失敗';}
+  finally{get('factory-device-password').value='';button.disabled=false;}
+ });
  get('add-dialog').addEventListener('close',()=>{get('factory-device-id').value='';get('factory-device-password').value='';});
  get('device-search').addEventListener('input',()=>{
   // Search is ready for real device cards; empty/unverified state remains explicit.
