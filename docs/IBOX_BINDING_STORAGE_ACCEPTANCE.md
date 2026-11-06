@@ -86,6 +86,26 @@ routes the allowlisted action through `ikeyFactoryDeviceAction`, preserves
 the verified caller identity, and does not provide a bypass. These excerpts
 alone are not a deployed-version attestation. Do not enable the feature.
 
+## Observed doPost device dispatcher — 2026-11-06
+
+User-provided continuation of `doPost` confirms:
+`IKEY_DEVICE_ACTIONS.includes(action) ? ikeyFactoryDeviceAction(action, payload)`.
+The earlier API-key rejection precedes this branch, and
+`ikeyFactoryDeviceAction` itself invokes `ikeyDeviceAuthorized_`, which
+delegates to the project-admin authorization verifier. The **source-level**
+dispatcher and GAS authorization path is therefore present.
+
+**Important residual trust boundary:** the shared `GEN3_API_KEY` authenticates
+Render as a service, not the end-user actor. The Render route must derive
+`actor_user_id` from its verified session, never from request JSON. Verify
+that the deployed GAS version matches these excerpts and that no other
+writer bypasses the ScriptLock.
+
+**Integration decision:** replace the staging Render endpoint's generic
+`db.select` / `db.insert` calls with the dedicated factory-device action
+contract after validating the factory credential KDF, authorization, and
+failure semantics in isolation. Current staging API remains disabled.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
