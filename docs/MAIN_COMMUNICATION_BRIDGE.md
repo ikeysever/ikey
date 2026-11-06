@@ -61,3 +61,19 @@ It does not sign `devicePing*` actions. Therefore the adapter must **not**
 be wired to the live GAS dispatcher until both the signer and GAS verifier
 agree on the exact actions, payload digest, replay rules and authorization
 for Web users versus ESP32 device principals. No GAS deployment performed.
+
+## Signed ping transport (staging only)
+
+Render signer now permits `devicePingCreate/Claim/Report/Status`.
+`gen3-auth/signed-ping-store.js` produces HMAC assertions using the existing
+command trust secret and separates verified Web actor claims from device
+principals. `gas-staging/ikey-ping-trust-verifier.gs` checks signature,
+expiry, audience, action, scope and payload digest. Tests verify HMAC and
+principal separation.
+
+**Critical security gates remain:** GAS dispatcher has not been wired to the
+verifier or queue; project owner and device binding authorization must be
+checked server-side; CacheService replay checks are NOT atomic/durable and
+must be replaced with a durable nonce ledger before deployment. Neither
+production GAS nor Render has been deployed. This is staging implementation,
+not an end-to-end success claim.
