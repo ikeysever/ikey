@@ -177,12 +177,12 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   // Project member access is not yet verified; only the actual creator may read devices.
   if(project.created_by_user_id!==req.projectUser.user_id)
    return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
-  const inventory=await authStore.dbCall('db.select',{table:'Devices',where:{project_id:projectId},limit:100});
+  const inventory=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:projectId},limit:100});
   if(!Array.isArray(inventory?.rows)||inventory.limited===true)
    return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNVERIFIED'});
   const devices=inventory.rows.filter(d=>d.project_id===projectId&&/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||'')))
-   .map(d=>({device_id:String(d.device_id),device_name:String(d.device_name||'iBOX').slice(0,80),
-    registration_status:String(d.status||'unknown'),connection_status:'unverified',control_ready:false}));
+   .map(d=>({device_id:String(d.device_id),device_name:String(d.display_name||'iBOX').slice(0,80),
+    registration_status:'bound',connection_status:'unverified',control_ready:false}));
   return res.json({success:true,devices});
  }catch(err){
   console.warn('Project device inventory unavailable',String(err.message||'unknown').slice(0,90));
