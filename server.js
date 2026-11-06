@@ -189,6 +189,42 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNAVAILABLE'});
  }
 });
+// Project owner device binding. Device ID is the unique binding key across projects.
+// Requires the GAS db.insert primary-key operation to be atomic; fail closed otherwise.
+app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const projectId=String(req.params.projectId||'');
+ const deviceId=String(req.body?.device_id||'').trim().toUpperCase();
+ const password=req.body?.password;
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)
+   || !/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)
+   ||typeof password!=='string'||password.length<8||password.length>128)
+  return res.status(400).json({success:false,code:'INVALID_BINDING_REQUEST'});
+ try{
+  const projects=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(projects?.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const record=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1});
+  const device=(record?.rows||[]).find(d=>d.device_id===deviceId);
+  const {passwordVerify}=require('./gen3-auth/core');
+  if(!device||device.status!=='pre_registered'||!passwordVerify(password,String(device.password_hash||'')))
+   return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
+  // The unique primary key equals the factory device ID, preventing cross-project rebinds.
+  const now=new Date().toISOString();
+  const binding={binding_id:deviceId,project_id:projectId,device_id:deviceId,display_name:'iBOX',
+   lock_mode:'locked',heartbeat_interval_minutes:'5',auto_firmware_update:'false',
+   bound_by:req.projectUser.user_id,bound_at:now,updated_at:now};
+  const result=await authStore.dbCall('db.insert',{table:'Project_Devices',primary_key:'binding_id',data:binding});
+  if(result?.inserted!==true||result?.record?.binding_id!==deviceId)
+   return res.status(503).json({success:false,code:'BINDING_NOT_CONFIRMED'});
+  return res.status(201).json({success:true,device_id:deviceId});
+ }catch(err){
+  console.warn('Project device binding unavailable',String(err.message||'unknown').slice(0,80));
+  return res.status(503).json({success:false,code:'DEVICE_BINDING_UNAVAILABLE'});
+ }
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
