@@ -77,7 +77,7 @@
   const buttons=[$('announcement-save-draft'),$('announcement-save-schedule'),$('announcement-save-publish')];buttons.forEach(b=>b.disabled=true);
   try{
    let data;
-   if(mode==='draft')payload.status='draft';
+   if(mode==='draft'){payload.status='draft';payload.scheduled_at='';payload.published_at='';}
    if(editingId)data=await api('/api/admin/announcements/'+encodeURIComponent(editingId),{method:'PUT',body:JSON.stringify(payload)});
    else data=await api('/api/admin/announcements',{method:'POST',body:JSON.stringify(payload)});
    const id=editingId||data.announcement?.announcement_id;
