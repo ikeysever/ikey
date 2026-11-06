@@ -77,3 +77,16 @@ checked server-side; CacheService replay checks are NOT atomic/durable and
 must be replaced with a durable nonce ledger before deployment. Neither
 production GAS nor Render has been deployed. This is staging implementation,
 not an end-to-end success claim.
+
+## Durable replay and permission gate (staging only)
+
+Added `gas-staging/ikey-ping-nonce-ledger.gs` to atomically persist each
+assertion nonce in `Device_Ping_Nonces` (`nonce,expires_at`) using ScriptLock;
+replaced CacheService marker in GAS verifier. Added
+`gas-staging/ikey-ping-dispatcher.gs` with fail-closed authorization callbacks
+for Web project owners and authenticated bound devices. Runtime tests exercise
+nonce reuse rejection and authorization denial. These callbacks are **not yet
+bound to real GAS account/device records**, and the staging dispatcher is **not
+registered with doPost**. Durable nonce rows must be retained at least through
+expiry; operational pruning is still outstanding. Do not deploy until real
+permissions, trusted device login, GAS routing and concurrency tests pass.
