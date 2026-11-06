@@ -39,7 +39,7 @@ function createSheetsStore() {
    audit:async event=>call("audit",{event}),
    // Dedicated keyed GAS factory-device actions. Never expose credential records to browsers.
    factoryDeviceCall:async(action,payload)=>{
-     if(!['factoryDeviceCredentialGet','factoryDeviceBind','factoryDeviceList'].includes(action))
+     if(!['factoryDeviceCredentialGet','factoryDeviceBind','factoryDeviceList','factoryDeviceRegister'].includes(action))
        throw Error('GEN3_FACTORY_DEVICE_ACTION_NOT_ALLOWED');
      return call(action,payload);
    },
