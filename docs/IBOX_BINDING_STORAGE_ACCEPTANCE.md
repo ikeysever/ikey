@@ -133,6 +133,23 @@ serialized check-and-append contract, **not** actual deployed GAS source,
 ScriptLock behavior, spreadsheet operations, or credentials. They must not
 be cited as completion of live or sandbox GAS integration acceptance.
 
+## Factory registration contract alignment — 2026-11-06
+
+The staging Render pre-registration route was also found to use the obsolete
+generic `Devices` insert and `scrypt:v1` password format. It now calls
+`factoryDeviceRegister` using the GAS-defined `scrypt-n16384-r8-p1` format,
+a 32-byte hex salt and a 64-byte hex derived key, with the actor derived from
+the verified Render session. `IKEY_FACTORY_REGISTRATION_ENABLED` defaults
+OFF independently of the binding flag. A static regression test covers this
+contract. The two GitHub Actions workflows passed at commit
+`96f31814b490f81ca0cb2d8f6603f7972af01bc6`.
+
+**Still incompatible:** the global `GET /api/devices` route reads generic
+`Devices`, but the supplied GAS device API only exposes project-scoped
+`factoryDeviceList`. Do not present global inventory as verified or enable
+factory registration until an authorized global-list contract is defined and
+tested. Also verify the deployed GAS version and sandbox write behavior.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
