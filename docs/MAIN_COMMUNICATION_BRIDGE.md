@@ -47,3 +47,17 @@ to an untrusted caller. Create an isolated test spreadsheet with exact header
 `command_id,project_id,device_id,action,status,created_at,claimed_at,reported_at,result`
 and verify concurrent claims, failures, permissions and rollback behavior.
 No production GAS writes or deployments occurred.
+
+## Render GAS transport adapter — 2026-11-06
+
+Added `gen3-auth/ping-store-adapter.js` with strict allowlisting of the
+four `devicePing*` operations, scope validation, and a required trusted
+assertion; tests cover malformed inputs and invalid responses. This is a
+transport adapter, **not an authorized HTTP endpoint**. The existing
+`lib/command-trust-assertion.js` signer only accepts
+`deviceCommandCreateAtomic`, `deviceCommandGet`,
+`deviceCommandClaimAtomic`, and `deviceCommandReportAtomic`.
+It does not sign `devicePing*` actions. Therefore the adapter must **not**
+be wired to the live GAS dispatcher until both the signer and GAS verifier
+agree on the exact actions, payload digest, replay rules and authorization
+for Web users versus ESP32 device principals. No GAS deployment performed.
