@@ -6,6 +6,24 @@ The Render endpoint `POST /api/projects/:projectId/devices/bind` is guarded by
 `IKEY_DEVICE_BINDING_ENABLED === 'true'`. Do not set this flag in production until
 the deployed GAS writer has been inspected and tested.
 
+## Observed GAS source review — 2026-11-06
+
+User-provided `project-data.gs` source was reviewed read-only. Its
+`executeProjectData(action,p)` explicitly rejects any table other than
+`Projects` (`if(name!=="Projects") throw Error("DB_TABLE_NOT_ALLOWED")`).
+Its `db.select`, `db.insert` and `db.update` implementations only operate
+on `Projects`; the `db.insert` branch requires
+`primary_key === "project_id"`. Consequently this source **does not support**
+`Project_Devices` reads or inserts, and the new binding endpoint cannot work
+against this implementation. It is not yet established that this specific
+source is the version deployed and used by Render.
+
+**Release blocker:** identify the actually deployed GAS version, then add a
+narrow, locked `Project_Devices` operation with atomic cross-project uniqueness
+and dedicated isolated integration tests. Do not enable
+`IKEY_DEVICE_BINDING_ENABLED` until that is verified. No production GAS
+changes were made during this review.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
