@@ -30,3 +30,20 @@ verification.
 **Never** treat CI success, a 200 health response, or the mock GAS binding
 tests as proof that these interfaces are operational. The new bridge contract
 is an input-validation layer only, not a working transport.
+
+## GAS storage implementation staged — 2026-11-06
+
+Added `gas-staging/ikey-ping-command-actions.gs` with a strict
+`Device_Ping_Commands` sheet schema, ScriptLock-protected ping create/claim/
+report/status, project+device scoping, and idempotent completion. Added
+`test/ibox-gas-ping-queue-contract.test.js` for source-level invariants.
+
+**Not integrated:** The live GAS dispatcher does not yet route these actions.
+The code intentionally contains no caller authorization; the trusted GAS
+dispatcher must validate the Render API key and verify the appropriate Web
+actor or device session, including project binding, **before** invoking the
+storage function. Never deploy this script standalone or expose its function
+to an untrusted caller. Create an isolated test spreadsheet with exact header
+`command_id,project_id,device_id,action,status,created_at,claimed_at,reported_at,result`
+and verify concurrent claims, failures, permissions and rollback behavior.
+No production GAS writes or deployments occurred.
