@@ -220,15 +220,8 @@ app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,re
   const actor_user_id=req.projectUser.user_id;
   const credential=await authStore.factoryDeviceCall('factoryDeviceCredentialGet',
    {actor_user_id,project_id:projectId,device_id:deviceId});
-  const crypto=require('node:crypto');
-  const valid=credential?.credential_kdf==='scrypt-n16384-r8-p1'
-   &&/^[a-f0-9]{64}$/.test(String(credential.credential_salt||''))
-   &&/^[a-f0-9]{128}$/.test(String(credential.credential_hash||''));
-  if(!valid)return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
-  const actual=crypto.scryptSync(password,Buffer.from(credential.credential_salt,'hex'),64,
-   {N:16384,r:8,p:1,maxmem:64*1024*1024});
-  const expected=Buffer.from(credential.credential_hash,'hex');
-  if(!crypto.timingSafeEqual(actual,expected))
+  const {verifyFactoryCredential}=require('./gen3-auth/factory-credential');
+  if(!verifyFactoryCredential(password,credential))
    return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
   // GAS factoryDeviceBind uses ScriptLock around a global device_id check + append.
   // The GAS action itself rechecks project-admin authorization.
