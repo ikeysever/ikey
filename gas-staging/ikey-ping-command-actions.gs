@@ -48,13 +48,14 @@ function ikeyPingCommandAction_(action,p){
    sheet.appendRow([id,p.project_id,p.device_id,'ping','pending',now,'','','']);
    return {command_id:id,status:'pending'};
   }
-  if(!ikeyPingUUID_(p.command_id)&&action!=='devicePingClaim')
+  if(action!=='devicePingClaim'&&action!=='devicePingCreate'&&!ikeyPingUUID_(p.command_id))
    throw Error('PING_INVALID_COMMAND_ID');
   if(action==='devicePingClaim'){
    for(let i=0;i<rows.length;i++){
     const r=rows[i];
     if(r[1]===p.project_id&&r[2]===p.device_id&&r[3]==='ping'&&r[4]==='pending'){
-     sheet.getRange(i+2,5,1,3).setValues([['delivered',r[5],now]]);
+     sheet.getRange(i+2,5).setValue('delivered');
+     sheet.getRange(i+2,7).setValue(now);
      return {command:{command_id:r[0],project_id:r[1],device_id:r[2],action:'ping',payload:null}};
     }
    }
@@ -64,6 +65,7 @@ function ikeyPingCommandAction_(action,p){
   if(index<0)return {found:false};
   const row=rows[index];
   if(action==='devicePingStatus')return {found:true,command:{command_id:row[0],project_id:row[1],device_id:row[2],action:row[3],status:row[4],result:row[8]}};
+  if(action!=='devicePingReport')throw Error('PING_ACTION_NOT_ALLOWED');
   if(!['completed','failed'].includes(p.result))throw Error('PING_INVALID_RESULT');
   if(row[4]===p.result)return {found:true,recorded:true,duplicate:true};
   if(row[4]!=='delivered')return {found:true,recorded:false,code:'PING_INVALID_TRANSITION'};
