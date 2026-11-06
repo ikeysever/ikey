@@ -55,6 +55,23 @@ an explicit, verified server-side credential check; test concurrent duplicate
 binding, legacy rows, authorization failure, and all response cases in an
 isolated sheet. Do not enable the feature flag or touch production devices.
 
+## Observed GAS actor authorization — 2026-11-06
+
+User-provided `gas-device-authorizations.gs` defines
+`ikeyVerifyDeviceActor_(action,p)`. It checks actor UUID format, an active
+Gen3 user record, and (for credential-get, bind, list, update) invokes
+`executeProjectAccess('projectAccessGet', ...)` and requires
+`project_role === 'admin'`. Factory registration instead checks
+`IKEY_SUPER_ADMIN_USER_IDS`. This establishes a project-admin gate in GAS,
+but the function does **not** itself authenticate a browser session or
+cryptographically bind `actor_user_id` to the caller.
+
+**Still to verify:** deployed `doPost` checks `GEN3_API_KEY` before
+dispatch; Render authenticates the session and derives the actor ID rather
+than trusting a client-supplied actor; no alternate dispatch path bypasses
+the gate. Factory credential verification and the Render-to-GAS dedicated
+action integration remain unresolved. Keep the feature disabled.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
