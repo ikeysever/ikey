@@ -18,7 +18,7 @@ function setup(props={},handler=()=>({command_id:'test'})){
  };
  vm.createContext(context);vm.runInContext(source,context);
  const legacy=(action,payload)=>{calls.push(['legacy',action]);return {legacy:true}};
- return {run:req=>context.ikeySandboxCommandHttpCandidate_(req,legacy),calls};
+ return {run:req=>context.ikeySandboxCommandHttpCandidate_(req),calls};
 }
 const valid={api_key:key,action:'deviceCommandGet',payload:{command_assertion:'mock'}};
 test('valid sandbox request dispatches command after key check',()=>{
@@ -61,6 +61,9 @@ test('dispatcher errors are sanitized',()=>{
  const result=run(valid);
  assert.equal(result.ok,false);
  assert.equal(result.error,'SANDBOX_COMMAND_FAILED');
+});
+test('sandbox adapter does not contain legacy dispatch fallback',()=>{
+ assert.doesNotMatch(source,/ikeyCommandRouteCandidate_|legacyDispatch|GEN3_API_KEY|ikeyDbDispatch_/);
 });
 test('no doPost function is replaced in staging candidate',()=>{
  assert.doesNotMatch(source,/function\s+doPost\s*\(/);
