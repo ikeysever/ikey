@@ -219,7 +219,14 @@ app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,re
   const {passwordVerify}=require('./gen3-auth/core');
   if(!device||device.status!=='pre_registered'||!passwordVerify(password,String(device.password_hash||'')))
    return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
-  // The unique primary key equals the factory device ID, preventing cross-project rebinds.
+  // Early duplicate check improves error handling, but is NOT an atomic guarantee.
+  // GAS must enforce uniqueness under its own script lock before this can be enabled.
+  const existing=await authStore.dbCall('db.select',{table:'Project_Devices',where:{device_id:deviceId},limit:2});
+  if(!Array.isArray(existing?.rows)||existing.limited===true)
+   return res.status(503).json({success:false,code:'BINDING_STATE_UNVERIFIED'});
+  if(existing.rows.some(row=>row.device_id===deviceId))
+   return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND'});
+  // The unique primary key equals the factory device ID, requiring GAS to reject duplicate device IDs atomically.
   const now=new Date().toISOString();
   const binding={binding_id:deviceId,project_id:projectId,device_id:deviceId,display_name:'iBOX',
    lock_mode:'locked',heartbeat_interval_minutes:'5',auto_firmware_update:'false',
