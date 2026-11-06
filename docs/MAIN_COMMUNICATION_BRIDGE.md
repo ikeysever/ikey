@@ -90,3 +90,18 @@ bound to real GAS account/device records**, and the staging dispatcher is **not
 registered with doPost**. Durable nonce rows must be retained at least through
 expiry; operational pruning is still outstanding. Do not deploy until real
 permissions, trusted device login, GAS routing and concurrency tests pass.
+
+## ESP32 staging client (hardware-day smoke test)
+`firmware/esp32-ikey-ping-staging/esp32-ikey-ping-staging.ino` is a
+non-actuating HTTPS client for the isolated `/api/bridge-demo` endpoints.
+It logs in, polls every 30 seconds and acknowledges only `ping`.
+The Arduino sketch intentionally refuses to run until WiFi, device credentials
+and a **verified TLS root CA PEM** are filled locally; secrets must not be
+committed. ArduinoJson 7 and Arduino-ESP32 core 3.x are required.
+
+This does **not** mean the deployed Render instance is ready: demo HTTP routes
+require `IKEY_BRIDGE_DEMO_ENABLED=true`, a matching demo device ID and password,
+and the backend must be deployed separately after explicit authorization.
+The demo queue is memory-only, single-process, and unsuitable for unlocking.
+The signed GAS ping transport is also not yet connected to live doPost or
+real owner/device authorization callbacks. No main changes or deployment.
