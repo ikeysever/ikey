@@ -34,11 +34,9 @@ function ikeyPingVerifyAssertion_(action,payload){
  const web=action==='devicePingCreate'||action==='devicePingStatus';
  if(web?!(typeof claims.actor_user_id==='string'&&claims.actor_user_id):
    claims.actor_user_id!==null)throw Error('PING_PRINCIPAL_INVALID');
- // CacheService replay marker is not a durable atomic nonce ledger.
- // Dispatcher must use a durable, atomic replay store before production.
- const cache=CacheService.getScriptCache(),key='ikey_ping_nonce_'+claims.nonce;
- if(cache.get(key))throw Error('PING_ASSERTION_REPLAY');
- cache.put(key,'1',60);
+ // Durable nonce ledger is checked and written under ScriptLock. It is
+ // separate from the ping command lock to avoid nested lock acquisition.
+ ikeyPingConsumeNonce_(claims.nonce,claims.exp);
  return {actor_user_id:claims.actor_user_id,project_id:claims.project_id,
   device_id:claims.device_id,action:claims.action};
 }
