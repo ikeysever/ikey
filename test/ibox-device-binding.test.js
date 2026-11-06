@@ -15,6 +15,8 @@ test('iBOX binding requires project owner, factory credential and atomic unique 
  assert.match(server,/process\.env\.IKEY_DEVICE_BINDING_ENABLED!=='true'/);
  assert.match(server,/DEVICE_BINDING_DISABLED/);
  assert.match(html,/id="verify-bind-device"/);
+ assert.match(html,/id="bind-feedback" role="alert"/);
+ assert.match(js,/feedback\.textContent=e\.message/);
  assert.match(js,/credentials:'same-origin'/);
  assert.doesNotMatch(js,/localStorage\.setItem\(/);
  new Function(js);
