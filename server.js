@@ -164,6 +164,31 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
   return res.status(201).json({success:true,project});
  }catch(err){console.warn('Project creation unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒，未確認建立成功'});}
 });
+// Project-scoped, read-only iBOX inventory. Never expose device credentials or invent online state.
+app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(result?.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  // Project member access is not yet verified; only the actual creator may read devices.
+  if(project.created_by_user_id!==req.projectUser.user_id)
+   return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const inventory=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:projectId},limit:100});
+  if(!Array.isArray(inventory?.rows)||inventory.limited===true)
+   return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNVERIFIED'});
+  const devices=inventory.rows.filter(d=>d.project_id===projectId&&/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||'')))
+   .map(d=>({device_id:String(d.device_id),device_name:String(d.display_name||'iBOX').slice(0,80),
+    registration_status:'bound',connection_status:'unverified',control_ready:false}));
+  return res.json({success:true,devices});
+ }catch(err){
+  console.warn('Project device inventory unavailable',String(err.message||'unknown').slice(0,90));
+  return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNAVAILABLE'});
+ }
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
