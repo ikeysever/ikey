@@ -72,6 +72,20 @@ than trusting a client-supplied actor; no alternate dispatch path bypasses
 the gate. Factory credential verification and the Render-to-GAS dedicated
 action integration remain unresolved. Keep the feature disabled.
 
+## Observed doPost entry and allowlist — 2026-11-06
+
+User-provided excerpt of `doPost(e)` parses JSON, reads
+`GEN3_API_KEY` from Script Properties, and rejects absent, short (<32
+characters), or mismatched `data.api_key` before entering the action
+processing block. A second excerpt confirms `factoryDeviceBind` is
+included in `IKEY_DEVICE_ACTIONS` alongside register, credential-get,
+list, and update.
+
+**Not yet demonstrated:** the subsequent dispatcher branch actually
+routes the allowlisted action through `ikeyFactoryDeviceAction`, preserves
+the verified caller identity, and does not provide a bypass. These excerpts
+alone are not a deployed-version attestation. Do not enable the feature.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
