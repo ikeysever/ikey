@@ -314,6 +314,61 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
+// Non-actuating, single-instance end-to-end demo. OFF by default; never use
+// for physical lock commands or as a substitute for durable GAS storage.
+let demoBridge=null;
+if(process.env.IKEY_BRIDGE_DEMO_ENABLED==='true'){
+ try{
+  const {createDemoBridge}=require('./gen3-auth/device-bridge-demo');
+  demoBridge=createDemoBridge({deviceId:process.env.IKEY_BRIDGE_DEMO_DEVICE_ID,
+   password:process.env.IKEY_BRIDGE_DEMO_PASSWORD});
+ }catch(err){console.warn('Demo bridge disabled:',err.message)}
+}
+function requireDemoBridge(req,res,next){
+ res.set('Cache-Control','no-store');
+ if(!demoBridge)return res.status(503).json({success:false,code:'DEMO_BRIDGE_DISABLED'});
+ next();
+}
+function requireDemoDevice(req,res,next){
+ if(!demoBridge.authorize(req.get('authorization')))
+  return res.status(401).json({success:false,code:'DEVICE_NOT_AUTHENTICATED'});
+ next();
+}
+app.post('/api/bridge-demo/device/login',requireDemoBridge,(req,res)=>{
+ const result=demoBridge.login(req.body);
+ if(!result)return res.status(401).json({success:false,code:'INVALID_DEVICE_CREDENTIALS'});
+ return res.json({success:true,...result});
+});
+app.get('/api/bridge-demo/device/commands',requireDemoBridge,requireDemoDevice,(req,res)=>{
+ return res.json({success:true,command:demoBridge.poll()});
+});
+app.post('/api/bridge-demo/device/report',requireDemoBridge,requireDemoDevice,(req,res)=>{
+ const result=demoBridge.report(req.body);
+ return res.status(result.ok?200:409).json({success:result.ok,code:result.code});
+});
+async function requireDemoProjectOwner(req,res,next){
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(result?.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(project.created_by_user_id!==req.projectUser.user_id)
+   return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  next();
+ }catch{return res.status(503).json({success:false,code:'PROJECT_LOOKUP_UNAVAILABLE'})}
+}
+app.post('/api/bridge-demo/projects/:projectId/ping',requireDemoBridge,requireProjectUser,requireDemoProjectOwner,(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const command=demoBridge.createPing(req.params.projectId);
+ return res.status(201).json({success:true,command});
+});
+app.get('/api/bridge-demo/projects/:projectId/commands/:commandId',requireDemoBridge,requireProjectUser,requireDemoProjectOwner,(req,res)=>{
+ const command=demoBridge.status(req.params.projectId,req.params.commandId);
+ if(!command)return res.status(404).json({success:false,code:'COMMAND_NOT_FOUND'});
+ return res.json({success:true,command});
+});
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.
 app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
