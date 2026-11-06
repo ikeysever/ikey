@@ -189,8 +189,8 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNAVAILABLE'});
  }
 });
-// Project owner device binding. Device ID is the unique binding key across projects.
-// Requires the GAS db.insert primary-key operation to be atomic; fail closed otherwise.
+// Project owner device binding through the dedicated, locked GAS factory action.
+// Keep disabled until deployed GAS and isolated integration tests are verified.
 app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  // Do not enable until the GAS writer's atomic cross-project uniqueness is verified.
@@ -214,26 +214,27 @@ app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,re
    .update('ibox-bind:'+req.projectUser.user_id+':'+deviceId).digest('hex');
   const allowed=await authStore.throttleAtomic(throttleKey,5,15*60*1000);
   if(allowed!==true)return res.status(429).json({success:false,code:'BINDING_RATE_LIMITED'});
-  const record=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1});
-  const device=(record?.rows||[]).find(d=>d.device_id===deviceId);
-  const {passwordVerify}=require('./gen3-auth/core');
-  if(!device||device.status!=='pre_registered'||!passwordVerify(password,String(device.password_hash||'')))
+  // The factory credential is fetched only by this authenticated backend.
+  // Never forward hashes/salts to the browser or log supplied passwords.
+  const actor_user_id=req.projectUser.user_id;
+  const credential=await authStore.factoryDeviceCall('factoryDeviceCredentialGet',
+   {actor_user_id,project_id:projectId,device_id:deviceId});
+  const crypto=require('node:crypto');
+  const valid=credential?.credential_kdf==='scrypt-n16384-r8-p1'
+   &&/^[a-f0-9]{64}$/.test(String(credential.credential_salt||''))
+   &&/^[a-f0-9]{128}$/.test(String(credential.credential_hash||''));
+  if(!valid)return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
+  const actual=crypto.scryptSync(password,Buffer.from(credential.credential_salt,'hex'),64,
+   {N:16384,r:8,p:1,maxmem:64*1024*1024});
+  const expected=Buffer.from(credential.credential_hash,'hex');
+  if(!crypto.timingSafeEqual(actual,expected))
    return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
-  // Early duplicate check improves error handling, but is NOT an atomic guarantee.
-  // GAS must enforce uniqueness under its own script lock before this can be enabled.
-  const existing=await authStore.dbCall('db.select',{table:'Project_Devices',where:{device_id:deviceId},limit:2});
-  if(!Array.isArray(existing?.rows)||existing.limited===true)
-   return res.status(503).json({success:false,code:'BINDING_STATE_UNVERIFIED'});
-  if(existing.rows.some(row=>row.device_id===deviceId))
+  // GAS factoryDeviceBind uses ScriptLock around a global device_id check + append.
+  // The GAS action itself rechecks project-admin authorization.
+  const result=await authStore.factoryDeviceCall('factoryDeviceBind',
+   {actor_user_id,project_id:projectId,device_id:deviceId});
+  if(result?.bound!==true)
    return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND'});
-  // The unique primary key equals the factory device ID, requiring GAS to reject duplicate device IDs atomically.
-  const now=new Date().toISOString();
-  const binding={binding_id:deviceId,project_id:projectId,device_id:deviceId,display_name:'iBOX',
-   lock_mode:'locked',heartbeat_interval_minutes:'5',auto_firmware_update:'false',
-   bound_by:req.projectUser.user_id,bound_at:now,updated_at:now};
-  const result=await authStore.dbCall('db.insert',{table:'Project_Devices',primary_key:'binding_id',data:binding});
-  if(result?.inserted!==true||result?.record?.binding_id!==deviceId)
-   return res.status(503).json({success:false,code:'BINDING_NOT_CONFIRMED'});
   return res.status(201).json({success:true,device_id:deviceId});
  }catch(err){
   console.warn('Project device binding unavailable',String(err.message||'unknown').slice(0,80));
