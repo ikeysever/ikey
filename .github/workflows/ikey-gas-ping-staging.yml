@@ -1,0 +1,25 @@
+name: iKey GAS ping staging tests
+on:
+  push:
+    branches:
+      - feature/ibox-binding-verification-staging
+  pull_request:
+    paths:
+      - 'gas-staging/**'
+      - 'gen3-auth/**'
+      - 'lib/command-trust-assertion.js'
+      - 'test/*ping*.test.js'
+      - '.github/workflows/ikey-gas-ping-staging.yml'
+jobs:
+  gas-ping:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute signed assertion, authorization and GAS queue runtime tests
+        run: |
+          node --test test/gas-ping-crypto-interoperability.test.js test/gas-ping-session-identity-contract.test.js test/ibox-gas-ping-authorization-runtime.test.js test/ibox-gas-ping-dispatcher-runtime.test.js test/ibox-gas-ping-runtime.test.js test/gas-ping-bridge.test.js test/signed-ping-store.test.js test/ping-store-adapter.test.js
