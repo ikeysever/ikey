@@ -18,6 +18,9 @@ const char* WIFI_PASSWORD = "REPLACE_WIFI_PASSWORD";
 const char* DEVICE_ID = "REPLACE_DEVICE_ID";
 const char* DEVICE_PASSWORD = "REPLACE_DEVICE_PASSWORD";
 const char* BASE_URL = "https://ikey.onrender.com";
+// Leave blank for isolated in-memory demo. Set to the authorized project UUID
+// only after the GAS-backed staging routes are deployed and enabled.
+const char* PROJECT_ID = "";
 constexpr uint32_t POLL_MS = 30000;
 constexpr uint32_t HTTP_TIMEOUT_MS = 12000;
 }
@@ -85,6 +88,14 @@ bool login(){
  Serial.println("[iKey] authenticated (token hidden)");
  return true;
 }
+String commandRoute(){
+ if(strlen(Config::PROJECT_ID)==0)return "/api/bridge-demo/device/commands";
+ return String("/api/bridge-staging/projects/")+Config::PROJECT_ID+"/devices/"+Config::DEVICE_ID+"/commands";
+}
+String reportRoute(){
+ if(strlen(Config::PROJECT_ID)==0)return "/api/bridge-demo/device/report";
+ return String("/api/bridge-staging/projects/")+Config::PROJECT_ID+"/devices/"+Config::DEVICE_ID+"/report";
+}
 void pollOnce(){
  if(!wifiReady()){Serial.println("[iKey] WiFi unavailable");return;}
  if(!clockReady()){Serial.println("[iKey] NTP unavailable");return;}
@@ -92,7 +103,8 @@ void pollOnce(){
   if(!login())return;
  }
  JsonDocument output;
- if(!request("GET","/api/bridge-demo/device/commands","",output,true))return;
+ const String pollUrl=commandRoute();
+ if(!request("GET",pollUrl.c_str(),"",output,true))return;
  JsonVariant command=output["command"];
  if(command.isNull()){Serial.println("[iKey] no pending ping");return;}
  const String id=command["command_id"].as<String>();
@@ -106,7 +118,8 @@ void pollOnce(){
  report["command_id"]=id;
  report["result"]="completed";
  String body;serializeJson(report,body);
- if(request("POST","/api/bridge-demo/device/report",body,ack,true))
+ const String reportUrl=reportRoute();
+ if(request("POST",reportUrl.c_str(),body,ack,true))
   Serial.println("[iKey] ping acknowledged");
 }
 void setup(){
