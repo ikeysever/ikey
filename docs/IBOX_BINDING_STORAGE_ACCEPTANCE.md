@@ -123,6 +123,16 @@ disabled, PR remains draft, no production deployment or physical unlock.
 Before release, validate factory registration KDF semantics, credentials,
 deployed GAS version, and concurrency/authorization tests.
 
+## Isolated contract simulation — 2026-11-06
+
+Added `test/ibox-gas-binding-contract-mock.test.js`, a self-contained,
+in-memory mock of the supplied `factoryDeviceBind` contract. It exercises
+concurrent cross-project binding, legacy UUID binding IDs, unauthorized actors,
+and inactive factory devices. These tests validate expected behavior of a
+serialized check-and-append contract, **not** actual deployed GAS source,
+ScriptLock behavior, spreadsheet operations, or credentials. They must not
+be cited as completion of live or sandbox GAS integration acceptance.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
