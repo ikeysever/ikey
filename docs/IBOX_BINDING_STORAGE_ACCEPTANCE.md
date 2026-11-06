@@ -24,6 +24,37 @@ and dedicated isolated integration tests. Do not enable
 `IKEY_DEVICE_BINDING_ENABLED` until that is verified. No production GAS
 changes were made during this review.
 
+## Observed GAS device actions — 2026-11-06
+
+User-provided `gas-device-actions.gs` contains a separate device API:
+`factoryDeviceList`, `factoryDeviceCredentialGet`,
+`factoryDeviceRegister`, `factoryDeviceUpdate`, and `factoryDeviceBind`.
+`factoryDeviceBind` acquires `LockService.getScriptLock()`, checks for an
+active factory device, checks all existing `Project_Devices.device_id` values,
+and appends under the lock. This is a promising atomic duplicate-prevention
+implementation **provided all writers use the same lock**.
+
+**Integration mismatch:** PR #101 currently calls generic `db.select` /
+`db.insert` with `Devices.password_hash` and `pre_registered`, whereas
+this GAS source uses dedicated actions, `Factory_Devices`, scrypt credential
+fields, and `active` registration. The existing GAS
+`project-data.gs` explicitly rejects `Project_Devices` through its generic
+DB API. The current Render endpoint therefore must not be enabled.
+
+**Authorization blocker:** `ikeyDeviceAuthorized_` delegates to
+`ikeyVerifyDeviceActor_`. Verify its actual implementation, dispatcher API-key
+checks, authenticated actor/session binding, project owner/membership checks,
+and deployed version before relying on these actions. The source comment
+explicitly delegates project membership/role verification to the dispatcher.
+The binding action also currently does not accept or verify a factory password
+directly; credential verification must be established in the trusted backend
+before any binding.
+
+**Next implementation:** integrate the dedicated GAS action contract with
+an explicit, verified server-side credential check; test concurrent duplicate
+binding, legacy rows, authorization failure, and all response cases in an
+isolated sheet. Do not enable the feature flag or touch production devices.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
