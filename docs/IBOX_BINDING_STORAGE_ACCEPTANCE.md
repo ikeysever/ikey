@@ -106,6 +106,23 @@ writer bypasses the ScriptLock.
 contract after validating the factory credential KDF, authorization, and
 failure semantics in isolation. Current staging API remains disabled.
 
+## Staging implementation update — 2026-11-06
+
+Render staging now calls the existing authenticated GAS
+`factoryDeviceCredentialGet`, `factoryDeviceBind`, and `factoryDeviceList`
+actions through a restricted server-only `factoryDeviceCall` transport.
+Binding verifies `scrypt-n16384-r8-p1` credentials server-side using
+`crypto.scryptSync` with a 32-byte hex salt and 64-byte hex derived key,
+then sends the authenticated session actor to GAS for locked binding.
+The old `Devices` / `db.insert` path was removed from the binding route.
+Project device inventory also uses `factoryDeviceList`.
+
+This is **source-level integration only**. It has not been exercised against
+the deployed GAS version or an isolated test sheet. Feature flag remains
+disabled, PR remains draft, no production deployment or physical unlock.
+Before release, validate factory registration KDF semantics, credentials,
+deployed GAS version, and concurrency/authorization tests.
+
 ## Required storage contract
 
 - `db.insert` into `Project_Devices` must validate the exact allowed columns,
