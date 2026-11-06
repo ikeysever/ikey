@@ -21,7 +21,9 @@ test('probe rejects any extra or malformed fields before network',async()=>{
 });
 test('probe sends signed get-only request, never unlock',async()=>{
  process.env.IKEY_COMMAND_PROBE_ENABLED='true';
- process.env.IKEY_COMMAND_TRUST_SECRET='test-only-32-character-secret-0123456789';
+ process.env.IKEY_SANDBOX_COMMAND_TEST_ENABLED='true';
+ process.env.IKEY_PHYSICAL_UNLOCK_ENABLED='false';
+ process.env.IKEY_SANDBOX_COMMAND_TRUST_SECRET='sandbox-test-32-character-secret-0123456789';
  const store=createSheetsStoreWithDummyConfiguration();
  const previousFetch=global.fetch;let captured;
  global.fetch=async(_url,opts)=>{
@@ -38,5 +40,8 @@ test('probe sends signed get-only request, never unlock',async()=>{
 function createSheetsStoreWithDummyConfiguration(){
  process.env.GEN3_APPS_SCRIPT_URL='https://script.google.com/macros/s/test/exec';
  process.env.GEN3_APPS_SCRIPT_KEY='test-only-32-character-api-key-0123456789';
+ process.env.IKEY_SANDBOX_COMMAND_GAS_DEPLOYMENT_ID='SANDBOXTESTDEPLOYMENT1234567890';
+ process.env.IKEY_SANDBOX_COMMAND_GAS_URL='https://script.google.com/macros/s/SANDBOXTESTDEPLOYMENT1234567890/exec';
+ process.env.IKEY_SANDBOX_COMMAND_GAS_KEY='sandbox-test-32-character-api-key-0123456789';
  return createSheetsStore();
 }

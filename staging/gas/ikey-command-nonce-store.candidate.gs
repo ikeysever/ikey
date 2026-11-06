@@ -2,7 +2,7 @@
  * iKey command nonce store — staging candidate.
  * Uses a dedicated sheet in the SANDBOX spreadsheet; never calls this against
  * production without a verified dispatcher and explicit rollout approval.
- * Requires IKEY_COMMAND_NONCE_SPREADSHEET_ID Script Property.
+ * Requires the pinned Bound Sandbox adapter.
  * Sheet name: DeviceCommandNonces, columns nonce, expires_at, created_at.
  */
 function ikeyCommandReserveNonceCandidate_(verified) {
@@ -12,11 +12,7 @@ function ikeyCommandReserveNonceCandidate_(verified) {
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(10000))throw Error('COMMAND_NONCE_LOCK_BUSY');
   try {
-    const id=PropertiesService.getScriptProperties()
-      .getProperty('IKEY_COMMAND_NONCE_SPREADSHEET_ID');
-    if(!id)throw Error('COMMAND_NONCE_STORE_NOT_CONFIGURED');
-    const sheet=SpreadsheetApp.openById(id).getSheetByName('DeviceCommandNonces');
-    if(!sheet)throw Error('COMMAND_NONCE_SHEET_MISSING');
+    const sheet=ikeyBoundNonceSheetCandidate_();
     const lastCol=sheet.getLastColumn();
     const headers=sheet.getRange(1,1,1,lastCol).getDisplayValues()[0];
     const keys=['nonce','expires_at','created_at'];
