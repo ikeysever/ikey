@@ -109,8 +109,10 @@ void pollOnce(){
  if(command.isNull()){Serial.println("[iKey] no pending ping");return;}
  const String id=command["command_id"].as<String>();
  const String device=command["device_id"].as<String>();
+ const String project=command["project_id"].as<String>();
  const String action=command["action"].as<String>();
- if(id.length()!=36||device!=Config::DEVICE_ID||action!="ping"||!command["payload"].isNull()){
+ if(id.length()!=36||device!=Config::DEVICE_ID||action!="ping"||!command["payload"].isNull()||
+    (strlen(Config::PROJECT_ID)>0&&project!=Config::PROJECT_ID)){
   Serial.println("[iKey] rejected unexpected command");return;
  }
  // Only ping is accepted. Do not actuate hardware.
