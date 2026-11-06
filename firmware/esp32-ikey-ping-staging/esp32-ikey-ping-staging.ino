@@ -22,7 +22,7 @@ constexpr uint32_t POLL_MS = 30000;
 constexpr uint32_t HTTP_TIMEOUT_MS = 12000;
 }
 // Install the current verified root CA PEM for the HTTPS endpoint.
-// Do not replace certificate verification with setInsecure().
+// Never disable TLS certificate validation.
 static const char ROOT_CA[] PROGMEM = R"PEM(
 -----BEGIN CERTIFICATE-----
 REPLACE_WITH_VERIFIED_ROOT_CA_CERTIFICATE_PEM
