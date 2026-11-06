@@ -21,6 +21,17 @@ function ikeyPingConsumeNonce_(nonce,expiresAt){
   if(count>0){
    const values=sheet.getRange(2,1,count,2).getValues();
    if(values.some(row=>row[0]===nonce))throw Error('PING_ASSERTION_REPLAY');
+   // Expired nonce records can be removed after their signed assertion has
+   // expired. Delete bottom-up to preserve sheet row indices.
+   // Keep bounded cleanup work per call to avoid Apps Script timeouts.
+   let removed=0;
+   for(let i=values.length-1;i>=0&&removed<100;i--){
+    const expiry=Number(values[i][1]);
+    if(Number.isFinite(expiry)&&expiry<Date.now()-60000){
+     sheet.deleteRow(i+2);
+     removed++;
+    }
+   }
   }
   sheet.appendRow([nonce,expiresAt]);
  }finally{lock.releaseLock()}
