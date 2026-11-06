@@ -47,10 +47,12 @@
  get('add-device').addEventListener('click',()=>get('add-dialog').showModal());
  get('verify-bind-device').addEventListener('click',async()=>{
   const button=get('verify-bind-device');
+  const feedback=get('bind-feedback');
+  feedback.textContent='';
   const device_id=get('factory-device-id').value.trim().toUpperCase();
   const password=get('factory-device-password').value;
   if(!/^[A-HJ-NP-Z2-9]{8}$/.test(device_id)||password.length<8||password.length>128){
-   status.textContent='請確認出廠裝置 ID 與密碼格式。';return;
+   feedback.textContent='請確認出廠裝置 ID 與密碼格式。';return;
   }
   button.disabled=true;
   try{
@@ -63,7 +65,7 @@
    get('add-dialog').close();
    status.textContent='裝置綁定成功，正在重新載入清單。';
    await load();
-  }catch(e){status.textContent=e.message||'裝置綁定失敗';}
+  }catch(e){feedback.textContent=e.message||'裝置綁定失敗';}
   finally{get('factory-device-password').value='';button.disabled=false;}
  });
  get('add-dialog').addEventListener('close',()=>{get('factory-device-id').value='';get('factory-device-password').value='';});
