@@ -193,6 +193,9 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
 // Requires the GAS db.insert primary-key operation to be atomic; fail closed otherwise.
 app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
+ // Do not enable until the GAS writer's atomic cross-project uniqueness is verified.
+ if(process.env.IKEY_DEVICE_BINDING_ENABLED!=='true')
+  return res.status(503).json({success:false,code:'DEVICE_BINDING_DISABLED'});
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
  const projectId=String(req.params.projectId||'');
  const deviceId=String(req.body?.device_id||'').trim().toUpperCase();
