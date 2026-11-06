@@ -206,6 +206,11 @@ app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,re
   const project=(projects?.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
   if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
   if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  // Limit credential guesses per account and device in the shared GAS store.
+  const throttleKey=require('node:crypto').createHash('sha256')
+   .update('ibox-bind:'+req.projectUser.user_id+':'+deviceId).digest('hex');
+  const allowed=await authStore.throttleAtomic(throttleKey,5,15*60*1000);
+  if(allowed!==true)return res.status(429).json({success:false,code:'BINDING_RATE_LIMITED'});
   const record=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1});
   const device=(record?.rows||[]).find(d=>d.device_id===deviceId);
   const {passwordVerify}=require('./gen3-auth/core');
