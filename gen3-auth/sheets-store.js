@@ -53,6 +53,17 @@ function createSheetsStore() {
      if(!["adminAccountSetStatus","adminAccountRevokeSessions","adminAccountResetPassword"].includes(action))throw Error("GEN3_ADMIN_ACTION_NOT_ALLOWED");
      return call(action,payload);
    },
+   // Staging-only signed ping transport. Never accept browser-supplied actions
+   // or enable physical actuation. GAS must independently authorize each call.
+   pingCall:async(action,payload)=>{
+     if(process.env.IKEY_GAS_PING_ENABLED!=='true')throw Error('GAS_PING_DISABLED');
+     if(!['devicePingCreate','devicePingClaim','devicePingReport','devicePingStatus'].includes(action))
+       throw Error('GAS_PING_ACTION_NOT_ALLOWED');
+     if(!payload||typeof payload!=='object'||Array.isArray(payload)||
+        typeof payload.command_assertion!=='string')
+       throw Error('GAS_PING_ASSERTION_REQUIRED');
+     return call(action,payload);
+   },
    // Safe test transport: deliberately restricted to non-actuating command lookup.
    // It never enables the physical unlock routes or accepts create/claim/report.
    // GAS must still validate the signature, nonce, actor and project binding.
