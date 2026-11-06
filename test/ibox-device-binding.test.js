@@ -12,6 +12,7 @@ test('iBOX binding requires project owner, factory credential and atomic unique 
  assert.match(server,/project\.created_by_user_id!==req\.projectUser\.user_id/);
  assert.match(server,/factoryDeviceCall\('factoryDeviceCredentialGet'/);
  assert.match(server,/factoryDeviceCall\('factoryDeviceBind'/);
+ assert.match(server,/factoryDeviceCall\('factoryDeviceList'/);
  assert.match(server,/credential_kdf==='scrypt-n16384-r8-p1'/);
  assert.match(server,/crypto\.timingSafeEqual\(actual,expected\)/);
  assert.match(server,/actor_user_id=req\.projectUser\.user_id/);
