@@ -369,6 +369,76 @@ app.get('/api/bridge-demo/projects/:projectId/commands/:commandId',requireDemoBr
  if(!command)return res.status(404).json({success:false,code:'COMMAND_NOT_FOUND'});
  return res.json({success:true,command});
 });
+// GAS-backed, non-actuating staging ping routes. All gates default OFF.
+// Device login is the isolated demo credential only; GAS independently verifies
+// the project/device binding before any queue action. No unlock functionality.
+let gasPingBridge=null;
+if(process.env.IKEY_GAS_PING_ENABLED==='true'&&process.env.IKEY_BRIDGE_DEMO_ENABLED==='true'&&authStore){
+ try{
+  const {createGasPingBridge}=require('./gen3-auth/gas-ping-bridge');
+  gasPingBridge=createGasPingBridge({store:authStore});
+ }catch(err){console.warn('GAS ping bridge disabled:',err.message)}
+}
+function requireGasPing(req,res,next){
+ res.set('Cache-Control','no-store');
+ if(!gasPingBridge||!demoBridge)return res.status(503).json({success:false,code:'GAS_PING_DISABLED'});
+ next();
+}
+const gasPingUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const gasPingDevice=/^[A-HJ-NP-Z2-9]{8}$/;
+function gasPingScope(req,res,next){
+ if(!gasPingUuid.test(String(req.params.projectId||''))||
+    !gasPingDevice.test(String(req.params.deviceId||'')))
+  return res.status(400).json({success:false,code:'PING_SCOPE_INVALID'});
+ if(req.params.deviceId!==process.env.IKEY_BRIDGE_DEMO_DEVICE_ID)
+  return res.status(403).json({success:false,code:'PING_DEVICE_NOT_CONFIGURED'});
+ next();
+}
+app.post('/api/bridge-staging/projects/:projectId/devices/:deviceId/ping',
+ requireGasPing,requireProjectUser,requireDemoProjectOwner,gasPingScope,async(req,res)=>{
+  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+  try{
+   const result=await gasPingBridge.execute('create',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,
+    actor_user_id:req.projectUser.user_id});
+   return res.status(201).json({success:true,result});
+  }catch(err){console.warn('GAS ping create rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
+app.get('/api/bridge-staging/projects/:projectId/devices/:deviceId/commands/:commandId',
+ requireGasPing,requireProjectUser,requireDemoProjectOwner,gasPingScope,async(req,res)=>{
+  if(!gasPingUuid.test(String(req.params.commandId||'')))
+   return res.status(400).json({success:false,code:'PING_COMMAND_ID_INVALID'});
+  try{
+   const result=await gasPingBridge.execute('status',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,
+    command_id:req.params.commandId,actor_user_id:req.projectUser.user_id});
+   return res.json({success:true,result});
+  }catch(err){console.warn('GAS ping status rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
+app.get('/api/bridge-staging/projects/:projectId/devices/:deviceId/commands',
+ requireGasPing,requireDemoDevice,gasPingScope,async(req,res)=>{
+  try{
+   const result=await gasPingBridge.execute('claim',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,device_authenticated:true});
+   return res.json({success:true,...result});
+  }catch(err){console.warn('GAS ping claim rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
+app.post('/api/bridge-staging/projects/:projectId/devices/:deviceId/report',
+ requireGasPing,requireDemoDevice,gasPingScope,async(req,res)=>{
+  const {validateDeviceReport}=require('./gen3-auth/device-bridge-contract');
+  if(!validateDeviceReport(req.body)||req.body.result==='received')
+   return res.status(400).json({success:false,code:'PING_REPORT_INVALID'});
+  try{
+   const result=await gasPingBridge.execute('report',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,
+    command_id:req.body.command_id,result:req.body.result,device_authenticated:true});
+   return res.json({success:true,result});
+  }catch(err){console.warn('GAS ping report rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.
 app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
