@@ -1,0 +1,19 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+test('iBOX binding requires project owner, factory credential and atomic unique key',()=>{
+ const server=fs.readFileSync(path.join(__dirname,'../server.js'),'utf8');
+ const html=fs.readFileSync(path.join(__dirname,'../public/project-devices.html'),'utf8');
+ const js=fs.readFileSync(path.join(__dirname,'../public/project-devices.js'),'utf8');
+ assert.match(server,/app\.post\('\/api\/projects\/:projectId\/devices\/bind',requireProjectUser/);
+ assert.match(server,/project\.created_by_user_id!==req\.projectUser\.user_id/);
+ assert.match(server,/passwordVerify\(password,String\(device\.password_hash/);
+ assert.match(server,/table:'Project_Devices',primary_key:'binding_id'/);
+ assert.match(server,/binding_id:deviceId,project_id:projectId/);
+ assert.match(html,/id="verify-bind-device"/);
+ assert.match(js,/credentials:'same-origin'/);
+ assert.doesNotMatch(js,/localStorage\.setItem\(/);
+ new Function(js);
+});
