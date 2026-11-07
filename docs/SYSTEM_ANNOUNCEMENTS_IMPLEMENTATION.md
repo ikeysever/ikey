@@ -75,3 +75,28 @@
 - 新增獨立 staging Apps Script 同步 workflow，要求獨立 staging GitHub secrets，並拒絕已知非 staging Script ID。
 - Drive 唯讀搜尋找到既有 `iKey_Database` 與歷史備份，未找到獨立 staging Spreadsheet 或獨立 staging Apps Script 專案。
 - 沒有執行任何 clasp push、GAS Web App 部署或 Spreadsheet 寫入；不得使用舊的固定 Script ID 同步 workflow。
+
+
+
+## 2026-11-07｜排程到期歸檔補強
+
+### 問題發現
+- 靜態檢查發現原排程工作只讀取 `scheduled` 狀態，因此能處理到期排程公告，卻不會把已發布且已過期的公告狀態更新為 `archived`。
+- 首頁公開 API 雖然會隱藏過期公告，但管理後台仍可能持續顯示為「已發布」，與文件描述的自動歸檔行為不一致。
+
+### 修正
+- `gen3-auth/announcement-router.js` 的排程工作現在同時讀取 `scheduled` 與 `published`。
+- 到期的已發布公告會更新為 `archived` 並寫入 `archived_at`、`updated_at`。
+- 尚未到期的已發布公告維持原狀；到期排程公告仍會歸檔，未到期且已到排程時間的公告則發布。
+
+### 測試補強
+- `test/announcement-router.test.js` 新增排程工作測試，涵蓋：到期已發布公告歸檔、到期排程公告歸檔、到期排程公告發布，以及尚未到期公告維持發布狀態。
+- 程式與測試已提交至 staging 分支；本次尚未取得 GitHub Actions 執行結果，也未宣稱測試通過。
+
+### Commit
+- Router 修正：`62535f87aa624426808839fd7e2d397691836c72`
+- 排程測試：`bdba4f23de6801999c577d91110f81adcfc5920a`
+
+### 部署邊界
+- 僅修改 `feature/system-announcements-staging-20261102`。
+- 未修改 `main`、未執行 GAS 同步、未寫入試算表、未修改 Render 環境變數，亦未部署正式環境。
