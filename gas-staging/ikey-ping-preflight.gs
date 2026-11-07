@@ -6,12 +6,15 @@ function ikeyPingPreflight_(){
  const props=PropertiesService.getScriptProperties();
  const id=props.getProperty('GEN3_SPREADSHEET_ID');
  const secret=props.getProperty('IKEY_COMMAND_TRUST_SECRET');
+ const apiKey=props.getProperty('GEN3_API_KEY');
  const result={
   spreadsheet_configured:Boolean(id),
+  api_key_configured:typeof apiKey==='string'&&apiKey.length>=32,
   trust_secret_configured:typeof secret==='string'&&secret.length>=32,
   legacy_actor_verifier:typeof ikeyVerifyDeviceActor_==='function',
   factory_actions:typeof ikeyFactoryDeviceAction==='function',
   ping_dispatcher:typeof ikeyPingDispatchAuthorized_==='function',
+  ping_route_seam:typeof ikeyPingTryDispatch_==='function',
   ping_authorization:typeof ikeyPingAuthorization_==='function',
   sheets:{}
  };
@@ -28,9 +31,9 @@ function ikeyPingPreflight_(){
     tab.getRange(1,1,1,entry[1].length).getDisplayValues()[0].join('|')===entry[1].join('|'));
   });
  }
- result.ready=result.spreadsheet_configured&&result.trust_secret_configured&&
+ result.ready=result.spreadsheet_configured&&result.api_key_configured&&result.trust_secret_configured&&
   result.legacy_actor_verifier&&result.factory_actions&&
-  result.ping_dispatcher&&result.ping_authorization&&
+  result.ping_dispatcher&&result.ping_route_seam&&result.ping_authorization&&
   Object.keys(result.sheets).length===4&&
   Object.values(result.sheets).every(Boolean);
  return result;
