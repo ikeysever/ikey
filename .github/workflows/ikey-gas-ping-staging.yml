@@ -22,4 +22,4 @@ jobs:
           node-version: '22'
       - name: Execute signed assertion, authorization and GAS queue runtime tests
         run: |
-          node --test test/gas-ping-route-seam.test.js test/gas-ping-crypto-interoperability.test.js test/gas-ping-session-identity-contract.test.js test/ibox-gas-ping-authorization-runtime.test.js test/ibox-gas-ping-dispatcher-runtime.test.js test/ibox-gas-ping-runtime.test.js test/gas-ping-bridge.test.js test/signed-ping-store.test.js test/ping-store-adapter.test.js
+          node --test test/gas-ping-preflight-and-dopost-contract.test.js test/gas-ping-route-seam.test.js test/gas-ping-crypto-interoperability.test.js test/gas-ping-session-identity-contract.test.js test/ibox-gas-ping-authorization-runtime.test.js test/ibox-gas-ping-dispatcher-runtime.test.js test/ibox-gas-ping-runtime.test.js test/gas-ping-bridge.test.js test/signed-ping-store.test.js test/ping-store-adapter.test.js
