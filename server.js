@@ -352,6 +352,9 @@ app.post('/api/admin/accounts/action',requireProjectUser,async(req,res)=>{
   return res.status(409).json({success:false,message:'操作未完成，請確認帳號狀態及管理權限'});
  }
 });
+// System announcements: public reads and authenticated super-admin management.
+const { createAnnouncementRouter } = require('./gen3-auth/announcement-router');
+app.use('/api', createAnnouncementRouter(authStore));
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
