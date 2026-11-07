@@ -7,8 +7,8 @@ const vm=require('node:vm');
 const seam=fs.readFileSync(path.join(__dirname,'../gas-staging/ikey-ping-route-seam.gs'),'utf8');
 const preflight=fs.readFileSync(path.join(__dirname,'../gas-staging/ikey-ping-preflight.gs'),'utf8');
 const headers={
- Factory_Devices:['device_id','device_password_hash','created_at','created_by','status'],
- Project_Devices:['binding_id','project_id','device_id'],
+ Factory_Devices:['device_id','credential_kdf','credential_salt','credential_hash','registration_status','registered_by','registered_at','updated_at'],
+ Project_Devices:['binding_id','project_id','device_id','display_name','lock_mode','heartbeat_interval_minutes','auto_firmware_update','bound_by','bound_at','updated_at'],
  Device_Ping_Commands:['command_id','project_id','device_id','action','status','created_at','claimed_at','reported_at','result'],
  Device_Ping_Nonces:['nonce','expires_at']
 };
