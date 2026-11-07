@@ -1,0 +1,25 @@
+name: GAS read-only audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gas-readonly-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ikeysever/ikey' && github.ref == 'refs/heads/feature/gas-automation-staging' && github.actor == 'ikeysever'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Static and synthetic tests without credentials
+        run: |
+          node --check gas-automation/audit.mjs
+          node --test gas-automation/audit.test.mjs
+      - name: Read GAS HEAD without executing functions
+        env:
+          GAS_AUDIT_CREDENTIALS: ${{ secrets.IKEY_GAS_AUDIT_CLASPRC_JSON }}
+        run: node gas-automation/audit.mjs
