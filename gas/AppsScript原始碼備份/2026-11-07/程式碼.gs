@@ -551,3 +551,5 @@ function iKey_TestCommandDispatcherSafe() {
   Logger.log(JSON.stringify(results));
   return results;
 }
+
+
