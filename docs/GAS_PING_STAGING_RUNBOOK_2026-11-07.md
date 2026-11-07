@@ -54,3 +54,17 @@
 
 ## Progress accounting
 This work advances preparation of the existing unfinished GAS integration item in the 23/32 baseline. It does **not** increase the completed count until the staging Apps Script integration and actual verification pass.
+
+
+## Actual staging spreadsheet provisioned — 2026-11-07
+- Dedicated Google Sheet: https://docs.google.com/spreadsheets/d/1dn__bGUmCAnGZTNOmvdc0QOUozmrGenpqbrNU3bb_CQ/edit
+- Four tabs created and headers read back from Google Sheets:
+  - Factory_Devices: device_id,credential_kdf,credential_salt,credential_hash,registration_status,registered_by,registered_at,updated_at
+  - Project_Devices: binding_id,project_id,device_id,display_name,lock_mode,heartbeat_interval_minutes,auto_firmware_update,bound_by,bound_at,updated_at
+  - Device_Ping_Commands: command_id,project_id,device_id,action,status,created_at,claimed_at,reported_at,result
+  - Device_Ping_Nonces: nonce,expires_at
+- This is a new empty staging spreadsheet; no production data or credentials copied.
+- Fixed the previously incorrect factory/binding test fixtures in commit 0be49de97ad7e29c760f5d155faa80300005d463.
+- The user has independently created an empty Apps Script staging project. Its script ID is not yet known to GitHub tooling, and no staging script upload or GAS deployment has occurred.
+- Critical: no current full doPost source backup has been verified; do not deploy an invented replacement.
+- Division of labor: assistant completes GitHub/Drive work in batches; user alone performs Apps Script editor operations, with precise instructions when a human action is required.
