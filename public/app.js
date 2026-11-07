@@ -58,7 +58,8 @@ async function verifyWelcomeReadiness(){
     if(health.ok!==true||status.ready!==true||status.enabled!==true)throw Error('BACKEND_NOT_READY');
     // Confirm all currently implemented page entrypoints and their scripts/styles exist.
     const assets=welcomePagePreloads;
-    const responses=await Promise.all(assets.map(url=>fetch(url,{credentials:'same-origin',cache:'no-store'})));
+    // Static assets may reuse the browser HTTP cache; authenticated API checks above remain no-store.
+     const responses=await Promise.all(assets.map(url=>fetch(url,{credentials:'same-origin',cache:'default'})));
     if(responses.some(response=>!response.ok))throw Error('PAGE_ASSET_UNAVAILABLE');
     try{sessionStorage.setItem('ikey-welcome-user',JSON.stringify({display_name:session.user.display_name||'',username:session.user.username||''}));}catch{}
     welcomeAssetsReady=true;
