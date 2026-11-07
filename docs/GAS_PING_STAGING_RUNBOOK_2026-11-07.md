@@ -77,3 +77,8 @@ This work advances preparation of the existing unfinished GAS integration item i
 - No doPost included or activated. Actual existing doPost must be verified, backed up and adapted without changing legacy behavior.
 - Staging spreadsheet exists with four headers verified, but secrets and staging GAS source have not been configured, so preflight has NOT passed.
 - Never deploy or activate Render flags until these gates pass.
+
+
+## Authorization contract tests added
+- `test/gas-ping-authorization-adapter-contract.test.js` at commit `bf3d8d603bc8002f72e70fe12234951aeb6141e7` exercises inactive devices, invalid scope, wrong project, duplicate binding and denied web actor with isolated mocks.
+- This does NOT verify the real legacy `ikeyVerifyDeviceActor_` return contract or substitute for a staging GAS execution. Keep the staging route disabled until original source is verified and backed up.
