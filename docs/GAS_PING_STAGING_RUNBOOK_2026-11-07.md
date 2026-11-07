@@ -1,0 +1,56 @@
+# iKey 3.1 — GAS staging integration checklist (2026-11-07)
+
+## Scope and safety
+- Branch: `feature/ibox-binding-verification-staging` (PR #101).
+- No changes to `main`, production GAS, Render production, or live Sheets.
+- No physical actuation: ping only.
+- The GitHub staging source is versioned but is **not** a verified backup of the current live Apps Script project.
+
+## Source verification and backup gate
+1. Obtain the **current** Apps Script project source through an authenticated read-only channel (e.g. Apps Script API/clasp with an authorized account), not a Drive document describing a historic candidate.
+2. Record project script ID (keep private), source file names, version and retrieval time; store source in a **private** backup location with access controls. Do not commit production secrets or credentials.
+3. Compare the actual `doPost(e)` dispatcher with `docs/GAS_PING_DOPOST_INTEGRATION.md`. The historic V14 diagnostic candidate is not authoritative.
+4. Confirm the dispatcher validates `GEN3_API_KEY` **before** routing any ping action. Confirm the actual success/error JSON envelope is `{ok:true,result:...}` or adapt the staging bridge only after checking the live contract.
+
+## Isolated staging setup
+1. Clone the GAS project to a separate staging Apps Script project and separate staging spreadsheet; do not reuse the live spreadsheet.
+2. Add existing `gas-device-actions.gs`, `gas-device-authorization.gs` and all staging ping files to the isolated project:
+   - `ikey-ping-command-actions.gs`
+   - `ikey-ping-trust-verifier.gs`
+   - `ikey-ping-nonce-ledger.gs`
+   - `ikey-ping-dispatcher.gs`
+   - `ikey-ping-authorization-adapter.gs`
+   - `ikey-ping-preflight.gs`
+   - `ikey-ping-route-seam.gs`
+3. Keep the original `doPost` response/error behavior. After API-key verification and payload extraction, insert only:
+   ```js
+   const ping = ikeyPingTryDispatch_(action, payload);
+   if (ping.handled) {
+     // Use the existing success envelope to return ping.result.
+     // Do not change legacy routes or exception handling.
+   }
+   ```
+   Do **not** paste this incomplete routing sketch as a complete `doPost` implementation.
+4. Provision the staging sheets with **exact** headers:
+   - `Factory_Devices`: use `IKEY_FACTORY_HEADERS`
+   - `Project_Devices`: use `IKEY_BIND_HEADERS`
+   - `Device_Ping_Commands`: `command_id,project_id,device_id,action,status,created_at,claimed_at,reported_at,result`
+   - `Device_Ping_Nonces`: `nonce,expires_at`
+5. Configure staging-only `GEN3_SPREADSHEET_ID`, `GEN3_API_KEY`, `IKEY_COMMAND_TRUST_SECRET` (32+ bytes) and the existing actor/project access configuration. Secrets must not be stored in GitHub or firmware.
+6. Run `ikeyPingPreflight_()` in the staging editor and require every check to pass before enabling the route.
+
+## Test gate
+1. GitHub CI: run `iKey GAS ping staging tests` including route-seam, crypto, authorization and command-store tests.
+2. GAS isolated test: create → claim → report → status; verify project/device IDs, exact response envelopes, and duplicate report handling.
+3. Negative tests: bad API key, missing signature, wrong actor/project, inactive factory device, wrong binding, expired signature, replayed nonce, wrong result, and unknown action.
+4. Render staging bridge must use a **dedicated staging GAS URL** and secret, with feature flags disabled until verified.
+5. ESP32 ping only; do not energize a lock or relay.
+
+## Stop conditions
+- Missing current GAS source or backup.
+- Preflight not fully passing.
+- Any response-envelope mismatch or unexpected permission acceptance.
+- No dedicated staging spreadsheet or inability to keep staging credentials isolated.
+
+## Progress accounting
+This work advances preparation of the existing unfinished GAS integration item in the 23/32 baseline. It does **not** increase the completed count until the staging Apps Script integration and actual verification pass.
