@@ -24,3 +24,9 @@
 
 ## 後續整合與刪除舊檔
 此次僅更新 **此快照資料夾**。原本的 `gas/` 其他程式和 `gen3-auth/` 同時包含 GAS、Node.js 後端等依賴，不應在未完成依賴盤點前整包刪除。將來源檔案接回正式執行環境前，必須確認 Script ID、部署版本、API 相容性與回復方案。
+
+## 2026-11-07｜舊 GAS 重複檔清理
+- 已從此分支移除 `gas/generic-db-engine.gs`、`gas/setup-system-announcement-tables.gs`：兩份內容原本已完整內嵌於舊的 `gen3-auth/Code.gs`，不是這套十檔快照的必要檔案。
+- 同時移除舊文件 `gas/README-generic-db.md`；Git 提交歷史仍可追溯。
+- `gen3-auth/Code.gs` **仍保留**，因為兩個既有 GitHub Actions 同步工作流程仍引用它。它不是本次 Google 文件快照，不能視為「已更新的最新版」，後續必須先修正工作流程與驗證 GAS 相容性，再決定退役。
+- `gen3-auth/announcement-router.js`、`core.js`、`routes.js`、`sheets-store.js` 是 Node.js/Render 程式，非 GAS 重複檔，暫不刪除。
