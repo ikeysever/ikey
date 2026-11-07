@@ -11,7 +11,7 @@ browser never receives `GEN3_APPS_SCRIPT_KEY` or the spreadsheet ID.
 
 ## Approved Google Sheets tables
 
-Run `setupSystemAnnouncementTables()` only in an isolated staging Apps Script project. The function now requires `IKEY_ENVIRONMENT=staging`, `IKEY_STAGING_SPREADSHEET_ID`, and an exact match between that ID and `GEN3_SPREADSHEET_ID`. It refuses to run otherwise. The integrated source is `gen3-auth/Code.gs`; the setup script is also retained separately under `gas/` for review.
+Run `setupSystemAnnouncementTables()` only in an isolated staging Apps Script project. The function now requires `IKEY_ENVIRONMENT=staging`, `IKEY_STAGING_SPREADSHEET_ID`, and an exact match between that ID and `GEN3_SPREADSHEET_ID`. It refuses to run otherwise. The legacy integrated source is `gen3-auth/Code.gs`; the earlier separate `gas/setup-system-announcement-tables.gs` duplicate was removed from this branch on 2026-11-07 (available in Git history). The newer Google Docs GAS source snapshot is stored under `gas/AppsScript原始碼備份/2026-11-07/`, and has not been deployed or reconciled with this old combined source.
 The setup function creates missing sheets, writes headers only to a genuinely
 empty sheet, refuses mismatched existing headers, and adds both names to
 `IKEY_DB_ALLOWED_TABLES`. It does not clear or replace existing data.
@@ -100,3 +100,8 @@ the HTTP API imposes the stricter 10,000-character announcement content limit.
 
 The generic DB dispatcher and guarded migration are now integrated into the repository's `gen3-auth/Code.gs` source, and a separate manual staging-only sync workflow is provided. The connected Drive search surfaced the existing `iKey_Database` and historical backups, but no dedicated staging spreadsheet or separate staging Apps Script project. The migration has not been run. This does not prove that the staging spreadsheet tables have been created, that a staging Web App deployment exists, that Render staging secrets are configured, or that a Cron Job exists. Do not dispatch the legacy `sync-apps-script.yml` workflow from this branch: it contains a fixed non-staging script ID. Those steps
 must be completed and verified before calling the API operational.
+
+
+## 2026-11-07 GAS source cleanup note
+
+The standalone duplicates `gas/generic-db-engine.gs`, `gas/setup-system-announcement-tables.gs` and the old `gas/README-generic-db.md` were removed from this staging branch. Their definitions were already embedded in the legacy `gen3-auth/Code.gs`. Existing sync workflows still reference that legacy combined file; no workflow, live Apps Script project, or Render deployment has been changed. Do not assume the new ten-file Google Docs source snapshot has replaced the live GAS deployment.
