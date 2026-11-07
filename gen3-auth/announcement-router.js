@@ -192,7 +192,10 @@ function createAnnouncementRouter(store) {
       return res.status(401).json({ success: false, message: '未授權的排程請求' });
     }
     try {
-      const scheduled = await selectByStatus('scheduled');
+      const [scheduled, published] = await Promise.all([
+        selectByStatus('scheduled'),
+        selectByStatus('published')
+      ]);
       const now = Date.now();
       const updated = [];
       for (const row of scheduled) {
@@ -203,6 +206,13 @@ function createAnnouncementRouter(store) {
           const publishedAt = new Date(row.scheduled_at).toISOString();
           await update(row.announcement_id, { status: 'published', published_at: publishedAt, scheduled_at: '', updated_at: nowIso() });
         }
+        updated.push(row.announcement_id);
+      }
+      // Also archive announcements that were published earlier and have since expired.
+      for (const row of published) {
+        const expiry = Date.parse(row.expires_at);
+        if (!row.expires_at || !Number.isFinite(expiry) || expiry > now) continue;
+        await update(row.announcement_id, { status: 'archived', archived_at: nowIso(), updated_at: nowIso() });
         updated.push(row.announcement_id);
       }
       return res.json({ success: true, processed: updated.length, announcement_ids: updated });
