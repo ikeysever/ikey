@@ -35,3 +35,14 @@
 
 ### 記錄原則
 後續每次重大修改都補上日期、需求、設計決策、檔案路徑、PR／Commit、測試與部署狀態、已知限制、待辦與交接資訊；以可核對的事實為準。
+
+
+## 2026-11-07｜系統公告排程到期歸檔修正
+
+- 靜態程式碼檢查發現排程工作原先只處理 `scheduled` 公告；已發布且過期的公告雖不再出現在首頁，卻不會自動轉為 `archived`，導致管理後台狀態不一致。
+- 修正 `gen3-auth/announcement-router.js`：排程工作同時讀取 `scheduled` 與 `published`，到期已發布公告會更新為 `archived`。
+- 新增 `test/announcement-router.test.js` 案例，驗證過期已發布公告歸檔、已到期排程公告發布，以及未到期已發布公告保持不變。
+- Commit：`62535f87aa624426808839fd7e2d397691836c72`（程式）、`bdba4f23de6801999c577d91110f81adcfc5920a`（測試）。
+- 本次尚未取得 GitHub Actions 執行結果；不得將程式提交等同測試通過。
+- 僅修改 `feature/system-announcements-staging-20261102`；未修改 `main`、未同步 GAS、未寫入試算表、未設定 Render 環境變數、未部署正式環境。
+- 下一步：確認 GitHub Actions 測試結果，再準備隔離的 staging Apps Script 專案與 staging Spreadsheet，執行受保護的兩表遷移及 API 整合驗收。
