@@ -146,6 +146,13 @@ test('scheduled worker publishes due items and archives expired published items'
     scheduled_at: new Date(Date.now() - 60_000).toISOString(),
     expires_at: ''
   });
+  const expiredBeforeSchedule = published({
+    announcement_id: '88888888-8888-4888-8888-888888888888',
+    status: 'scheduled',
+    published_at: '',
+    scheduled_at: new Date(Date.now() - 120_000).toISOString(),
+    expires_at: new Date(Date.now() - 60_000).toISOString()
+  });
   try {
     await withApi('user', async ({ base, store }) => {
       const response = await fetch(base + '/api/internal/announcements/publish-due', {
@@ -154,11 +161,12 @@ test('scheduled worker publishes due items and archives expired published items'
       });
       const data = await response.json();
       assert.equal(response.status, 200);
-      assert.equal(data.processed, 2);
+      assert.equal(data.processed, 3);
       assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === expired.announcement_id).status, 'archived');
       assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === due.announcement_id).status, 'published');
+      assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === expiredBeforeSchedule.announcement_id).status, 'archived');
       assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === stillVisible.announcement_id).status, 'published');
-    }, [expired, stillVisible, due]);
+    }, [expired, stillVisible, due, expiredBeforeSchedule]);
   } finally {
     if (previousSecret === undefined) delete process.env.ANNOUNCEMENTS_CRON_SECRET;
     else process.env.ANNOUNCEMENTS_CRON_SECRET = previousSecret;
