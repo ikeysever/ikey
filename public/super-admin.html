@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220">
 <title>iKey 3.1｜超級管理員</title><link rel="icon" type="image/svg+xml" href="/assets/brand/ikey-nextgen.svg">
-<link rel="stylesheet" href="/home.css?v=20261026-sidebar-align4"><script src="/home.js?v=20261026-desktop-sidebar-hotfix" defer></script>
+<link rel="stylesheet" href="/home.css?v=20261026-sidebar-align4"><link rel="stylesheet" href="/announcements-admin.css?v=20261102-api1"><script src="/home.js?v=20261026-desktop-sidebar-hotfix" defer></script><script src="/announcements-admin.js?v=20261102-api1" defer></script>
 <script src="/app-shell-register.js?v=20261026-local1" defer>
 </script></head>
 <body>
@@ -25,12 +25,38 @@
 </style>
 <div class="admin-dashboard"><h2>系統管理控制台</h2><p>選擇管理項目，裝置管理功能維持原有操作。</p><div class="admin-dashboard-grid">
 <button class="admin-dashboard-card" id="admin-open-devices" type="button"><strong>▣ 裝置管理</strong><small>裝置搜尋、預註冊及設定</small></button>
+<button class="admin-dashboard-card" id="admin-open-announcements" type="button"><strong>▤ 系統公告</strong><small>公告新增、編輯、預覽、優先級與發布狀態</small></button>
 <button class="admin-dashboard-card" type="button" disabled><strong>♙ 帳號與權限</strong><small>規劃中</small></button>
 <button class="admin-dashboard-card" type="button" disabled><strong>▤ 資料管理</strong><small>規劃中</small></button>
 <button class="admin-dashboard-card" type="button" disabled><strong>◉ 系統狀態</strong><small>規劃中</small></button>
 <button class="admin-dashboard-card" type="button" disabled><strong>☷ 操作紀錄</strong><small>規劃中</small></button>
 <button class="admin-dashboard-card" type="button" disabled><strong>⚙ 系統設定</strong><small>規劃中</small></button>
 </div></div>
+<div id="announcement-management-region" class="announcement-region" hidden>
+<button class="device-btn" id="announcement-back-dashboard" type="button">← 返回系統管理控制台</button>
+<div class="announcement-head"><div><h2>系統公告管理</h2><p class="announcement-note">管理公告內容、分類、優先級與發布狀態。</p></div><button id="announcement-new" class="announcement-btn primary" type="button">＋ 新增公告</button></div>
+<p class="announcement-note">公告資料由 iKey 後端 API 管理；新增、編輯、發布、下架與回收站操作會寫入資料庫。</p>
+<div class="announcement-toolbar">
+<input id="announcement-search" type="search" maxlength="120" placeholder="搜尋公告標題或內容…" aria-label="搜尋公告">
+<select id="announcement-category-filter" aria-label="依分類篩選"><option value="">全部分類</option><option value="system">系統公告</option><option value="maintenance">維護通知</option><option value="feature">功能更新</option><option value="administrative">行政公告</option><option value="other">其他</option></select>
+<select id="announcement-status-filter" aria-label="依狀態篩選"><option value="active">有效公告</option><option value="all">全部（不含回收站）</option><option value="trash">回收站</option></select>
+<span id="announcement-count" class="announcement-note">顯示 0 則</span>
+</div>
+<div id="announcement-editor" class="announcement-editor" hidden><h3 id="announcement-editor-title">新增公告</h3>
+<form id="announcement-form" class="announcement-form" onsubmit="return false">
+<label>公告標題<input id="announcement-title" maxlength="120" required placeholder="請輸入公告標題"></label>
+<label>公告分類<select id="announcement-category"><option value="system">系統公告</option><option value="maintenance">維護通知</option><option value="feature">功能更新</option><option value="administrative">行政公告</option><option value="other">其他</option></select></label>
+<label>優先級<select id="announcement-priority"><option value="urgent">緊急</option><option value="important">重要</option><option value="normal">一般</option></select></label>
+<label>排程發布時間<input id="announcement-schedule" type="datetime-local"></label>
+<label>到期時間<input id="announcement-expires" type="datetime-local"></label>
+<label class="wide">公告內容<textarea id="announcement-content" maxlength="10000" required placeholder="請輸入公告完整內容"></textarea></label>
+</form>
+<div class="announcement-form-actions"><button id="announcement-save-draft" class="announcement-btn" type="button">儲存草稿</button><button id="announcement-save-schedule" class="announcement-btn" type="button">儲存排程</button><button id="announcement-save-publish" class="announcement-btn primary" type="button">立即發布</button><button id="announcement-cancel" class="announcement-btn" type="button">取消</button></div>
+</div>
+<div class="announcement-table-wrap"><table class="announcement-table"><thead><tr><th>公告</th><th>分類</th><th>優先級</th><th>狀態／時間</th><th>操作</th></tr></thead><tbody id="announcement-rows"></tbody></table></div>
+<div id="announcement-preview" class="announcement-preview" hidden><div id="announcement-preview-category" class="announcement-state"></div><h3 id="announcement-preview-title"></h3><p id="announcement-preview-content"></p><div id="announcement-preview-date" class="announcement-foot"></div><button id="announcement-preview-close" class="announcement-btn" type="button" style="margin-top:12px">關閉預覽</button></div>
+<p id="announcement-status" class="announcement-note" role="status" aria-live="polite"></p>
+</div>
 <div id="device-management-region" hidden><button class="device-btn" id="admin-back-dashboard" type="button">← 返回系統管理控制台</button>
 <style>
 .device-page{margin-top:36px}.device-page button,.device-page input{font:inherit}.device-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line)}.device-heading{font-weight:700;white-space:nowrap;margin-right:8px}.device-search{flex:1;min-width:190px;padding:12px 15px;border:1px solid #4c647c;border-radius:10px;background:rgba(20,31,52,.65);color:white}.device-btn{padding:11px 14px;border:1px solid #54738c;border-radius:10px;background:#233852;color:#f1f7ff;cursor:pointer}.device-btn:disabled{opacity:.45;cursor:not-allowed}.device-btn.primary{background:#25445f}.device-btn.danger{background:#6c2432;border-color:#bc5264;color:#fff}.device-btn.danger:disabled{opacity:.5}.device-switch{display:flex;border:1px solid #52647b;border-radius:9px;overflow:hidden}.device-switch button{border:0;border-radius:0}.device-switch button[aria-pressed=true]{background:#3a536c}.device-results{min-height:160px}.device-empty{padding:42px 10px;text-align:center;color:#9db1c7}.device-row{display:flex;align-items:center;gap:18px;padding:20px 12px;border-bottom:1px solid var(--line)}.device-symbol{color:#8ebbd4;font-size:21px}.device-info{flex:1;min-width:0}.device-info strong{display:block}.device-info small{display:block;color:#92a8c1;margin-top:5px}.device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px;margin-top:16px}.device-grid .device-row{border:1px solid var(--line);border-radius:14px;flex-wrap:wrap}.device-grid .device-row .device-btn{width:100%}.device-panel{margin:20px 0;padding:22px;border:1px solid var(--line);border-radius:15px;background:rgba(20,31,52,.72)}.device-panel[hidden]{display:none}.device-panel h3{margin:0 0 12px}.device-panel label{display:block;margin:12px 0 6px;color:#bed0e1}.device-panel input{padding:12px 14px;background:#101d30;border:1px solid #50667d;border-radius:9px;color:white;width:100%;max-width:460px}.device-message{color:#b8dce9;overflow-wrap:anywhere}.device-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.device-caption{color:#94a9bf;font-size:13px}@media(max-width:760px){.device-toolbar{align-items:stretch}.device-search{flex-basis:100%}.device-row{gap:10px;flex-wrap:wrap}}
@@ -108,5 +134,6 @@ loadDevices();
 </script>
 </div>
 <script>document.getElementById("admin-open-devices").addEventListener("click",()=>{document.querySelector(".admin-dashboard").hidden=true;document.getElementById("device-management-region").hidden=false});document.getElementById("admin-back-dashboard").addEventListener("click",()=>{document.querySelector(".admin-dashboard").hidden=false;document.getElementById("device-management-region").hidden=true});</script>
+<script>document.getElementById("admin-open-announcements").addEventListener("click",()=>{document.querySelector(".admin-dashboard").hidden=true;document.getElementById("announcement-management-region").hidden=false});document.getElementById("announcement-back-dashboard").addEventListener("click",()=>{document.querySelector(".admin-dashboard").hidden=false;document.getElementById("announcement-management-region").hidden=true});</script>
 </section>
 </main></div></body></html>

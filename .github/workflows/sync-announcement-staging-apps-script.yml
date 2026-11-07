@@ -1,0 +1,53 @@
+name: Sync iKey announcement GAS source to staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require isolated staging credentials and script ID
+        env:
+          CLASPRC_JSON: ${{ secrets.IKEY_STAGING_CLASPRC_JSON }}
+          SCRIPT_ID: ${{ secrets.IKEY_STAGING_SCRIPT_ID }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ]; then
+            echo "::error::Set IKEY_STAGING_CLASPRC_JSON and IKEY_STAGING_SCRIPT_ID before syncing."
+            exit 1
+          fi
+          if [ "$SCRIPT_ID" = "16Oa3hrtSP7YMGWMoS1gW_RBFFV_CKIRN0Hp_OTIZ6IFkliNZl5AclFBy" ]; then
+            echo "::error::Refusing to target the existing non-staging Gen3 Apps Script project."
+            exit 1
+          fi
+      - name: Install clasp
+        run: npm install --global @google/clasp@2.5.0
+      - name: Prepare private credentials and isolated project config
+        env:
+          CLASPRC_JSON: ${{ secrets.IKEY_STAGING_CLASPRC_JSON }}
+          SCRIPT_ID: ${{ secrets.IKEY_STAGING_SCRIPT_ID }}
+        run: |
+          umask 077
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          node -e "JSON.parse(require('fs').readFileSync(process.env.HOME+'/.clasprc.json','utf8'))"
+          mkdir -p /tmp/ikey-gas-staging
+          cd /tmp/ikey-gas-staging
+          node -e "require('fs').writeFileSync('.clasp.json', JSON.stringify({scriptId:process.env.SCRIPT_ID}))"
+      - name: Pull isolated staging project and replace only Code.gs
+        run: |
+          cd /tmp/ikey-gas-staging
+          clasp pull
+          cp "$GITHUB_WORKSPACE/gen3-auth/Code.gs" Code.js
+          rm -f Code.gs
+          clasp push --force
+      - name: Clear local credentials
+        if: always()
+        run: rm -f "$HOME/.clasprc.json"

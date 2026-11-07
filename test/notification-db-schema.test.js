@@ -18,7 +18,7 @@ test('generic DB insert writes new notification fields in sheet header order',()
   Error,Set,Object,String,Number,
  };
  vm.createContext(context);
- vm.runInContext(fs.readFileSync(path.join(__dirname,'../gas/generic-db-engine.gs'),'utf8'),context);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../gen3-auth/Code.gs'),'utf8'),context);
  const data={project_id:'test-uuid',project_name:'測試',description:'',created_by_user_id:'test-user',authorization_method:'application',scheduled_authorization:'false',status:'active',created_at:'2026-10-25',updated_at:'2026-10-25',notification_theme:'midnight',notification_sound_pack:'pulse',notification_volume:'50'};
  const result=context.ikeyDbInsert_(sheet,headers,{data,primary_key:'project_id'});
  assert.equal(result.inserted,true);
@@ -35,7 +35,7 @@ test('generic DB insert rejects unknown fields before writing',()=>{
  const sheet={getLastRow:()=>1,getRange:()=>({setValues:()=>{wrote=true;}})};
  const context={LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},SpreadsheetApp:{flush:()=>{}},Error,Set,Object,String,Number};
  vm.createContext(context);
- vm.runInContext(fs.readFileSync(path.join(__dirname,'../gas/generic-db-engine.gs'),'utf8'),context);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../gen3-auth/Code.gs'),'utf8'),context);
  assert.throws(()=>context.ikeyDbInsert_(sheet,headers,{data:{project_id:'x',unknown:'y'},primary_key:'project_id'}),/DB_FIELD_DENIED/);
  assert.equal(wrote,false);
 });
