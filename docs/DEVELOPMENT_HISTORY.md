@@ -46,3 +46,12 @@
 - 本次尚未取得 GitHub Actions 執行結果；不得將程式提交等同測試通過。
 - 僅修改 `feature/system-announcements-staging-20261102`；未修改 `main`、未同步 GAS、未寫入試算表、未設定 Render 環境變數、未部署正式環境。
 - 下一步：確認 GitHub Actions 測試結果，再準備隔離的 staging Apps Script 專案與 staging Spreadsheet，執行受保護的兩表遷移及 API 整合驗收。
+
+
+## 2026-11-07｜系統公告 CI 與 staging 資料庫查核
+
+- GitHub Actions Run `42381490574`：`iKey announcement API tests` 完成且成功；Node.js 22、語法檢查及 `npm test` 通過。測試統計：30 pass、0 fail、0 skipped。
+- 找到 staging Spreadsheet `iKey-Gen3-GAS-STAGING-DATA`（ID `1dn__bGUmCAnGZTNOmvdc0QOUozmrGenpqbrNU3bb_CQ`）；現有四張表為 Device_Ping_Commands、Device_Ping_Nonces、Factory_Devices、Project_Devices，尚無兩張公告表。
+- Google Drive 搜尋未找到可確認的 staging Apps Script 專案，因此尚無法確認 Script ID 與 Spreadsheet 綁定關係。未執行 clasp push、GAS 部署、Spreadsheet 寫入或 Render 部署。
+- staging 分支與 main 比較為 diverged（ahead 84 / behind 53）；不得直接整支合併，須先處理分支基底與差異。
+- 下一步：確認隔離的 staging Apps Script 專案及其 Script Properties 指向 staging Spreadsheet，再使用既有 workflow 同步；完成後才建立公告兩表並執行真實 staging API 驗收。
