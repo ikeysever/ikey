@@ -1,0 +1,38 @@
+name: iKey Full Git History Backup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout all history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch all branches and tags
+        run: |
+          git fetch --no-prune origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
+      - name: Build and verify Git bundle
+        run: |
+          mkdir -p backup
+          git bundle create backup/ikey-all-refs.bundle --all
+          git bundle verify backup/ikey-all-refs.bundle
+          git for-each-ref --format='%(refname) %(objectname)' refs/remotes/origin refs/tags > backup/REFS.txt
+          git log --all --format='%H %aI %s' > backup/COMMITS.txt
+          printf 'iKey Git history backup. Restore with: git clone ikey-all-refs.bundle restored-repo\n' > backup/README.txt
+          (cd backup && sha256sum ikey-all-refs.bundle > SHA256SUMS.txt)
+          (cd backup && zip -q -9 ../ikey-full-history.zip *)
+      - name: Upload downloadable backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: ikey-full-history
+          path: ikey-full-history.zip
+          retention-days: 30
+          if-no-files-found: error
