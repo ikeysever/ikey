@@ -100,3 +100,27 @@
 ### 部署邊界
 - 僅修改 `feature/system-announcements-staging-20261102`。
 - 未修改 `main`、未執行 GAS 同步、未寫入試算表、未修改 Render 環境變數，亦未部署正式環境。
+
+
+## 2026-11-07｜Staging CI 驗收與資料庫盤點
+
+### 自動化測試
+- GitHub Actions workflow：`iKey announcement API tests`，Run ID `42381490574`，結果 `completed / success`。
+- 工作步驟：Node.js 22、依賴安裝、server/browser JavaScript 語法檢查、`npm test` 全部成功。
+- `npm test`：30 tests、30 pass、0 fail、0 skipped。
+- 本結果只代表 staging 分支的程式／模擬測試通過，不代表 GAS 已同步、Render 已部署或真實 Sheets API 已端到端驗收。
+
+### Staging 資料庫盤點
+- 找到 Google Spreadsheet：`iKey-Gen3-GAS-STAGING-DATA`，ID：`1dn__bGUmCAnGZTNOmvdc0QOUozmrGenpqbrNU3bb_CQ`。
+- 目前工作表：`Device_Ping_Commands`、`Device_Ping_Nonces`、`Factory_Devices`、`Project_Devices`；尚無 `System_Announcements` 與 `System_Announcement_Reads`。
+- 僅讀取 Spreadsheet metadata，未讀取資料列、未新增工作表、未寫入資料。
+- Google Drive 搜尋未找到可確認的獨立 Apps Script 專案；無法確認 staging Script ID 及其是否已綁定上述 Spreadsheet。
+
+### 分支整合風險
+- staging 分支相對目前 `main` 顯示 diverged：ahead 84、behind 53。不可直接合併整個分支或將其視為可直接發布的 PR；需先釐清基底與差異範圍。
+
+### 下一步與邊界
+- 取得／確認獨立 staging Apps Script 專案 ID，並確認其 Script Properties 指向上述 staging Spreadsheet。
+- 取得獨立 staging clasp OAuth secret 與 Script ID 後，才可執行既有 staging 專用同步 workflow；不可使用正式 GAS 專案。
+- 確認隔離無誤後，建立公告兩表並執行真實 staging API CRUD／權限／已讀／排程測試。
+- 本次未修改 `main`、未部署 Render、未同步 GAS、未寫入 Spreadsheet。
