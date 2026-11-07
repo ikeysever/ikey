@@ -128,6 +128,43 @@ test('read receipts are idempotent per user and announcement', async () => {
   }, [published()]);
 });
 
+test('scheduled worker publishes due items and archives expired published items', async () => {
+  const previousSecret = process.env.ANNOUNCEMENTS_CRON_SECRET;
+  process.env.ANNOUNCEMENTS_CRON_SECRET = 'staging-test-secret-'.padEnd(40, 'x');
+  const expired = published({
+    announcement_id: '55555555-5555-4555-8555-555555555555',
+    expires_at: new Date(Date.now() - 60_000).toISOString()
+  });
+  const stillVisible = published({
+    announcement_id: '66666666-6666-4666-8666-666666666666',
+    expires_at: new Date(Date.now() + 60_000).toISOString()
+  });
+  const due = published({
+    announcement_id: '77777777-7777-4777-8777-777777777777',
+    status: 'scheduled',
+    published_at: '',
+    scheduled_at: new Date(Date.now() - 60_000).toISOString(),
+    expires_at: ''
+  });
+  try {
+    await withApi('user', async ({ base, store }) => {
+      const response = await fetch(base + '/api/internal/announcements/publish-due', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + process.env.ANNOUNCEMENTS_CRON_SECRET }
+      });
+      const data = await response.json();
+      assert.equal(response.status, 200);
+      assert.equal(data.processed, 2);
+      assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === expired.announcement_id).status, 'archived');
+      assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === due.announcement_id).status, 'published');
+      assert.equal(store.tables.System_Announcements.find(row => row.announcement_id === stillVisible.announcement_id).status, 'published');
+    }, [expired, stillVisible, due]);
+  } finally {
+    if (previousSecret === undefined) delete process.env.ANNOUNCEMENTS_CRON_SECRET;
+    else process.env.ANNOUNCEMENTS_CRON_SECRET = previousSecret;
+  }
+});
+
 test('invalid announcement input is rejected before any database write', async () => {
   await withApi('super_admin', async ({ base, store }) => {
     const response = await fetch(base + '/api/admin/announcements', {
