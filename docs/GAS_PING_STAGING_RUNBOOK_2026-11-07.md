@@ -82,3 +82,11 @@ This work advances preparation of the existing unfinished GAS integration item i
 ## Authorization contract tests added
 - `test/gas-ping-authorization-adapter-contract.test.js` at commit `bf3d8d603bc8002f72e70fe12234951aeb6141e7` exercises inactive devices, invalid scope, wrong project, duplicate binding and denied web actor with isolated mocks.
 - This does NOT verify the real legacy `ikeyVerifyDeviceActor_` return contract or substitute for a staging GAS execution. Keep the staging route disabled until original source is verified and backed up.
+
+
+## Correction after user showed existing GAS editor (2026-11-07)
+- The existing original Apps Script project is **iKey_Gen3_Auth_API**, with editor-visible files `程式碼.gs`, `SetupKey.gs`, `project-data.gs`, `iKey_AutoCheck.gs`, `gas-device-actions.gs`, `gas-device-authorization.gs`, `gas-device-trust.gs`, `device-command-actions.gs` and admin module(s). These files **exist in the original project**; do not describe them as missing from the original system.
+- The newly created **iKey-Gen3-GAS-STAGING** is a separate test project containing the seven-module ping bundle, not a replacement for original GAS.
+- Source screenshot establishes file presence only, not code correctness or deployment wiring. Do not overwrite or deploy original GAS.
+- New read-only inventory utility `gas-staging/ikey-gen3-legacy-readonly-inventory.gs` inspects function availability and staging-related property/sheet presence without printing secrets or changing data. It has not been installed or run in original GAS.
+- Next prerequisite for exact integration remains a read-only export of the **actual current original project**; the Drive V14 document is explicitly a candidate and cannot substitute.
