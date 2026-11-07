@@ -97,6 +97,8 @@ app.get('/api/auth/status', async (_req, res) => {
   }
 });
 app.use('/api/auth', createRouter(authStore));
+// Device login and token introspection: fail closed when secret or GAS storage is unavailable.
+const requireDevice = require('./device-auth')(app, authStore);
 // Project operations are always scoped to the authenticated account on the server.
 const { hashToken, active } = require('./gen3-auth/core');
 const { randomUUID } = require('node:crypto');
@@ -115,6 +117,10 @@ function sameProjectOrigin(req){
  const origin=req.get('origin');if(!origin)return true;
  try{const u=new URL(origin);const proto=req.secure||req.get('x-forwarded-proto')==='https'?'https:':'http:';return u.protocol===proto&&u.host===req.get('host');}catch{return false;}
 }
+// Command routes are fail-closed unless both server and GAS trust gates are verified.
+require('./lib/device-command-routes').mountCommandRoutes(app, {
+  store: authStore, requireProjectUser, sameProjectOrigin, requireDevice
+});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}

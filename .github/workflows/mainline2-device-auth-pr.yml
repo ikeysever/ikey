@@ -1,0 +1,36 @@
+name: Mainline 2 device auth integration
+on:
+  pull_request:
+    paths:
+      - 'server.js'
+      - 'device-auth.js'
+      - 'gen3-auth/**'
+      - 'lib/device-command-*.js'
+      - 'lib/command-trust-assertion.js'
+      - 'tests/mainline2-render-route-mount.test.js'
+      - 'tests/mainline2-gas-nonce.test.js'
+      - 'tests/mainline2-gas-command-contract.test.js'
+      - 'tests/mainline2-gas-command-lifecycle.test.js'
+      - 'tests/mainline2-gas-dopost-router.test.js'
+      - 'staging/gas/**'
+      - '.github/workflows/mainline2-device-auth-pr.yml'
+  workflow_dispatch:
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      IKEY_PHYSICAL_UNLOCK_ENABLED: 'false'
+      IKEY_GAS_COMMAND_TRUST_VERIFIED: 'false'
+      IKEY_DEVICE_SIMULATION_ENABLED: 'false'
+      GEN3_APPS_SCRIPT_URL: ''
+      GEN3_APPS_SCRIPT_KEY: ''
+      IKEY_DEVICE_TOKEN_SECRET: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
