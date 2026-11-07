@@ -8,6 +8,7 @@
  const statusLabels={published:'已發布',draft:'草稿',scheduled:'排程中',archived:'已下架',deleted:'回收站'};
  let records=[],editingId=null,filterStatus='active',loading=false;
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const localDateTime=value=>{if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return '';const pad=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());};
  const fmt=value=>{if(!value)return '—';const d=new Date(value);return Number.isNaN(d.getTime())?'—':d.toLocaleString('zh-TW',{hour12:false});};
  function message(text){$('announcement-status').textContent=text;}
  async function api(path,options={}){
@@ -21,8 +22,8 @@
   try{
    const data=await api('/api/admin/announcements?include_trash=true');
    if(!Array.isArray(data.announcements))throw new Error('公告清單格式不正確');
-   records=data.announcements;message('已連線至公告資料庫。');loading=false;render();
-  }catch(err){loading=false;records=[];render();message(err.message||'公告清單載入失敗');}
+   records=data.announcements;message('已連線至公告資料庫。');loading=false;render();return true;
+  }catch(err){loading=false;records=[];render();message(err.message||'公告清單載入失敗');return false;}
  }
  function visibleRecords(){
   return records.filter(r=>filterStatus==='trash'?r.status==='deleted':filterStatus==='all'?r.status!=='deleted':!['deleted','archived'].includes(r.status));
@@ -44,10 +45,10 @@
    const add=(label,fn,klass='')=>{const b=document.createElement('button');b.type='button';b.className='announcement-btn '+klass;b.textContent=label;b.addEventListener('click',async()=>{b.disabled=true;try{await fn();}catch(err){message(err.message||'操作失敗');}finally{b.disabled=false;}});actions.append(b);};
    add('預覽',()=>preview(r));
    if(r.status!=='deleted')add('編輯',()=>openEditor(r));
-   if(r.status==='draft'||r.status==='scheduled')add('立即發布',async()=>{await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id)+'/publish',{method:'POST'});await load();message('公告已發布。');});
-   if(r.status==='published')add('下架',async()=>{await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id)+'/unpublish',{method:'POST'});await load();message('公告已下架。');});
-   if(r.status==='deleted')add('還原',async()=>{await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id)+'/restore',{method:'POST'});await load();message('公告已還原為草稿。');});
-   if(r.status!=='deleted')add('移至回收站',async()=>{if(!confirm('確定將此公告移至回收站？'))return;await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id),{method:'DELETE'});await load();message('公告已移至回收站。');},'danger');
+   if(r.status==='draft'||r.status==='scheduled')add('立即發布',async()=>{await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id)+'/publish',{method:'POST'});if(await load())message('公告已發布。');});
+   if(r.status==='published')add('下架',async()=>{await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id)+'/unpublish',{method:'POST'});if(await load())message('公告已下架。');});
+   if(r.status==='deleted')add('還原',async()=>{await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id)+'/restore',{method:'POST'});if(await load())message('公告已還原為草稿。');});
+   if(r.status!=='deleted')add('移至回收站',async()=>{if(!confirm('確定將此公告移至回收站？'))return;await api('/api/admin/announcements/'+encodeURIComponent(r.announcement_id),{method:'DELETE'});if(await load())message('公告已移至回收站。');},'danger');
    tr.append(title,category,priority,status,actions);body.append(tr);
   }
  }
@@ -59,7 +60,7 @@
  function openEditor(r){
   editingId=r?.announcement_id||null;$('announcement-editor').hidden=false;$('announcement-editor-title').textContent=r?'編輯公告':'新增公告';
   $('announcement-title').value=r?.title||'';$('announcement-category').value=r?.category||'system';$('announcement-priority').value=r?.priority||'normal';$('announcement-content').value=r?.content||'';
-  $('announcement-schedule').value=r?.scheduled_at?new Date(r.scheduled_at).toISOString().slice(0,16):'';$('announcement-expires').value=r?.expires_at?new Date(r.expires_at).toISOString().slice(0,16):'';
+  $('announcement-schedule').value=r?.scheduled_at?localDateTime(r.scheduled_at):'';$('announcement-expires').value=r?.expires_at?localDateTime(r.expires_at):'';
   $('announcement-editor').scrollIntoView({behavior:'smooth',block:'start'});$('announcement-title').focus();
  }
  function closeEditor(){$('announcement-editor').hidden=true;editingId=null;$('announcement-form').reset();}
@@ -78,12 +79,14 @@
   try{
    let data;
    if(mode==='draft'){payload.status='draft';payload.scheduled_at='';payload.published_at='';}
+   if(mode==='publish'){payload.scheduled_at='';payload.published_at='';}
+   if(mode==='schedule'){payload.published_at='';}
    if(editingId)data=await api('/api/admin/announcements/'+encodeURIComponent(editingId),{method:'PUT',body:JSON.stringify(payload)});
    else data=await api('/api/admin/announcements',{method:'POST',body:JSON.stringify(payload)});
    const id=editingId||data.announcement?.announcement_id;
    if(!id)throw new Error('伺服器未回傳公告 ID。');
    if(mode==='publish')await api('/api/admin/announcements/'+encodeURIComponent(id)+'/publish',{method:'POST'});
-   closeEditor();await load();message(mode==='publish'?'公告已發布並儲存。':mode==='schedule'?'公告排程已儲存。':'公告草稿已儲存。');
+   closeEditor();if(await load())message(mode==='publish'?'公告已發布並儲存。':mode==='schedule'?'公告排程已儲存。':'公告草稿已儲存。');
   }catch(err){message(err.message||'公告儲存失敗');}
   finally{buttons.forEach(b=>b.disabled=false);}
  }
