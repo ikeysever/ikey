@@ -441,6 +441,9 @@ function inspectGen3Setup(){
 /* iKey 3.1 generic Sheets engine — integrated into Gen3 V14 candidate.
  * Keeps existing GEN3_SPREADSHEET_ID and GEN3_API_KEY.
  * Optional Script Property IKEY_DB_ALLOWED_TABLES defaults to Projects.
+  * For announcements, append System_Announcements and System_Announcement_Reads
+  * to the existing comma-separated allowlist in the GAS Script Properties.
+  * Preserve all existing allowed tables; this source edit does not change deployment properties.
  * Never expose the GAS API key to the browser.
  */
 const IKEY_DB_ACTIONS_=['db.health','db.schema','db.select','db.insert','db.update','db.delete'];
@@ -473,7 +476,8 @@ function ikeyDbDispatch_(action,p){
     if(!keys.length||keys.some(k=>columns.indexOf(k)<0))throw Error('DB_FIELD_DENIED');
     for(const k of keys){
       const v=data[k];
-      if(!['string','number','boolean'].includes(typeof v)||String(v).length>2000||(typeof v==='number'&&!Number.isFinite(v)))throw Error('DB_VALUE_INVALID');
+      const maxLength=(name==='System_Announcements'&&k==='content')?10000:2000;
+       if(!['string','number','boolean'].includes(typeof v)||String(v).length>maxLength||(typeof v==='number'&&!Number.isFinite(v)))throw Error('DB_VALUE_INVALID');
       if(typeof v==='string'&&/^[=+@\-\t\r]/.test(v))throw Error('DB_FORMULA_DENIED');
     }
     return keys;
