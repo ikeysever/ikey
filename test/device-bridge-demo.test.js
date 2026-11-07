@@ -1,0 +1,35 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {createDemoBridge}=require('../gen3-auth/device-bridge-demo');
+const deviceId='Y8R69EXB',password='test-password-123';
+const projectId='11111111-1111-4111-8111-111111111111';
+test('demo bridge completes authenticated ping round trip with idempotent report',()=>{
+ let time=1700000000000;
+ const bridge=createDemoBridge({deviceId,password,now:()=>time});
+ assert.equal(bridge.login({device_id:deviceId,password:'wrong-password'}),null);
+ const login=bridge.login({device_id:deviceId,password});
+ assert.ok(login?.access_token);
+ assert.equal(bridge.authorize('Bearer '+login.access_token),true);
+ assert.equal(bridge.authorize('Bearer '+'0'.repeat(64)),false);
+ const created=bridge.createPing(projectId);
+ assert.equal(created.status,'pending');
+ const polled=bridge.poll();
+ assert.equal(polled.command_id,created.command_id);
+ assert.equal(polled.action,'ping');
+ assert.equal(bridge.poll(),null);
+ assert.deepEqual(bridge.report({command_id:created.command_id,result:'completed'}),{ok:true,code:'RECORDED'});
+ assert.deepEqual(bridge.report({command_id:created.command_id,result:'completed'}),{ok:true,code:'ALREADY_RECORDED'});
+ assert.equal(bridge.status(projectId,created.command_id).status,'completed');
+ assert.equal(bridge.status('22222222-2222-4222-8222-222222222222',created.command_id),null);
+ time+=901000;
+ assert.equal(bridge.authorize('Bearer '+login.access_token),false);
+});
+test('demo bridge rejects invalid reports and never emits lock commands',()=>{
+ const bridge=createDemoBridge({deviceId,password});
+ assert.equal(bridge.report({command_id:'bad',result:'completed'}).ok,false);
+ const c=bridge.createPing(projectId);
+ assert.equal(bridge.report({command_id:c.command_id,result:'completed'}).ok,false);
+ assert.equal(bridge.poll().action,'ping');
+ assert.equal(bridge.report({command_id:c.command_id,result:'received'}).ok,false);
+});

@@ -1,0 +1,21 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+test('factory pre-registration uses GAS factory registry and defaults disabled',()=>{
+ const server=fs.readFileSync(path.join(__dirname,'../server.js'),'utf8');
+ const store=fs.readFileSync(path.join(__dirname,'../gen3-auth/sheets-store.js'),'utf8');
+ const start=server.indexOf("app.post('/api/devices/pre-register'");
+ const end=server.indexOf('// Read-only device list:',start);
+ assert.ok(start>=0&&end>start);
+ const route=server.slice(start,end);
+ assert.match(route,/IKEY_FACTORY_REGISTRATION_ENABLED!=='true'/);
+ assert.match(route,/req.projectUser.global_role!=='super_admin'/);
+ assert.match(route,/actor_user_id:req.projectUser.user_id/);
+ assert.match(route,/factoryDeviceCall\('factoryDeviceRegister'/);
+ assert.match(route,/credential_kdf:'scrypt-n16384-r8-p1'/);
+ assert.match(route,/crypto.scryptSync\(password,salt,64/);
+ assert.doesNotMatch(route,/db\.insert|table:'Devices'|password_hash/);
+ assert.match(store,/'factoryDeviceRegister'/);
+});

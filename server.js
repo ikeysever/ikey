@@ -177,10 +177,11 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   // Project member access is not yet verified; only the actual creator may read devices.
   if(project.created_by_user_id!==req.projectUser.user_id)
    return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
-  const inventory=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:projectId},limit:100});
-  if(!Array.isArray(inventory?.rows)||inventory.limited===true)
+  const inventory=await authStore.factoryDeviceCall('factoryDeviceList',
+   {actor_user_id:req.projectUser.user_id,project_id:projectId});
+  if(!Array.isArray(inventory?.devices))
    return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNVERIFIED'});
-  const devices=inventory.rows.filter(d=>d.project_id===projectId&&/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||'')))
+  const devices=inventory.devices.filter(d=>/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||'')))
    .map(d=>({device_id:String(d.device_id),device_name:String(d.display_name||'iBOX').slice(0,80),
     registration_status:'bound',connection_status:'unverified',control_ready:false}));
   return res.json({success:true,devices});
@@ -189,11 +190,59 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNAVAILABLE'});
  }
 });
+// Project owner device binding through the dedicated, locked GAS factory action.
+// Keep disabled until deployed GAS and isolated integration tests are verified.
+app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ // Do not enable until the GAS writer's atomic cross-project uniqueness is verified.
+ if(process.env.IKEY_DEVICE_BINDING_ENABLED!=='true')
+  return res.status(503).json({success:false,code:'DEVICE_BINDING_DISABLED'});
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const projectId=String(req.params.projectId||'');
+ const deviceId=String(req.body?.device_id||'').trim().toUpperCase();
+ const password=req.body?.password;
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)
+   || !/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)
+   ||typeof password!=='string'||password.length<8||password.length>128)
+  return res.status(400).json({success:false,code:'INVALID_BINDING_REQUEST'});
+ try{
+  const projects=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(projects?.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  // Limit credential guesses per account and device in the shared GAS store.
+  const throttleKey=require('node:crypto').createHash('sha256')
+   .update('ibox-bind:'+req.projectUser.user_id+':'+deviceId).digest('hex');
+  const allowed=await authStore.throttleAtomic(throttleKey,5,15*60*1000);
+  if(allowed!==true)return res.status(429).json({success:false,code:'BINDING_RATE_LIMITED'});
+  // The factory credential is fetched only by this authenticated backend.
+  // Never forward hashes/salts to the browser or log supplied passwords.
+  const actor_user_id=req.projectUser.user_id;
+  const credential=await authStore.factoryDeviceCall('factoryDeviceCredentialGet',
+   {actor_user_id,project_id:projectId,device_id:deviceId});
+  const {verifyFactoryCredential}=require('./gen3-auth/factory-credential');
+  if(!verifyFactoryCredential(password,credential))
+   return res.status(403).json({success:false,code:'DEVICE_VERIFICATION_FAILED'});
+  // GAS factoryDeviceBind uses ScriptLock around a global device_id check + append.
+  // The GAS action itself rechecks project-admin authorization.
+  const result=await authStore.factoryDeviceCall('factoryDeviceBind',
+   {actor_user_id,project_id:projectId,device_id:deviceId});
+  if(result?.bound!==true)
+   return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND'});
+  return res.status(201).json({success:true,device_id:deviceId});
+ }catch(err){
+  console.warn('Project device binding unavailable',String(err.message||'unknown').slice(0,80));
+  return res.status(503).json({success:false,code:'DEVICE_BINDING_UNAVAILABLE'});
+ }
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
-const { passwordHash } = require('./gen3-auth/core');
 app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  // Fail closed until the GAS factory registry deployment is independently verified.
+  if(process.env.IKEY_FACTORY_REGISTRATION_ENABLED!=='true')
+    return res.status(503).json({success:false,code:'FACTORY_REGISTRATION_DISABLED'});
   if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
   if(req.projectUser.global_role!=='super_admin')return res.status(403).json({success:false,message:'需要超級管理員權限'});
   const password=req.body?.password;
@@ -201,26 +250,24 @@ app.post('/api/devices/pre-register',requireProjectUser,async(req,res)=>{
     return res.status(400).json({success:false,message:'裝置密碼須為 8 至 128 字元'});
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   try{
-    const hash=passwordHash(password);
-    for(let attempt=0;attempt<3;attempt++){
-      const bytes=randomBytes(8);
-      const device_id=Array.from(bytes,b=>alphabet[b%alphabet.length]).join('');
-      const now=new Date().toISOString();
-      const device={device_id,password_hash:hash,status:'pre_registered',created_by_user_id:req.projectUser.user_id,created_at:now,updated_at:now};
-      try{
-        const result=await authStore.dbCall('db.insert',{table:'Devices',primary_key:'device_id',data:device});
-        if(result?.inserted===true&&result?.record?.device_id===device_id)
-          return res.status(201).json({success:true,device_id});
-        // Unknown storage response is not a verified insert.
-        return res.status(503).json({success:false,message:'無法確認裝置已建立，請聯絡管理員'});
-      }catch(err){
-        // Do not retry ambiguous storage failures: the insert may already have committed.
-        console.warn('Device pre-registration storage unavailable',err.message);
-        return res.status(503).json({success:false,message:'裝置資料服務尚未就緒，請勿重複提交'});
-      }
-    }
-    return res.status(503).json({success:false,message:'無法產生裝置 ID'});
-  }catch(err){console.warn('Device pre-registration failed',err.name);return res.status(503).json({success:false,message:'裝置建立失敗'});}
+    // GAS expects scrypt-n16384-r8-p1, hex-encoded 32-byte salt and 64-byte hash.
+    const crypto=require('node:crypto');
+    const salt=crypto.randomBytes(32);
+    const credential_salt=salt.toString('hex');
+    const credential_hash=crypto.scryptSync(password,salt,64,
+      {N:16384,r:8,p:1,maxmem:64*1024*1024}).toString('hex');
+    const device_id=Array.from(randomBytes(8),b=>alphabet[b%alphabet.length]).join('');
+    const result=await authStore.factoryDeviceCall('factoryDeviceRegister',{
+      actor_user_id:req.projectUser.user_id,device_id,
+      credential_kdf:'scrypt-n16384-r8-p1',credential_salt,credential_hash
+    });
+    if(result?.registered===true)return res.status(201).json({success:true,device_id});
+    // A collision or unknown result is never silently treated as successful.
+    return res.status(503).json({success:false,code:'FACTORY_REGISTRATION_NOT_CONFIRMED'});
+  }catch(err){
+    console.warn('Factory device registration unavailable',String(err.message||'unknown').slice(0,80));
+    return res.status(503).json({success:false,code:'FACTORY_REGISTRATION_UNAVAILABLE'});
+  }
 });
 // Read-only device list: limited to preregistered records; no secrets returned.
 app.get('/api/devices',requireProjectUser,async(req,res)=>{
@@ -267,6 +314,131 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
+// Non-actuating, single-instance end-to-end demo. OFF by default; never use
+// for physical lock commands or as a substitute for durable GAS storage.
+let demoBridge=null;
+if(process.env.IKEY_BRIDGE_DEMO_ENABLED==='true'){
+ try{
+  const {createDemoBridge}=require('./gen3-auth/device-bridge-demo');
+  demoBridge=createDemoBridge({deviceId:process.env.IKEY_BRIDGE_DEMO_DEVICE_ID,
+   password:process.env.IKEY_BRIDGE_DEMO_PASSWORD});
+ }catch(err){console.warn('Demo bridge disabled:',err.message)}
+}
+function requireDemoBridge(req,res,next){
+ res.set('Cache-Control','no-store');
+ if(!demoBridge)return res.status(503).json({success:false,code:'DEMO_BRIDGE_DISABLED'});
+ next();
+}
+function requireDemoDevice(req,res,next){
+ if(!demoBridge.authorize(req.get('authorization')))
+  return res.status(401).json({success:false,code:'DEVICE_NOT_AUTHENTICATED'});
+ next();
+}
+app.post('/api/bridge-demo/device/login',requireDemoBridge,(req,res)=>{
+ const result=demoBridge.login(req.body);
+ if(!result)return res.status(401).json({success:false,code:'INVALID_DEVICE_CREDENTIALS'});
+ return res.json({success:true,...result});
+});
+app.get('/api/bridge-demo/device/commands',requireDemoBridge,requireDemoDevice,(req,res)=>{
+ return res.json({success:true,command:demoBridge.poll()});
+});
+app.post('/api/bridge-demo/device/report',requireDemoBridge,requireDemoDevice,(req,res)=>{
+ const result=demoBridge.report(req.body);
+ return res.status(result.ok?200:409).json({success:result.ok,code:result.code});
+});
+async function requireDemoProjectOwner(req,res,next){
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(result?.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(project.created_by_user_id!==req.projectUser.user_id)
+   return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  next();
+ }catch{return res.status(503).json({success:false,code:'PROJECT_LOOKUP_UNAVAILABLE'})}
+}
+app.post('/api/bridge-demo/projects/:projectId/ping',requireDemoBridge,requireProjectUser,requireDemoProjectOwner,(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const command=demoBridge.createPing(req.params.projectId);
+ return res.status(201).json({success:true,command});
+});
+app.get('/api/bridge-demo/projects/:projectId/commands/:commandId',requireDemoBridge,requireProjectUser,requireDemoProjectOwner,(req,res)=>{
+ const command=demoBridge.status(req.params.projectId,req.params.commandId);
+ if(!command)return res.status(404).json({success:false,code:'COMMAND_NOT_FOUND'});
+ return res.json({success:true,command});
+});
+// GAS-backed, non-actuating staging ping routes. All gates default OFF.
+// Device login is the isolated demo credential only; GAS independently verifies
+// the project/device binding before any queue action. No unlock functionality.
+let gasPingBridge=null;
+if(process.env.IKEY_GAS_PING_ENABLED==='true'&&process.env.IKEY_BRIDGE_DEMO_ENABLED==='true'&&authStore){
+ try{
+  const {createGasPingBridge}=require('./gen3-auth/gas-ping-bridge');
+  gasPingBridge=createGasPingBridge({store:authStore});
+ }catch(err){console.warn('GAS ping bridge disabled:',err.message)}
+}
+function requireGasPing(req,res,next){
+ res.set('Cache-Control','no-store');
+ if(!gasPingBridge||!demoBridge)return res.status(503).json({success:false,code:'GAS_PING_DISABLED'});
+ next();
+}
+const gasPingUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const gasPingDevice=/^[A-HJ-NP-Z2-9]{8}$/;
+function gasPingScope(req,res,next){
+ if(!gasPingUuid.test(String(req.params.projectId||''))||
+    !gasPingDevice.test(String(req.params.deviceId||'')))
+  return res.status(400).json({success:false,code:'PING_SCOPE_INVALID'});
+ if(req.params.deviceId!==process.env.IKEY_BRIDGE_DEMO_DEVICE_ID)
+  return res.status(403).json({success:false,code:'PING_DEVICE_NOT_CONFIGURED'});
+ next();
+}
+app.post('/api/bridge-staging/projects/:projectId/devices/:deviceId/ping',
+ requireGasPing,requireProjectUser,requireDemoProjectOwner,gasPingScope,async(req,res)=>{
+  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+  try{
+   const result=await gasPingBridge.execute('create',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,
+    actor_user_id:req.projectUser.user_id});
+   return res.status(201).json({success:true,result});
+  }catch(err){console.warn('GAS ping create rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
+app.get('/api/bridge-staging/projects/:projectId/devices/:deviceId/commands/:commandId',
+ requireGasPing,requireProjectUser,requireDemoProjectOwner,gasPingScope,async(req,res)=>{
+  if(!gasPingUuid.test(String(req.params.commandId||'')))
+   return res.status(400).json({success:false,code:'PING_COMMAND_ID_INVALID'});
+  try{
+   const result=await gasPingBridge.execute('status',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,
+    command_id:req.params.commandId,actor_user_id:req.projectUser.user_id});
+   return res.json({success:true,result});
+  }catch(err){console.warn('GAS ping status rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
+app.get('/api/bridge-staging/projects/:projectId/devices/:deviceId/commands',
+ requireGasPing,requireDemoDevice,gasPingScope,async(req,res)=>{
+  try{
+   const result=await gasPingBridge.execute('claim',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,device_authenticated:true});
+   return res.json({success:true,...result});
+  }catch(err){console.warn('GAS ping claim rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
+app.post('/api/bridge-staging/projects/:projectId/devices/:deviceId/report',
+ requireGasPing,requireDemoDevice,gasPingScope,async(req,res)=>{
+  const {validateDeviceReport}=require('./gen3-auth/device-bridge-contract');
+  if(!validateDeviceReport(req.body)||req.body.result==='received')
+   return res.status(400).json({success:false,code:'PING_REPORT_INVALID'});
+  try{
+   const result=await gasPingBridge.execute('report',{
+    project_id:req.params.projectId,device_id:req.params.deviceId,
+    command_id:req.body.command_id,result:req.body.result,device_authenticated:true});
+   return res.json({success:true,result});
+  }catch(err){console.warn('GAS ping report rejected',err.message);
+   return res.status(503).json({success:false,code:'GAS_PING_UNAVAILABLE'})}
+ });
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.
 app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
