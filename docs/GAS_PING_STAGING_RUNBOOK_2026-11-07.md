@@ -68,3 +68,12 @@ This work advances preparation of the existing unfinished GAS integration item i
 - The user has independently created an empty Apps Script staging project. Its script ID is not yet known to GitHub tooling, and no staging script upload or GAS deployment has occurred.
 - Critical: no current full doPost source backup has been verified; do not deploy an invented replacement.
 - Division of labor: assistant completes GitHub/Drive work in batches; user alone performs Apps Script editor operations, with precise instructions when a human action is required.
+
+
+## One-file installation alternative (prepared 2026-11-07)
+- Source: gas-staging/ikey-ping-staging-single-file.gs, commit 03c3c796bc91ee0d5a032690bb21693274171627. This concatenates the seven staging ping files without changing their logic.
+- In isolated Apps Script staging, install this bundle **instead of** the seven individual ping files. Do not include both: duplicate top-level const declarations would cause errors.
+- Existing original gas-device-actions.gs and gas-device-authorization.gs remain dependencies; the bundle does not recreate missing production source.
+- No doPost included or activated. Actual existing doPost must be verified, backed up and adapted without changing legacy behavior.
+- Staging spreadsheet exists with four headers verified, but secrets and staging GAS source have not been configured, so preflight has NOT passed.
+- Never deploy or activate Render flags until these gates pass.
