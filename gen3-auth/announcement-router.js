@@ -184,7 +184,7 @@ function createAnnouncementRouter(store) {
   // or public endpoint can trigger scheduled publishing.
   router.post('/internal/announcements/publish-due', async (req, res) => {
     const expected = process.env.ANNOUNCEMENTS_CRON_SECRET || '';
-    const supplied = String(req.get('authorization') || '').replace(/^Bearer\\s+/i, '');
+    const supplied = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
     const expectedBuffer = Buffer.from(expected);
     const suppliedBuffer = Buffer.from(supplied);
     if (expectedBuffer.length < 32 || expectedBuffer.length !== suppliedBuffer.length ||
