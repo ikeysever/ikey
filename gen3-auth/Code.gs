@@ -68,11 +68,16 @@ function deviceAuthStagingSpreadsheetId_(){
  return id;
 }
 function deviceAuthSheet_(){
- const id=deviceAuthStagingSpreadsheetId_();
- const tab=SpreadsheetApp.openById(id).getSheetByName(TABS.deviceAuth);
- if(!tab)throw Error("DEVICE_AUTH_STAGING_SHEET_NOT_FOUND");
+ // Explicit opt-in only. Default continues to use isolated staging storage.
+ // This does not modify credentials, create tables or enable physical commands.
+ const primary=PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_SOURCE")==="primary";
+ const id=primary?PropertiesService.getScriptProperties().getProperty("GEN3_SPREADSHEET_ID"):deviceAuthStagingSpreadsheetId_();
+ if(!id)throw Error("DEVICE_AUTH_SPREADSHEET_NOT_CONFIGURED");
+ const name=primary?"Devices":TABS.deviceAuth;
+ const tab=SpreadsheetApp.openById(id).getSheetByName(name);
+ if(!tab)throw Error("DEVICE_AUTH_SHEET_NOT_FOUND");
  const expected=HEADERS[TABS.deviceAuth],actual=tab.getRange(1,1,1,expected.length).getDisplayValues()[0];
- if(expected.some((v,i)=>actual[i]!==v))throw Error("DEVICE_AUTH_STAGING_SCHEMA_MISMATCH");
+ if(expected.some((v,i)=>actual[i]!==v))throw Error("DEVICE_AUTH_SCHEMA_MISMATCH");
  return tab;
 }
 function deviceAuthRows_(tab){
