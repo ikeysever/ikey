@@ -1,0 +1,24 @@
+name: iKey device auth mainline integration
+on:
+  push:
+    branches:
+      - feature/device-auth-mainline-integration-20261108
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund
+      - run: node --check server.js && node --check device-auth.js && node --check gen3-auth/sheets-store.js
+      - run: node --test tests/device-auth-mainline.test.js
+      - run: npm test
