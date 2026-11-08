@@ -97,6 +97,8 @@ app.get('/api/auth/status', async (_req, res) => {
   }
 });
 app.use('/api/auth', createRouter(authStore));
+// Device identity API only; physical commands remain disabled.
+require('./device-auth')(app,authStore);
 // Project operations are always scoped to the authenticated account on the server.
 const { hashToken, active } = require('./gen3-auth/core');
 const { randomUUID } = require('node:crypto');
