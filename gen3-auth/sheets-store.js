@@ -37,6 +37,11 @@ function createSheetsStore() {
    touchSession:async(session_id,expires_at,last_seen_at)=>call("touchSession",{session_id,expires_at,last_seen_at}),
    revokeSession:async(session_id,reason)=>call("revokeSession",{session_id,reason}),
    audit:async event=>call("audit",{event}),
+   // Dedicated device auth transport. GAS validates schema and reads the existing Devices table.
+   deviceAuthFindById:async device_id=>{
+     if(typeof device_id!=='string'||!/^[A-HJ-NP-Z2-9]{8}$/.test(device_id))throw Error('INVALID_DEVICE_ID');
+     return call('deviceAuthFindById',{device_id});
+   },
    // Generic data operations: allowlist lives in Render and GAS; no browser access.
    dbCall:async(action,payload)=>{
      if(!['db.health','db.schema','db.select','db.insert','db.update','db.delete'].includes(action))throw Error('GEN3_DB_ACTION_NOT_ALLOWED');
