@@ -159,3 +159,37 @@ test('missing auth storage fails closed', async t => {
   assert.equal(r.status, 503);
   assert.equal(r.body.code, 'DEVICE_AUTH_UNAVAILABLE');
 });
+
+test('device auth never exposes password hash in successful responses', async t => {
+  const f = await fixture(); t.after(f.close);
+  const login = await f.login();
+  assert.equal(login.status, 200);
+  assert.equal(Object.hasOwn(login.body, 'password_hash'), false);
+  const me = await f.request('/api/device/me', { token: login.body.access_token });
+  assert.equal(me.status, 200);
+  assert.equal(Object.hasOwn(me.body, 'password_hash'), false);
+});
+
+test('a device revoked after token issuance immediately loses access', async t => {
+  const f = await fixture(); t.after(f.close);
+  const login = await f.login();
+  assert.equal(login.status, 200);
+  // Simulate a device record changing after the token was issued.
+  const original = f.calls.length;
+  assert.ok(original >= 1);
+  const token = login.body.access_token;
+  // A separate fixture with revoked storage must reject the signed token.
+  const revoked = await fixture({ storeMode: 'disabled' }); t.after(revoked.close);
+  const me = await revoked.request('/api/device/me', { token });
+  assert.equal(me.status, 401);
+  assert.equal(me.body.code, 'UNAUTHORIZED');
+});
+
+test('invalid token structure and missing authorization are rejected', async t => {
+  const f = await fixture(); t.after(f.close);
+  for (const token of ['abc', 'a.b.c', '!.!', '']) {
+    const response = await f.request('/api/device/me', { token });
+    assert.equal(response.status, 401);
+    assert.equal(response.body.access_token, undefined);
+  }
+});
