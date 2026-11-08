@@ -125,9 +125,11 @@ function setupDeviceAuthStagingSheet(spreadsheetId){
  return {created,ready:true,sheet:name};
 }
 function inspectDeviceAuthStagingSetup(){
- const configured=Boolean(PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID"));
- if(!configured)return {configured:false,ready:false,reason:"STAGING_SPREADSHEET_NOT_CONFIGURED"};
- try{const tab=deviceAuthSheet_();return {configured:true,ready:true,sheet:TABS.deviceAuth,data_rows:Math.max(0,tab.getLastRow()-1)};}
+ const props=PropertiesService.getScriptProperties();
+ const primary=props.getProperty("IKEY_DEVICE_AUTH_SOURCE")==="primary";
+ const configured=primary?Boolean(props.getProperty("GEN3_SPREADSHEET_ID")):Boolean(props.getProperty("IKEY_DEVICE_AUTH_STAGING_SPREADSHEET_ID"));
+ if(!configured)return {configured:false,ready:false,reason:primary?"PRIMARY_SPREADSHEET_NOT_CONFIGURED":"STAGING_SPREADSHEET_NOT_CONFIGURED"};
+ try{const tab=deviceAuthSheet_();return {configured:true,ready:true,source:primary?"primary":"staging",sheet:primary?"Devices":TABS.deviceAuth,data_rows:Math.max(0,tab.getLastRow()-1)};}
  catch(err){return {configured:true,ready:false,reason:String(err.message||"DEVICE_AUTH_SETUP_FAILED")};}
 }
 
