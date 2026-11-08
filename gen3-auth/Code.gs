@@ -55,7 +55,27 @@ function locked(fn) {
  if(!lock.tryLock(25000))throw Error("DATABASE_BUSY");
  try{return fn()}finally{lock.releaseLock()}
 }
+// Read-only device authentication lookup. Does not depend on the generic DB allowlist.
+function deviceAuthFindById_(p) {
+ const id=String(p&&p.device_id||"");
+ if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id))throw Error("INVALID_DEVICE_ID");
+ const spreadsheetId=PropertiesService.getScriptProperties().getProperty("GEN3_SPREADSHEET_ID");
+ if(!spreadsheetId)throw Error("DEVICE_AUTH_STORAGE_NOT_CONFIGURED");
+ const tab=SpreadsheetApp.openById(spreadsheetId).getSheetByName("Devices");
+ if(!tab)throw Error("DEVICE_AUTH_SHEET_NOT_FOUND");
+ const expected=["device_id","password_hash","status","created_by_user_id","created_at","updated_at"];
+ const actual=tab.getRange(1,1,1,expected.length).getDisplayValues()[0];
+ if(expected.some((v,i)=>actual[i]!==v)||tab.getLastColumn()!==expected.length)throw Error("DEVICE_AUTH_SCHEMA_MISMATCH");
+ const last=tab.getLastRow();
+ if(last<2)return null;
+ const data=tab.getRange(2,1,last-1,expected.length).getDisplayValues();
+ const matches=data.filter(row=>row[0]===id);
+ if(matches.length>1)throw Error("DEVICE_AUTH_DUPLICATE_ID");
+ if(!matches.length)return null;
+ return Object.fromEntries(expected.map((key,i)=>[key,matches[0][i]]));
+}
 function execute(action,p) {
+ if(action==="deviceAuthFindById")return deviceAuthFindById_(p);
  switch(action) {
   case "registerAtomic":return locked(()=>{
    const u=p.user||{},username=String(u.username||"").trim().toLowerCase();
