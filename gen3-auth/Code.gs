@@ -89,6 +89,7 @@ function deviceAuthFindById_(p){
  const r=deviceAuthRows_(deviceAuthSheet_()).find(x=>x.value.device_id===id);return r?r.value:null;
 }
 function deviceAuthCreateAtomic_(p){
+ if(PropertiesService.getScriptProperties().getProperty("IKEY_DEVICE_AUTH_SOURCE")==="primary")throw Error("DEVICE_AUTH_PRIMARY_CREATE_DISABLED");
  const d=p.device||{},keys=["created_at","created_by_user_id","device_id","password_hash","status","updated_at"];
  if(!d||typeof d!=="object"||Array.isArray(d)||Object.keys(d).length!==keys.length||!keys.every(k=>Object.prototype.hasOwnProperty.call(d,k))||
     !DEVICE_AUTH_ID_PATTERN_.test(String(d.device_id||""))||d.status!=="pre_registered"||
