@@ -43,7 +43,10 @@ function ikeySyncRead_(request){
  if(!Number.isInteger(limit)||limit<1||limit>IKEY_SYNC_PAGE_MAX_)ikeySyncError_('SYNC_LIMIT_INVALID');
  var offset=request.pageToken===null||request.pageToken===undefined?0:Number(request.pageToken);
  if(!Number.isSafeInteger(offset)||offset<0)ikeySyncError_('SYNC_PAGE_TOKEN_INVALID');
- var revision=ikeySyncRevision_(s.state);
+ // Require the journal guard to be loaded and reject ambiguous writes before serving data.
+ if(typeof ikeyJournalAudit_!=='function')ikeySyncError_('SYNC_GUARD_MISSING');
+ var audit=ikeyJournalAudit_(s.state,s.log);
+ var revision=audit.revision;
  var pinned=request.revision===null||request.revision===undefined?revision:Number(request.revision);
  if(!Number.isSafeInteger(pinned)||pinned!==revision)ikeySyncError_('SYNC_REVISION_CHANGED');
  var rows=[];
@@ -68,7 +71,7 @@ function ikeySyncRead_(request){
  }
  var slice=rows.slice(offset,offset+limit);
  // Source may be written outside this journal: such writes are not covered by this protocol.
- if(ikeySyncRevision_(s.state)!==revision)ikeySyncError_('SYNC_REVISION_CHANGED');
+ if(ikeyJournalAudit_(s.state,s.log).revision!==revision)ikeySyncError_('SYNC_REVISION_CHANGED');
  return {rows:slice,revision:String(revision),nextCursor:String(revision),nextPageToken:offset+limit<rows.length?String(offset+limit):null,complete:true};
 }
 // Call from staging write-through handlers under the SAME script lock as the business write.
