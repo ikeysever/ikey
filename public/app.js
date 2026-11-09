@@ -197,4 +197,17 @@ form.addEventListener('submit', async event => {
   finally { updateAvailability(); }
 });
 setMode('login');
+// Returning visitors with a valid server-side session should not see a login prompt.
+// The session cookie remains HttpOnly; never persist a token in browser storage.
+(async function resumeExistingSession(){
+  try {
+    const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok)return;
+    const data=await response.json();
+    if(data.authenticated!==true||!data.user)return;
+    // Do not interrupt someone who has started interacting with the form.
+    if(form.matches(':focus-within')||account.value||password.value||mode!=='login')return;
+    window.location.replace('/home.html');
+  }catch{/* Temporary network failure: leave the login form usable. */}
+})();
 // Skip automatic remote health probe; login/register endpoints validate availability.
