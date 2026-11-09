@@ -246,6 +246,7 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNAVAILABLE'});
  }
 });
+const deviceBindAttempts=new Map();
 // Bind a factory-registered iBOX to exactly one project. Atomic primary-key insert
 // prevents two projects from claiming the same device concurrently.
 app.post('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
@@ -256,6 +257,13 @@ app.post('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
   return res.status(400).json({success:false,code:'INVALID_PROJECT_ID',message:'專案 ID 不正確'});
  const deviceId=req.body?.device_id,password=req.body?.password;
+ const attemptKey=String(req.ip||'unknown')+':'+String(deviceId||'').slice(0,32);
+ const nowAttempt=Date.now();
+ let attempt=deviceBindAttempts.get(attemptKey);
+ if(!attempt||attempt.until<=nowAttempt)attempt={count:0,until:nowAttempt+60000};
+ attempt.count++;deviceBindAttempts.set(attemptKey,attempt);
+ if(deviceBindAttempts.size>5000)for(const [key,value] of deviceBindAttempts)if(value.until<=nowAttempt)deviceBindAttempts.delete(key);
+ if(attempt.count>5)return res.status(429).json({success:false,code:'RATE_LIMITED',message:'驗證次數過多，請稍後再試'});
  if(typeof deviceId!=='string'||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||typeof password!=='string'||password.length<8||password.length>128)
   return res.status(400).json({success:false,code:'INVALID_REQUEST',message:'裝置 ID 或密碼格式不正確'});
  try{
