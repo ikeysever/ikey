@@ -117,6 +117,20 @@ function sameProjectOrigin(req){
  const origin=req.get('origin');if(!origin)return true;
  try{const u=new URL(origin);const proto=req.secure||req.get('x-forwarded-proto')==='https'?'https:':'http:';return u.protocol===proto&&u.host===req.get('host');}catch{return false;}
 }
+// LINE integration phase B: read-only capability status. No persistence, OAuth or webhook
+// activation until a durable binding store and verified LINE channel configuration exist.
+app.get('/api/line/status',requireProjectUser,(_req,res)=>{
+ res.set('Cache-Control','no-store');
+ return res.json({success:true,available:false,binding_status:'unavailable',reason:'PERSISTENT_STORAGE_NOT_CONFIGURED'});
+});
+app.post('/api/line/bind/start',requireProjectUser,(_req,res)=>{
+ res.set('Cache-Control','no-store');
+ return res.status(503).json({success:false,code:'LINE_BINDING_DISABLED',message:'LINE 綁定功能尚未開放'});
+});
+app.post('/api/line/unbind',requireProjectUser,(_req,res)=>{
+ res.set('Cache-Control','no-store');
+ return res.status(503).json({success:false,code:'LINE_BINDING_DISABLED',message:'LINE 解除綁定功能尚未開放'});
+});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
