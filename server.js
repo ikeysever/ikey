@@ -3,6 +3,8 @@ const express = require('express');
 const path = require('node:path');
 const app = express();
 app.disable('x-powered-by');
+// LINE webhook requires raw request bytes for HMAC verification.
+require('./lib/line-ingress').mountLineIngress(app);
 app.use(express.json({ limit: '16kb' }));
 // Server-side API request timing and per-minute counts; no credentials or payloads logged.
 const requestMinuteStats = new Map();
