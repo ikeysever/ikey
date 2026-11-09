@@ -358,6 +358,32 @@ app.post('/api/admin/accounts/action',requireProjectUser,async(req,res)=>{
 const { createAnnouncementRouter } = require('./gen3-auth/announcement-router');
 app.use('/api', createAnnouncementRouter(authStore));
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, code: 'NOT_FOUND' }));
+// Guard management HTML on the server as well as the navigation. Static assets
+// are not authorization boundaries; every management API must verify its own actor.
+const protectedAdminPages = new Set([
+  '/super-admin.html', '/admin-accounts.html', '/admin-accounts-preview.html'
+]);
+app.use(async (req,res,next)=>{
+  if(req.method!=='GET' && req.method!=='HEAD')return next();
+  const requested=req.path.toLowerCase().replace(/\/+$/,'');
+  if(!protectedAdminPages.has(requested))return next();
+  res.set('Cache-Control','no-store');
+  if(!authStore)return res.status(503).send('管理服務尚未就緒');
+  try{
+    const raw=String(req.headers.cookie||'').split(';').map(x=>x.trim())
+      .find(x=>x.startsWith('ikey_gen3_session='))?.slice('ikey_gen3_session='.length);
+    if(!raw||raw.length>256)return res.redirect(302,'/');
+    const resolved=await authStore.resolveSession(hashToken(raw));
+    if(!resolved||resolved.session.revoked_at||
+       Date.parse(resolved.session.expires_at)<=Date.now()||!active(resolved.user))
+      return res.redirect(302,'/');
+    if(resolved.user.global_role!=='super_admin')return res.status(403).send('無權存取管理頁面');
+    return next();
+  }catch(error){
+    console.warn('Admin page authorization unavailable',error.name||'error');
+    return res.status(503).send('暫時無法驗證管理權限');
+  }
+});
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use((_err, _req, res, _next) => res.status(400).json({ ok: false, code: 'BAD_REQUEST' }));
 
