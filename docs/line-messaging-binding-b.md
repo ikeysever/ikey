@@ -17,8 +17,19 @@
 - 事件必須先**持久化並完成原子處理**才可回 HTTP 200；失敗回非 2xx 讓 LINE 重試；利用 webhookEventId 去重。
 - LINE Login OAuth 與 LINE Messaging API 是不同產品；此方案不宣稱已提供 LINE OAuth 登入。
 - 不使用 Node.js 記憶體 Map 作為綁定碼儲存；Render 重啟或多實例時會失效。
-- 不更動既有 Users/Sessions 欄位或帳號權限；新增獨立 LINE_Bind_Challenges、LINE_Bindings、LINE_Webhook_Events（實際名稱及欄位須先經 GAS schema 盤點確認）。
+- 不更動既有 Users/Sessions 欄位或帳號權限；保留現有 LINE_Bindings、LINE_Notification_Preferences、LINE_Audit_Logs；另規劃獨立 LINE_Bind_Challenges 與 LINE_Webhook_Events（實際名稱及欄位須經 GAS writer schema 盤點確認）。
 - 目前 GAS writer 未提供這些表的原子操作。lib/line-code-binding.js 僅提供純函式與能力檢查，現有 API 保持 503，真實 webhook 仍不確認未處理事件。
 
 ## 啟用門檻
 確認 GAS 原始碼可安全修改、部署測試版及備份；實作 createChallengeAtomic / consumeChallengeAtomic / getBindingByUser / unbindAtomic / recordWebhookEventAtomic，完成重放、競爭條件、過期、跨帳號、群組事件、簽章錯誤測試後，才能將 API 和帳號頁按鈕正式啟用。
+
+## 2026-11-09 唯讀資料庫盤點（Google Drive）
+- 現行試算表：iKey_Database；另有 iKey_Database_BACKUP_before_LINE_binding_2026-11-09。
+- 現有 LINE_Bindings 欄位：binding_id,user_id,line_user_id,line_display_name,status,bound_at,unbound_at,updated_at。
+- 現有 LINE_Notification_Preferences 欄位：preference_id,user_id,notification_type,enabled,updated_at。
+- 現有 LINE_Audit_Logs 欄位：audit_id,user_id,line_user_id,event_type,result,details,created_at。
+- 現有 Gen3_Users 有 user_id、account_status、global_role、username 等欄位；Auth_Sessions 有 session_token_hash、expires_at、revoked_at 等欄位。
+- **未發現** LINE_Bind_Challenges 或 LINE_Webhook_Events 工作表。現有 LINE_Bindings 不應拿來存一次性明文綁定碼。
+- Render 的 gen3-auth/sheets-store.js 僅開放既有 GAS 動作與一般 db.*；尚無 LINE 原子動作。無法只靠試算表新增欄位確保競爭條件安全。
+- 尚未取得正在執行的 GAS 原始碼；不可聲稱 GAS 已支援綁定交易、Webhook 去重或修改 GAS 正式部署。
+- 下一步先取得 GAS writer 唯讀原始碼，確認 LockService、動作路由與 schema allowlist，再於獨立測試環境實作與驗證。此時不改動任何現有資料列。
