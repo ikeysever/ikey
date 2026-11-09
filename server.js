@@ -266,6 +266,15 @@ app.post('/api/projects/:projectId/devices/:deviceId/unlock',requireProjectUser,
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
  return res.status(503).json({success:false,code:'UNLOCK_EXECUTION_NOT_READY',message:'實體開鎖回報尚未串接，未發送開鎖指令'});
 });
+// CTRL-001: opt-in, process-local staging simulation. Disabled by default.
+// Do not enable on the production service or connect its poll route to real hardware.
+require('./device-command-simulation')(app, {
+ enabled: process.env.IKEY_CTRL001_SIMULATION === 'true' &&
+          process.env.NODE_ENV !== 'production',
+ authStore,
+ requireProjectUser,
+ secret: process.env.IKEY_DEVICE_TOKEN_SECRET
+});
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.
 app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
