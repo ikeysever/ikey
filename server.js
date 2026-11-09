@@ -121,6 +121,32 @@ app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
+// Project settings update: owner-only, strict allowlist, verified persistence, no physical commands.
+app.patch('/api/projects/:projectId/settings',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req)||req.get('sec-fetch-site')==='cross-site')return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))return res.status(400).json({success:false,message:'專案 ID 格式不正確'});
+ const body=req.body;
+ if(!body||typeof body!=='object'||Array.isArray(body))return res.status(400).json({success:false,message:'設定格式不正確'});
+ const allowed=['project_name','description','status','authorization_method','scheduled_authorization','notification_theme','notification_sound_pack','notification_volume'];
+ const keys=Object.keys(body);
+ if(!keys.length||keys.some(k=>!allowed.includes(k)))return res.status(400).json({success:false,message:'包含不允許修改的欄位'});
+ const themes=['midnight','polar','emerald','copper','violet','graphite'],sounds=['pulse','crystal','air','wood','future','click'];
+ const valid=(k,v)=>k==='project_name'?typeof v==='string'&&v.trim().length>0&&v.trim().length<=80:k==='description'?typeof v==='string'&&v.trim().length<=1000:k==='status'?['active','inactive'].includes(v):k==='authorization_method'?['application','self_registration'].includes(v):k==='scheduled_authorization'?typeof v==='boolean':k==='notification_theme'?themes.includes(v):k==='notification_sound_pack'?sounds.includes(v):k==='notification_volume'?Number.isInteger(v)&&v>=0&&v<=100:false;
+ if(keys.some(k=>!valid(k,body[k])))return res.status(400).json({success:false,message:'設定內容不符合規格'});
+ const data={};for(const key of keys)data[key]=key==='scheduled_authorization'?String(body[key]):key==='notification_volume'?String(body[key]):typeof body[key]==='string'?body[key].trim():body[key];
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(result?.rows||[]).find(p=>p.project_id===projectId);
+  if(!project||project.status==='deleted')return res.status(404).json({success:false,message:'找不到專案'});
+  if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,message:'只有專案建立者可修改設定'});
+  await authStore.dbCall('db.update',{table:'Projects',where:{project_id:projectId,created_by_user_id:req.projectUser.user_id},data:{...data,updated_at:new Date().toISOString()}});
+  const check=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const saved=(check?.rows||[]).find(p=>p.project_id===projectId);
+  if(!saved||keys.some(k=>String(saved[k])!==String(data[k])))return res.status(503).json({success:false,message:'尚未確認設定已儲存，請重新整理檢查'});
+  return res.json({success:true,project:saved});
+ }catch(err){console.warn('Project settings update unavailable',err.name||'Error');return res.status(503).json({success:false,message:'設定服務暫時無法完成更新'});}
+});
 app.delete('/api/projects/:projectId',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
  const projectId=String(req.params.projectId||'');
