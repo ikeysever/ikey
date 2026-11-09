@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iKey 3.1｜系統公告管理</title><meta name="theme-color" content="#0b1220">
+<style>
+:root{font-family:system-ui,"Noto Sans TC",sans-serif;color:#f8fafc;color-scheme:dark;background:#0b1220}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 0%,#1b3150,#0b1220 42%,#070c16)}
+main{max-width:1160px;margin:auto;padding:28px 20px 70px}a{color:#63d8e8}h1{margin:12px 0 4px;font-size:clamp(26px,4vw,38px)}h2{font-size:19px;margin:0 0 16px}p{color:#a6b2c5}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:25px}
+.panel{background:rgba(20,31,52,.88);border:1px solid #34465d;border-radius:18px;padding:22px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,1fr);gap:18px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}
+label{display:block;margin:12px 0 5px;color:#d9e6f4;font-size:14px}
+input,textarea,select{width:100%;padding:11px 12px;border-radius:9px;border:1px solid #526981;background:#0b192b;color:#fff;font:inherit}
+textarea{min-height:190px;resize:vertical;line-height:1.6}
+button{font:inherit;cursor:pointer;padding:10px 14px;border:1px solid #49657b;border-radius:9px;background:#1b344c;color:#f8fafc}
+button.primary{background:#176c83;border-color:#36bbd2}button.danger{border-color:#c26a73;color:#ffd1d1}
+button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #63d8e8;outline-offset:2px}
+.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.filters{margin:0 0 16px}
+.item{padding:13px 0;border-bottom:1px solid #34465d}.item:last-child{border:0}
+.item strong{display:block;overflow-wrap:anywhere}.meta{font-size:13px;color:#b4c3d6;margin:6px 0}
+small{color:#b4c3d6}.status{min-height:24px;color:#a8e9f4;margin-top:12px}.status.error{color:#ffb6bd}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:480px){.two{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+</style></head><body><main>
+<header><div><a href="/super-admin.html">← 返回超級管理員</a><h1>系統公告管理</h1><p>iKey 3.1 · 僅限超級管理員</p></div><button id="refresh" type="button">重新整理</button></header>
+<div id="global-status" class="status" role="status" aria-live="polite">正在驗證權限並讀取公告…</div>
+<div id="workspace" class="grid" hidden>
+<section class="panel"><h2>公告清單</h2><div class="filters"><label for="filter">狀態篩選</label><select id="filter"><option value="all">全部（不含回收站）</option><option value="draft">草稿</option><option value="scheduled">排程</option><option value="published">已發布</option><option value="archived">已封存</option><option value="deleted">回收站</option></select><button id="new" type="button">＋新增公告</button></div><div id="items"></div></section>
+<section class="panel"><h2 id="form-heading">新增公告</h2>
+<form id="editor"><label for="title">公告標題（最多 120 字）</label><input id="title" maxlength="120" required>
+<label for="content">公告內容（最多 10,000 字）</label><textarea id="content" maxlength="10000" required></textarea>
+<div class="two"><div><label for="category">分類</label><select id="category"><option value="system">系統</option><option value="maintenance">維護</option><option value="feature">功能</option><option value="administrative">行政</option><option value="other">其他</option></select></div>
+<div><label for="priority">重要程度</label><select id="priority"><option value="normal">一般</option><option value="important">重要</option><option value="urgent">緊急</option></select></div></div>
+<div class="two"><div><label for="scheduled">排程發布（選填）</label><input id="scheduled" type="datetime-local"></div><div><label for="expires">到期時間（選填）</label><input id="expires" type="datetime-local"></div></div>
+<small>不填排程時間會儲存為草稿；排程發布需由後端排程工作執行。</small>
+<div class="actions"><button id="save" class="primary" type="submit">儲存</button><button id="publish" type="button" hidden>立即發布</button><button id="unpublish" type="button" hidden>下架</button><button id="remove" class="danger" type="button" hidden>移至回收站</button><button id="restore" type="button" hidden>還原為草稿</button></div>
+<div id="form-status" class="status" role="status" aria-live="polite"></div></form></section></div>
+</main><script>
+'use strict';
+const $=id=>document.getElementById(id);
+let rows=[], selected=null, busy=false;
+const labels={draft:'草稿',scheduled:'排程',published:'已發布',archived:'已封存',deleted:'回收站'};
+const categories={system:'系統',maintenance:'維護',feature:'功能',administrative:'行政',other:'其他'};
+const priorities={normal:'一般',important:'重要',urgent:'緊急'};
+function notice(message,error=false,id='global-status'){const el=$(id);el.textContent=message;el.classList.toggle('error',error)}
+async function api(path,options={}){
+ const res=await fetch(path,{credentials:'same-origin',cache:'no-store',...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}});
+ let data;try{data=await res.json()}catch{throw Error('伺服器回傳格式不正確')}
+ if(!res.ok||data.success!==true){const error=new Error(data.message||'操作失敗（HTTP '+res.status+'）');error.status=res.status;throw error}
+ return data;
+}
+const toInput=value=>{if(!value)return '';const d=new Date(value);if(!Number.isFinite(d.getTime()))return '';const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);return local.toISOString().slice(0,16)};
+const toIso=id=>$(id).value?new Date($(id).value).toISOString():'';
+function setBusy(value){busy=value;document.querySelectorAll('#editor button,#refresh,#new').forEach(el=>el.disabled=value)}
+function updateActions(){const row=rows.find(x=>x.announcement_id===selected);$('publish').hidden=!row||row.status==='published'||row.status==='deleted';$('unpublish').hidden=!row||row.status!=='published';$('remove').hidden=!row||row.status==='deleted';$('restore').hidden=!row||row.status!=='deleted';$('save').hidden=!!row&&row.status==='deleted'}
+function edit(id=null){selected=id;const row=rows.find(x=>x.announcement_id===id);$('editor').reset();$('form-heading').textContent=row?'編輯公告':'新增公告';if(row){$('title').value=row.title;$('content').value=row.content;$('category').value=row.category;$('priority').value=row.priority;$('scheduled').value=toInput(row.scheduled_at);$('expires').value=toInput(row.expires_at)}updateActions();notice('',false,'form-status')}
+function render(){
+ const root=$('items');root.replaceChildren();const filter=$('filter').value;
+ const shown=rows.filter(x=>filter==='all'?x.status!=='deleted':x.status===filter);
+ if(!shown.length){const p=document.createElement('p');p.textContent='目前沒有符合條件的公告';root.append(p);return}
+ for(const row of shown){const item=document.createElement('div');item.className='item';
+ const title=document.createElement('strong');title.textContent=row.title;
+ const meta=document.createElement('div');meta.className='meta';meta.textContent=[labels[row.status]||row.status,categories[row.category]||row.category,priorities[row.priority]||row.priority,row.updated_at?'更新：'+new Date(row.updated_at).toLocaleString('zh-TW'):''].filter(Boolean).join(' · ');
+ const button=document.createElement('button');button.type='button';button.textContent='檢視／編輯';button.addEventListener('click',()=>edit(row.announcement_id));
+ item.append(title,meta,button);root.append(item)}
+}
+async function load(){notice('正在載入公告…');try{const data=await api('/api/admin/announcements?include_trash=true');rows=data.announcements||[];$('workspace').hidden=false;render();updateActions();notice('公告已更新，共 '+rows.length+' 筆')}catch(e){if(e.status===401||e.status===403){$('workspace').hidden=true;notice(e.status===403?'權限不足：此功能僅限超級管理員':'請先登入 iKey 再使用公告管理',true)}else notice(e.message,true)}}
+async function execute(action,method='POST',body){if(busy)return;setBusy(true);notice('處理中…',false,'form-status');try{await api(action,{method,...(body?{body:JSON.stringify(body)}:{})});notice('操作成功',false,'form-status');await load();edit()}catch(e){notice(e.message,true,'form-status')}finally{setBusy(false)}}
+$('editor').addEventListener('submit',e=>{e.preventDefault();if(busy)return;const title=$('title').value.trim(),content=$('content').value.trim();if(!title||!content){notice('請填寫標題與內容',true,'form-status');return}
+const scheduled=toIso('scheduled'),expires=toIso('expires');if(scheduled&&expires&&Date.parse(expires)<=Date.parse(scheduled)){notice('到期時間必須晚於排程時間',true,'form-status');return}
+const body={title,content,category:$('category').value,priority:$('priority').value,scheduled_at:scheduled,expires_at:expires};
+execute(selected?'/api/admin/announcements/'+encodeURIComponent(selected):'/api/admin/announcements',selected?'PUT':'POST',body)});
+function action(suffix,method='POST',confirmText){if(!selected||busy)return;if(confirmText&&!confirm(confirmText))return;execute('/api/admin/announcements/'+encodeURIComponent(selected)+suffix,method)}
+$('publish').addEventListener('click',()=>action('/publish','POST','確定立即發布這則公告？'));
+$('unpublish').addEventListener('click',()=>action('/unpublish','POST','確定下架？下架後公告會封存。'));
+$('remove').addEventListener('click',()=>action('','DELETE','確定移至回收站？'));
+$('restore').addEventListener('click',()=>action('/restore'));
+$('refresh').addEventListener('click',load);$('new').addEventListener('click',()=>edit());$('filter').addEventListener('change',render);
+load();
+</script></body></html>
