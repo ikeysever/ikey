@@ -102,3 +102,13 @@
 - Security: no credentials or raw codes in Git/logs; keyed digests and source pseudonyms, exact signed payload with 60-second freshness; separate secrets required at activation. Test-only literal secrets are synthetic.
 - Release remains feature-gated OFF pending actual GAS/schema deployment, complete source/backup/restore validation and real LINE acceptance. Read-only Actions capability check may inspect existing clasp access; it never pushes GAS, executes business functions or logs source.
 - At this entry's creation: no live Sheets/GAS/LINE settings modified; no formal backup/restore/live acceptance performed. Deployment result and exact commit/deploy IDs must be recorded after verification, never inferred from test results.
+
+
+### 2026-11-09 16:00（Asia/Taipei）— 合併與關閉功能部署結果
+- Implementation commit: 5e292c9eab0da6075f47db82185a98b0a3630a95; PR #117 merged; main merge commit: e8d218a6a382a44765506a86c5dfed6c8fe60ef7.
+- GitHub CI on implementation commit: all executable checks passed; PR-context GAS capability job skipped by design. Push-context capability job completed and reported GAS_ACCESS_UNAVAILABLE because IKEY_CLASPRC_JSON is not configured. No clasp push or GAS code execution occurred. Main commit checks also passed.
+- Render deployment: dep-dbonqotg1s2s73fq293g; exact deployed commit e8d218a6a382a44765506a86c5dfed6c8fe60ef7; live at 2026-11-09 16:00:04 Asia/Taipei. Updating only IKEY_LINE_BINDING_ENABLED=false merged with existing variables and automatically triggered this deployment; no duplicate trigger was sent. Auto-deploy remains off.
+- Post-deploy HTTP read checks: /ping 200; /api/health 200; /api/auth/status 200 with ready/enabled/registration true; unauthenticated /api/line/status 401; /account.html 200 containing the new LINE form. These are readiness/smoke checks, not actual login, device execution or live LINE acceptance.
+- Formal state: Node code deployed with LINE binding explicitly OFF. Live GAS, Sheets, LINE console and existing bindings were not modified. No full formal database/GAS backup or restoration was performed because this release did not mutate those systems. Prior Render commit retained for rollback: 9b33d6ce72426e05a65f13add1a28a011e35b31b.
+- Blocker: no configured non-editor GAS credential. Real schema/secret/GAS deployment and designated-account LINE end-to-end tests remain outstanding. Do not describe this deployment as a working LINE binding launch. User requested no GAS editor use and no further per-step approval; continue only through an authenticated non-editor channel when available.
+- This follow-up is documentation only; it does not require another Render deployment.
