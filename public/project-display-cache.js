@@ -14,12 +14,19 @@ window.iKeyProjectCache=(()=>{
   try{sessionStorage.setItem(KEY,JSON.stringify({savedAt:Date.now(),projects:projects.map(clean).slice(0,100)}));}catch(_){}
  }
  function clear(){try{sessionStorage.removeItem(KEY);}catch(_){}}
- function prefetch(){
-  if(!read())return Promise.resolve(null);
-  return fetch('/api/projects',{credentials:'same-origin',cache:'no-store'}).then(async r=>{
-   const data=await r.json();if(!r.ok||!data.success||!Array.isArray(data.projects))throw Error('project refresh failed');
+ let pending=null;
+ function fetchProjects(){
+  if(pending)return pending;
+  pending=fetch('/api/projects',{credentials:'same-origin',cache:'no-store'}).then(async r=>{
+   const data=await r.json();
+   if(!r.ok||!data.success||!Array.isArray(data.projects)){
+    if(r.status===401||r.status===403)clear();
+    throw Error(data.message||'project refresh failed');
+   }
    write(data.projects);return data.projects;
-  }).catch(()=>null);
+  }).finally(()=>{pending=null;});
+  return pending;
  }
- return {read,write,clear,prefetch};
+ function prefetch(){return fetchProjects().catch(()=>null);}
+ return {read,write,clear,prefetch,fetchProjects};
 })();
