@@ -310,3 +310,19 @@ test('CTRL-001 T03: failed emulated actuator produces failed receipt', async t =
   const read = await ctx.request('/api/device-commands/' + created.body.command.command_id);
   assert.equal(read.body.command.status, 'failed');
 });
+
+test('CTRL-001: duplicate super-admin command remains explicitly simulated', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const path = '/api/devices/' + deviceId + '/commands';
+  const options = { method: 'POST', body: {
+    action: 'unlock', timeout_ms: 15000, idempotency_key: 'ui-duplicate-marker-0001'
+  } };
+  const first = await ctx.request(path, options);
+  const second = await ctx.request(path, options);
+  assert.equal(first.status, 201);
+  assert.equal(second.status, 200);
+  assert.equal(second.body.duplicate, true);
+  assert.equal(second.body.simulated, true);
+  assert.equal(first.body.command.command_id, second.body.command.command_id);
+});
