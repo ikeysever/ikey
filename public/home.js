@@ -31,7 +31,7 @@ const projectMenuToggle=byId('project-menu-toggle'),projectMenuContent=byId('pro
 if(projectMenuToggle&&projectMenuContent){projectMenuToggle.addEventListener('click',()=>{const open=projectMenuToggle.getAttribute('aria-expanded')!=='true';projectMenuToggle.setAttribute('aria-expanded',String(open));projectMenuToggle.setAttribute('aria-label',open?'收合我的專案':'展開我的專案');const chevron=projectMenuToggle.querySelector('.project-menu-chevron');if(chevron)chevron.textContent=open?'▼':'▶';projectMenuContent.hidden=!open;});}
 function showDashboard(user){
   if(byId('projects-panel')){byId('loading').hidden=true;byId('projects-panel').hidden=false;return;}
-  if(byId('account-empty-page')){byId('loading').hidden=true;byId('account-empty-page').hidden=false;return;}
+  if(byId('account-empty-page')){if(user?.global_role!=='super_admin')return;byId('loading').hidden=true;byId('account-empty-page').hidden=false;return;}
   if(byId('account-panel')){
     byId('account-display-name').textContent=user?.display_name||'—';
     byId('account-username').textContent=user?.username||'—';
@@ -45,10 +45,10 @@ function showDashboard(user){
   byId('loading').hidden=true;
   byId('dashboard').hidden=false;
 }
-async function load(){
+function applySuperAdminVisibility(role){\n const nav=document.querySelector('.admin-side-nav')||document.querySelector('#sidebar nav a[href="/super-admin.html"]');\n if(nav)nav.hidden=role!=='super_admin';\n}\nasync function load(){
  // Paint non-sensitive page chrome immediately using the user verified during welcome.
- try{const cached=JSON.parse(sessionStorage.getItem('ikey-welcome-user')||'null');if(cached){showDashboard(cached);}}catch{}
- try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){try{sessionStorage.removeItem('ikey-welcome-user');sessionStorage.removeItem('ikey:projects:display:v1');sessionStorage.removeItem('ikey-projects-refresh');}catch{}location.replace('/');return;}showDashboard(data.user);window.dispatchEvent(new CustomEvent('ikey:session-verified',{detail:{role:data.user?.global_role}}));}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
+ try{const cached=JSON.parse(sessionStorage.getItem('ikey-welcome-user')||'null');if(cached&&!byId('account-empty-page')){showDashboard(cached);}}catch{}
+ try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){try{sessionStorage.removeItem('ikey-welcome-user');sessionStorage.removeItem('ikey:projects:display:v1');sessionStorage.removeItem('ikey-projects-refresh');}catch{}location.replace('/');return;}applySuperAdminVisibility(data.user?.global_role);if(byId('account-empty-page')&&data.user?.global_role!=='super_admin'){location.replace('/home.html');return;}showDashboard(data.user);window.dispatchEvent(new CustomEvent('ikey:session-verified',{detail:{role:data.user?.global_role}}));}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
 // Synthesize a short metallic latch click; no external audio asset required.
 function createLogoutLatchSound(){
  try{
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     content.append(item);
   }
   wrapper.append(heading,content);
-  link.replaceWith(wrapper);
+  link.replaceWith(wrapper);\n  wrapper.hidden=true;
   const onAdmin=location.pathname==='/super-admin.html';
   let expanded=onAdmin;
   function render(){
