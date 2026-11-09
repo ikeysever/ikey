@@ -48,3 +48,8 @@ test('incremental repeated id folds latest version and tombstone',async()=>{
  const sync=createGasSyncAdapter({request:async req=>req.action==='snapshot.page'?page([row('a',1)],'1'):page([row('a',2),row('a',3,true)],'3',null,'3')});
  const cache=new CentralCache({sync});assert.equal(await cache.tick(),true);assert.equal(await cache.tick(),true);assert.equal(cache.read('announcements:a'),null);
 });
+
+test('pagination pins revision on later requests',async()=>{
+ const calls=[];const sync=createGasSyncAdapter({request:async req=>{calls.push(req);return req.pageToken===null?page([row('a',1)],'rev1','page2'):page([row('b',2)],'rev1')}});
+ await sync({snapshot:new Map()});assert.equal(calls[0].revision,null);assert.equal(calls[1].revision,'rev1');
+});
