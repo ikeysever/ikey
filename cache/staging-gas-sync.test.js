@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
-const src=fs.readFileSync(path.join(__dirname,'../gas/staging-cache-sync.gs'),'utf8');
+const src=fs.readFileSync(path.join(__dirname,'../gas/staging-journal-guard.gs'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname,'../gas/staging-cache-sync.gs'),'utf8');
 function fixture(){
  const tables={
   System_Announcements:[['announcement_id','title'],['a','A'],['b','B'],['c','C']],
@@ -36,4 +36,17 @@ test('staging gate rejects production id',()=>{
 test('invalid page limit and action fail closed',()=>{
  const {ctx}=fixture();assert.throws(()=>ctx.ikeySyncRead_({action:'snapshot.page',limit:101}),/SYNC_LIMIT_INVALID/);
  assert.throws(()=>ctx.ikeySyncRead_({action:'db.select'}),/SYNC_ACTION_DENIED/);
+});
+
+test('read blocks pending journal tail',()=>{
+ const {ctx,tables}=fixture();tables.Cache_Change_Log.push([1,'a',1,false,'{}','now']);
+ assert.throws(()=>ctx.ikeySyncRead_({action:'snapshot.page'}),/JOURNAL_PENDING_RECONCILIATION/);
+});
+test('read blocks corrupt sequence',()=>{
+ const {ctx,tables}=fixture();tables.Cache_Change_Log.push([2,'a',2,false,'{}','now']);tables.Cache_Sync_State[1][1]=2;
+ assert.throws(()=>ctx.ikeySyncRead_({action:'changes.page',cursor:'0'}),/JOURNAL_CORRUPT/);
+});
+test('read blocks missing guard',()=>{
+ const {ctx}=fixture();ctx.ikeyJournalAudit_=undefined;
+ assert.throws(()=>ctx.ikeySyncRead_({action:'snapshot.page'}),/SYNC_GUARD_MISSING/);
 });
