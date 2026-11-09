@@ -252,3 +252,61 @@ test('existing super-admin unlock test endpoint uses simulation only and returns
   assert.equal(readback.body.command.status, 'pending');
   assert.equal(readback.body.simulated, true);
 });
+
+const { createSimulatedEsp32 } = require('../test-support/simulated-esp32-client');
+
+test('CTRL-001 T03: super-admin button -> simulated ESP32 poll -> receipt readback', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  let pulses = 0;
+  const client = createSimulatedEsp32({
+    baseUrl: 'http://test.local',
+    deviceToken: ctx.token,
+    fetchImpl: async (url, init) => {
+      const path = new URL(url).pathname;
+      const result = await ctx.request(path, {
+        method: init.method || 'GET',
+        headers: init.headers,
+        body: init.body ? JSON.parse(init.body) : undefined
+      });
+      return { ok: result.status >= 200 && result.status < 300, status: result.status, json: async () => result.body };
+    },
+    onCommand: async () => { pulses++; return true; }
+  });
+  const created = await ctx.request('/api/devices/' + deviceId + '/commands', {
+    method: 'POST', body: { action: 'unlock', timeout_ms: 15000, idempotency_key: 't03-full-chain-0001' }
+  });
+  assert.equal(created.status, 201);
+  const receipt = await client.tick();
+  assert.equal(receipt.state, 'succeeded');
+  assert.equal(pulses, 1, 'emulated pulse only');
+  const again = await client.tick();
+  assert.equal(again.state, 'idle');
+  assert.equal(pulses, 1);
+  const read = await ctx.request('/api/device-commands/' + created.body.command.command_id);
+  assert.equal(read.body.command.status, 'succeeded');
+  assert.match(read.body.command.result.detail, /no relay actuation/);
+});
+
+test('CTRL-001 T03: failed emulated actuator produces failed receipt', async t => {
+  const ctx = await setup();
+  t.after(ctx.close);
+  const created = await ctx.request('/api/devices/' + deviceId + '/commands', {
+    method: 'POST', body: { action: 'unlock', timeout_ms: 15000, idempotency_key: 't03-failed-0001' }
+  });
+  const client = createSimulatedEsp32({
+    baseUrl: 'http://test.local', deviceToken: ctx.token,
+    fetchImpl: async (url, init) => {
+      const result = await ctx.request(new URL(url).pathname, {
+        method: init.method || 'GET', headers: init.headers,
+        body: init.body ? JSON.parse(init.body) : undefined
+      });
+      return { ok: result.status < 300, status: result.status, json: async () => result.body };
+    },
+    onCommand: async () => false
+  });
+  const receipt = await client.tick();
+  assert.equal(receipt.state, 'failed');
+  const read = await ctx.request('/api/device-commands/' + created.body.command.command_id);
+  assert.equal(read.body.command.status, 'failed');
+});
