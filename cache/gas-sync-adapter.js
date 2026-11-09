@@ -11,7 +11,7 @@ function createGasSyncAdapter({request,namespace='announcements',pageSize=100,ma
  async function collect({action,cursor=null,signal}){
   const all=[],seenTokens=new Set();let pageToken=null,revision=null,nextCursor=null;
   for(let i=0;i<maxPages;i++){
-   const r=await request({action,namespace,cursor,pageToken,limit:pageSize,signal});
+   const r=await request({action,namespace,cursor,pageToken,revision,limit:pageSize,signal});
    if(!obj(r)||r.complete!==true||!Array.isArray(r.rows)||r.rows.length>pageSize||!token(r.revision))throw fail('SYNC_PAGE_UNVERIFIED');
    if(revision===null)revision=r.revision;
    if(revision!==r.revision)throw fail('SYNC_REVISION_CHANGED');
