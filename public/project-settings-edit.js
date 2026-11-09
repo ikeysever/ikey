@@ -10,7 +10,7 @@
   const data={};for(const field of form.elements){if(!field.name)continue;data[field.name]=field.type==='checkbox'?field.checked:field.name==='notification_volume'?Number(field.value):field.value;}
   if(data.notification_volume!==undefined&&!Number.isInteger(data.notification_volume))return;
   const button=form.querySelector('button[type=submit]'),status=form.querySelector('[data-pc-save-status]');button.disabled=true;status.textContent='正在儲存並驗證…';
-  try{const r=await fetch('/api/projects/'+encodeURIComponent(id)+'/settings',{method:'PATCH',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await r.json();if(!r.ok||!result.success||!result.project)throw Error(result.message||'儲存失敗');populate(result.project);status.textContent='儲存成功，正在更新顯示…';location.reload();}
+  try{const r=await fetch('/api/projects/'+encodeURIComponent(id)+'/settings',{method:'PATCH',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await r.json();if(!r.ok||!result.success||!result.project)throw Error(result.message||'儲存失敗');populate(result.project);window.iKeyProjectCache?.upsert?.(result.project);document.dispatchEvent(new CustomEvent('ikey:project-loaded',{detail:{project:result.project}}));status.textContent='儲存成功，資料已更新';button.disabled=false;}
   catch(e){status.textContent=e.message||'儲存失敗，請稍後重試';button.disabled=false;}
  });
 })();
