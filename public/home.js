@@ -1,6 +1,6 @@
 'use strict';
 const byId=id=>document.getElementById(id);
-const menuToggle=byId('menu-toggle'), sidebar=byId('sidebar'), backdrop=byId('sidebar-backdrop');
+const menuToggle=byId('menu-toggle'), sidebar=byId('sidebar'), backdrop=byId('sidebar-backdrop');\n// Fail closed: admin navigation is hidden until /api/auth/me verifies super_admin.\nconst adminInitialLink=sidebar?.querySelector('nav a[href="/super-admin.html"]');\nif(adminInitialLink)adminInitialLink.hidden=true;
 function setMenu(open){
   if(window.innerWidth>760){
     document.body.classList.toggle('desktop-sidebar-collapsed',!open);
@@ -45,7 +45,7 @@ function showDashboard(user){
   byId('loading').hidden=true;
   byId('dashboard').hidden=false;
 }
-function applySuperAdminVisibility(role){\n const nav=document.querySelector('.admin-side-nav')||document.querySelector('#sidebar nav a[href="/super-admin.html"]');\n if(nav)nav.hidden=role!=='super_admin';\n}\nasync function load(){
+function applySuperAdminVisibility(role){\n window.ikeyVerifiedRole=role;\n const nav=document.querySelector('.admin-side-nav')||document.querySelector('#sidebar nav a[href="/super-admin.html"]');\n if(nav)nav.hidden=role!=='super_admin';\n}\nasync function load(){
  // Paint non-sensitive page chrome immediately using the user verified during welcome.
  try{const cached=JSON.parse(sessionStorage.getItem('ikey-welcome-user')||'null');if(cached&&!byId('account-empty-page')){showDashboard(cached);}}catch{}
  try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){try{sessionStorage.removeItem('ikey-welcome-user');sessionStorage.removeItem('ikey:projects:display:v1');sessionStorage.removeItem('ikey-projects-refresh');}catch{}location.replace('/');return;}applySuperAdminVisibility(data.user?.global_role);if(byId('account-empty-page')&&data.user?.global_role!=='super_admin'){location.replace('/home.html');return;}showDashboard(data.user);window.dispatchEvent(new CustomEvent('ikey:session-verified',{detail:{role:data.user?.global_role}}));}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     content.append(item);
   }
   wrapper.append(heading,content);
-  link.replaceWith(wrapper);\n  wrapper.hidden=true;
+  link.replaceWith(wrapper);\n  wrapper.hidden=true;\n  if(window.ikeyVerifiedRole==='super_admin')wrapper.hidden=false;
   const onAdmin=location.pathname==='/super-admin.html';
   let expanded=onAdmin;
   function render(){
