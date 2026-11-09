@@ -111,3 +111,73 @@ byId('logout').addEventListener('click',async()=>{
  }
 });
 load();
+/* iKey 3.1 super-admin sidebar navigation: links reuse existing guarded modules. */
+document.addEventListener('DOMContentLoaded',()=>{
+  const nav=document.querySelector('#sidebar nav');
+  if(!nav)return;
+  const link=Array.from(nav.querySelectorAll('a')).find(a=>a.getAttribute('href')==='/super-admin.html');
+  if(!link)return;
+  const wrapper=document.createElement('div');
+  wrapper.className='project-nav admin-side-nav';
+  const heading=document.createElement('div');
+  heading.className='project-nav-heading';
+  const toggle=document.createElement('button');
+  toggle.type='button';toggle.className='project-menu-toggle';
+  toggle.setAttribute('aria-label','展開超級管理員');
+  toggle.setAttribute('aria-controls','admin-side-menu');
+  const chevron=document.createElement('span');
+  chevron.className='project-menu-chevron';
+  chevron.setAttribute('aria-hidden','true');chevron.textContent='▶';
+  toggle.append(chevron);
+  link.classList.add('project-nav-link');
+  heading.append(toggle,link);
+  const content=document.createElement('div');
+  content.id='admin-side-menu';
+  const modules=[['裝置管理','devices'],['帳號與權限','accounts'],['系統公告','announcements']];
+  for(const [label,key] of modules){
+    const a=document.createElement('a');
+    a.href='/super-admin.html#'+key;
+    a.textContent=label;
+    a.className='admin-side-item';
+    content.append(a);
+  }
+  for(const label of ['資料管理（規劃中）','系統狀態（規劃中）','操作紀錄（規劃中）','系統設定（規劃中）']){
+    const item=document.createElement('span');
+    item.className='admin-side-item admin-side-disabled';
+    item.textContent=label;
+    content.append(item);
+  }
+  wrapper.append(heading,content);
+  link.replaceWith(wrapper);
+  const onAdmin=location.pathname==='/super-admin.html';
+  let expanded=onAdmin;
+  function render(){
+    content.hidden=!expanded;
+    toggle.setAttribute('aria-expanded',String(expanded));
+    toggle.setAttribute('aria-label',expanded?'收合超級管理員':'展開超級管理員');
+    chevron.textContent=expanded?'▼':'▶';
+  }
+  toggle.addEventListener('click',()=>{expanded=!expanded;render()});
+  render();
+  const style=document.createElement('style');
+  style.textContent='.admin-side-item{display:block;padding:9px 12px 9px 34px;color:#c8d8e8;text-decoration:none;font-size:14px;border-radius:9px}.admin-side-item:hover{background:#20364d}.admin-side-item[aria-current="page"]{color:#63d8e8;background:#1c3043;font-weight:700}.admin-side-disabled{opacity:.48;cursor:not-allowed}.admin-side-disabled:hover{background:transparent}';
+  document.head.append(style);
+  if(!onAdmin)return;
+  function activate(){
+    const key=location.hash.slice(1);
+    const target={devices:'admin-open-devices',accounts:'admin-open-accounts',announcements:'admin-open-announcements'}[key]?'':null;
+    const valid=['devices','accounts','announcements'].includes(key)?key:'devices';
+    const button=document.getElementById({devices:'admin-open-devices',accounts:'admin-open-accounts',announcements:'admin-open-announcements'}[valid]);
+    if(!button)return;
+    for(const id of ['device-management-region','admin-accounts-region','announcement-management-region']){
+      const el=document.getElementById(id);if(el)el.hidden=true;
+    }
+    button.click();
+    content.querySelectorAll('a').forEach(a=>{
+      if(a.hash==='#'+valid)a.setAttribute('aria-current','page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+  window.addEventListener('hashchange',activate);
+  activate();
+});
