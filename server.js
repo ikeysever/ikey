@@ -251,6 +251,31 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
+// Read-only project device choices: only verified owner bindings may appear.
+app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const id=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:id},limit:1});
+  const project=(result?.rows||[]).find(p=>p.project_id===id&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const rows=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:id},limit:100});
+  if(!Array.isArray(rows?.rows)||rows.limited)return res.status(503).json({success:false,code:'DEVICE_LIST_UNVERIFIED'});
+  return res.json({success:true,devices:rows.rows.filter(d=>d.project_id===id&&/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||''))).map(d=>({
+   project_id:id,device_id:d.device_id,device_name:String(d.display_name||'iBOX').slice(0,80),
+   control_ready:false,connection_status:'unverified'
+  }))});
+ }catch(e){return res.status(503).json({success:false,code:'DEVICE_LIST_UNAVAILABLE',message:'裝置清單暫時無法驗證'});}
+});
+// Fail closed: never acknowledge an unlock until device execution receipts are verified.
+app.post('/api/projects/:projectId/devices/:deviceId/unlock',requireProjectUser,(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ return res.status(503).json({success:false,code:'UNLOCK_EXECUTION_NOT_READY',message:'實體開鎖回報尚未串接，未發送開鎖指令'});
+});
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.
 app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
