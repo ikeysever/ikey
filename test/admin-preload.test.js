@@ -9,9 +9,9 @@ const server=fs.readFileSync('server.js','utf8');
 
 test('admin preload starts only after verified session event and role check',()=>{
  assert.match(home,/await fetch\('\/api\/auth\/me'/);
- assert.match(home,/if\(!r\.ok\|\|!data\.authenticated\)/);
+ assert.match(home,/if\(!r\.ok\|\|data\.authenticated!==true\)/);
  assert.match(home,/dispatchEvent\(new CustomEvent\('ikey:session-verified'/);
- assert.match(admin,/if\(event\.detail\?\.role==='super_admin'\)loadDevices\(\)/);
+ assert.match(admin,/if\(event\.detail\?\.role==='super_admin'\)loadDevices\(\);?/);
  assert.match(admin,/if\(event\.detail\?\.role==='super_admin'\)load\(\)/);
 });
 test('account preloading deduplicates pending requests and permits retry after failure',()=>{
@@ -32,9 +32,9 @@ test('backend enforces super admin on account directory',()=>{
  assert.match(server,/app\.get\('\/api\/admin\/accounts',requireProjectUser/);
  assert.match(server,/if\(req\.projectUser\.global_role!=='super_admin'\)return res\.status\(403\)/);
 });
-test('unimplemented admin cards remain disabled',()=>{
+test('removed unimplemented admin cards cannot be opened',()=>{
  for(const label of ['資料管理','系統狀態','操作紀錄','系統設定']){
-  const i=admin.indexOf(label);assert.ok(i>0,label);
-  assert.match(admin.slice(i-100,i),/disabled/);
+  const buttons=[...admin.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].map(x=>x[0]);
+  for(const button of buttons.filter(x=>x.includes(label)))assert.match(button,/disabled/);
  }
 });

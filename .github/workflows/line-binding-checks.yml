@@ -1,0 +1,48 @@
+name: LINE binding candidate checks
+on:
+  push:
+    branches: [main, feature/line-code-binding-staging]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+      - run: node --test
+  gas-read-capability:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect existing private GAS connection without modifying it
+        env:
+          CLASPRC_JSON: ${{ secrets.IKEY_CLASPRC_JSON }}
+        shell: bash
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "GAS_ACCESS_UNAVAILABLE: existing clasp credential is not configured; no GAS write attempted."
+            exit 0
+          fi
+          umask 077
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          node -e 'try{JSON.parse(require("fs").readFileSync(process.env.HOME+"/.clasprc.json","utf8"))}catch{console.error("INVALID_CLASP_CREDENTIAL_FORMAT");process.exit(1)}'
+          npm install --global @google/clasp@2.5.0 --ignore-scripts --no-audit --no-fund
+          mkdir -p /tmp/ikey-line-read
+          cd /tmp/ikey-line-read
+          printf '%s\n' '{"scriptId":"16Oa3hrtSP7YMGWMoS1gW_RBFFV_CKIRN0Hp_OTIZ6IFkliNZl5AclFBy"}' > .clasp.json
+          clasp pull > /tmp/ikey-clasp-read.log 2>&1 || { echo "GAS_ACCESS_UNAVAILABLE: authenticated pull failed; private output withheld."; exit 0; }
+          node -e 'const fs=require("fs"),c=require("crypto");for(const f of fs.readdirSync(".").filter(x=>/\.(js|gs|json)$/.test(x)&&!x.startsWith(".")))console.log(f,c.createHash("sha256").update(fs.readFileSync(f)).digest("hex"));console.log("GAS_READ_OK: no source or credentials printed; no writes performed.")'
+      - name: Remove temporary credentials and source
+        if: always()
+        shell: bash
+        run: rm -rf "$HOME/.clasprc.json" /tmp/ikey-line-read /tmp/ikey-clasp-read.log

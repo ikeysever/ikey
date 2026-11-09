@@ -19,10 +19,15 @@ const {mountLineIngress}=require('../lib/line-ingress');
   assert.equal(invalid.status,401);
   const signature=crypto.createHmac('sha256',secret).update(raw).digest('base64');
   const valid=await fetch(url+'/api/line/webhook',{method:'POST',headers:{'content-type':'application/json','x-line-signature':signature},body:raw});
-  assert.equal(valid.status,503);
+  assert.equal(valid.status,200);
   const result=await valid.json();
-  assert.equal(result.processed,false);
-  assert.equal(result.code,'LINE_WEBHOOK_DISABLED');
+  assert.equal(result.processed,0);
+  // Real events remain disabled by default.
+  const body=JSON.stringify({events:[{type:'message'}]});
+  const sig=crypto.createHmac('sha256',secret).update(body).digest('base64');
+  const actual=await fetch(url+'/api/line/webhook',{method:'POST',headers:{'content-type':'application/json','x-line-signature':sig},body});
+  assert.equal(actual.status,503);
+  assert.equal((await actual.json()).code,'LINE_WEBHOOK_DISABLED');
   console.log('LINE ingress tests passed');
  }finally{server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,3 +1,5 @@
+> Historical design — superseded by [LINE v2 implementation](line-binding-v2-implementation-20261109.md). Retained for design history; do not use its old code format, separate tables or retry rules for current implementation.
+
 # iKey 3.1 — Messaging API LINE 帳號綁定（方案 B）
 
 狀態：staging 開發中；不得將此文件視為已開通功能。

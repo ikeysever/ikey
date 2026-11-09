@@ -88,3 +88,17 @@
 2. 比對正式 GAS editor 及缺失的兩檔，建立隔離 staging Apps Script 與 staging 試算表。
 3. 實作 GAS lock/唯一性/去重/限速及跨列故障復原，再以 Mock + staging fault-injection 完整驗證。
 4. 維持原有 API 503，完成真實 signed webhook + Session 端到端測試後再提出啟用建議。
+
+## 2026-11-09 — LINE v2 implementation, offline verification and release authorization
+
+- Requirements: user Architecture Handoff V1.0; explicit Q06 amendment: five failures per LINE in rolling 15 minutes, blocked 15 minutes from fifth failure; reissue cannot clear block.
+- User authorized development branch writes/commits first, then explicitly authorized main merge and deployments without further approval. User subsequently prohibited further GAS editor use. GitHub snapshot is the authorized source baseline, not proof of deployed GAS equivalence.
+- Implemented: six-digit keyed challenges, appended existing-table schema, shared GAS/Node domain, lock + intent + verified row writes, ambiguous-state fences, durable rates and uniqueness; signed scoped GAS transport; Session-bound status/create/unbind, fresh password/hash recheck and CSRF; one-attempt notifications; read-only masked admin API; countdown/reissue/polling/unbind frontend.
+- Changed source groups: server.js; gen3-auth/sheets-store.js; lib/line-*; public/account.html and account-line.js; gas/line-binding-{domain,v2}.gs; candidate snapshot doPost. Exact files are in the associated commit. Original snapshot retained in ancestor 1db89cc70558a4c7dc71516c744359c6b8da7024.
+- No new challenge/event tables, no OAuth, no auto-retry queue. Original login, Session semantics, admin mutations and ESP32 functionality unchanged.
+- Baseline tested independently from clean original worktree: 74 / 64 pass / 10 fail. LINE test corrected for signed empty probe 200. Nine stale existing test assertions updated to current main behavior (strict authenticated guard, callback semicolon, removed cards/forms/routes, asset version, cache.put and inventory names/order). No production UI/control features changed to make those old assertions pass.
+- Final offline full suite: 92 / 92 pass; LINE subset 32 / 32 pass. Runtime Node v24.22.1. Actual GAS adapter executed in VM using fake Sheets; concurrency and write-fault tests use exclusive test queue, not actual GAS service. Browser-state tests use simulated DOM/timers, not rendered-layout acceptance.
+- Debugging: fixed collision retry being counted as cooldown, pending duplicate being treated as completed, partial reissue/consume fencing, unknown-state UI mutation enabling, notification receipt scope, CSRF non-ASCII length handling and late polling response invalidation.
+- Security: no credentials or raw codes in Git/logs; keyed digests and source pseudonyms, exact signed payload with 60-second freshness; separate secrets required at activation. Test-only literal secrets are synthetic.
+- Release remains feature-gated OFF pending actual GAS/schema deployment, complete source/backup/restore validation and real LINE acceptance. Read-only Actions capability check may inspect existing clasp access; it never pushes GAS, executes business functions or logs source.
+- At this entry's creation: no live Sheets/GAS/LINE settings modified; no formal backup/restore/live acceptance performed. Deployment result and exact commit/deploy IDs must be recorded after verification, never inferred from test results.

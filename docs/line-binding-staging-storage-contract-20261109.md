@@ -1,3 +1,5 @@
+> Historical design — superseded by [LINE v2 implementation](line-binding-v2-implementation-20261109.md). Retained for design history; do not use its old code format, separate tables or retry rules for current implementation.
+
 # LINE code-binding staging storage contract — 2026-11-09
 
 Status: **design + mock only**. No live GAS, Sheets, Render, or login changes. This contract extends the existing `lib/line-code-binding.js` format (`IK-XXXX-XXXX`) and requires a separate, reviewed GAS deployment before activation.

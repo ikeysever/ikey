@@ -1,3 +1,5 @@
+// Development candidate: LINE v2 dispatcher added on 2026-11-09; NOT deployed.
+// Original snapshot preserved at commit 1db89cc70558a4c7dc71516c744359c6b8da7024.
 /**
  * iKey Gen3 V14 DIAGNOSTIC CANDIDATE (based on supplied V12 candidate).
  * Does not alter Sheets schema, credentials, session rules, or login semantics.
@@ -407,7 +409,9 @@ const IKEY_ADMIN_ACCOUNT_ACTIONS = [
 
 
 
-const result = action.startsWith('db.')
+const result = action === 'lineBindingV2'
+  ? ikeyLineV2Dispatch_(payload)
+  : action.startsWith('db.')
   ? ikeyDbDispatch_(action, payload)
   : IKEY_DEVICE_ACTIONS.includes(action)
     ? ikeyFactoryDeviceAction(action, payload)

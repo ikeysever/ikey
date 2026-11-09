@@ -20,7 +20,7 @@ test('all three pages have working toggle and fresh assets',()=>{
   assert.match(html,/id="sidebar"/);
   assert.match(html,/home\.css\?v=20261026-[a-z0-9-]+/);
  }
- for(const file of ['home.html','projects.html'])assert.match(read(file),/home\.js\?v=20261026-desktop-sidebar-hotfix/);
+ for(const file of ['home.html','projects.html'])assert.match(read(file),/home\.js\?v=\d{8}-[a-z0-9-]+/);
  assert.match(read('project.html'),/project-sidebar\.js\?v=20261026-desktop-sidebar-hotfix/);
 });
 test('both navigation controllers toggle desktop collapsed class',()=>{
