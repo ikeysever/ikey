@@ -43,3 +43,8 @@ test('invalid change cursor keeps stale cache',async()=>{
  const cache=new CentralCache({sync});await cache.tick();assert.equal(await cache.tick(),false);assert.equal(cache.read('announcements:a').stale,true);
 });
 test('invalid adapter config',()=>assert.throws(()=>createGasSyncAdapter({request:async()=>{},pageSize:101}),RangeError));
+
+test('incremental repeated id folds latest version and tombstone',async()=>{
+ const sync=createGasSyncAdapter({request:async req=>req.action==='snapshot.page'?page([row('a',1)],'1'):page([row('a',2),row('a',3,true)],'3',null,'3')});
+ const cache=new CentralCache({sync});assert.equal(await cache.tick(),true);assert.equal(await cache.tick(),true);assert.equal(cache.read('announcements:a'),null);
+});
