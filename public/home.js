@@ -48,7 +48,7 @@ function showDashboard(user){
 async function load(){
  // Paint non-sensitive page chrome immediately using the user verified during welcome.
  try{const cached=JSON.parse(sessionStorage.getItem('ikey-welcome-user')||'null');if(cached){showDashboard(cached);}}catch{}
- try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok||!data.authenticated){try{sessionStorage.removeItem('ikey-welcome-user');sessionStorage.removeItem('ikey:projects:display:v1');sessionStorage.removeItem('ikey-projects-refresh');}catch{}location.replace('/');return;}showDashboard(data.user);window.dispatchEvent(new CustomEvent('ikey:session-verified',{detail:{role:data.user?.global_role}}));}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
+ try{const r=await fetch('/api/auth/me',{cache:'no-store',credentials:'same-origin'});const data=await r.json();if(r.status===401){try{sessionStorage.removeItem('ikey-welcome-user');sessionStorage.removeItem('ikey:projects:display:v1');sessionStorage.removeItem('ikey-projects-refresh');}catch{}location.replace('/');return;}if(!r.ok||data.authenticated!==true){throw Error('SESSION_VERIFICATION_TEMPORARILY_UNAVAILABLE');}showDashboard(data.user);window.dispatchEvent(new CustomEvent('ikey:session-verified',{detail:{role:data.user?.global_role}}));}catch{byId('loading').textContent='目前無法載入首頁，請稍後重新整理。';}}
 // Synthesize a short metallic latch click; no external audio asset required.
 function createLogoutLatchSound(){
  try{
