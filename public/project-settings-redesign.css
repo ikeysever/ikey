@@ -1,0 +1,34 @@
+/* iKey 3.1 project settings redesign — presentation only */
+.project-settings-page{max-width:1240px;width:100%}
+.project-settings-page .hero{margin-bottom:18px}
+.project-settings-page .project-detail{max-width:none;background:transparent;border:0;padding:0;margin-top:12px}
+.project-settings-page .project-detail-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ps-device-alert{border:1px solid #35516b;background:#101e32;border-radius:14px;padding:15px 20px;color:#c1d3e5;margin:15px 0 20px}
+.ps-overview{display:flex;gap:18px;align-items:center;padding:23px;background:linear-gradient(110deg,#162e4b,#101b30);border:1px solid #3b7895;border-radius:18px;margin-bottom:22px}
+.ps-overview-icon{display:grid;place-items:center;width:82px;height:82px;border-radius:18px;background:#163b5b;color:#63d8e8;font-size:38px;flex-shrink:0}
+.ps-overview h2{margin:0 0 8px;font-size:30px;color:#f8fafc}
+.ps-overview p{margin:6px 0;color:#b6c8d9;overflow-wrap:anywhere}
+.ps-status{font-size:13px;border:1px solid #377d77;border-radius:999px;background:#173d39;color:#a6f3d3;padding:4px 10px;vertical-align:middle}
+.ps-layout{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:20px;align-items:start}
+.ps-main,.ps-card{min-width:0}
+.ps-tabs{display:flex;gap:6px;border-bottom:1px solid #35516b;overflow-x:auto;margin-bottom:14px}
+.ps-tab{background:transparent;color:#b6c8d9;border:0;border-bottom:3px solid transparent;padding:13px 16px;font:inherit;white-space:nowrap;cursor:pointer}
+.ps-tab[aria-selected=true]{color:#63d8e8;border-bottom-color:#63d8e8;background:#152c43}
+.ps-tab:focus-visible,.ps-link:focus-visible{outline:2px solid #63d8e8;outline-offset:2px}
+.ps-card{background:linear-gradient(145deg,#162a45,#101b30);border:1px solid #38546e;border-radius:17px;padding:23px;margin-bottom:16px}
+.ps-card h3{font-size:20px;margin:0 0 6px;color:#f8fafc}
+.ps-card .ps-subtitle{color:#9fb6c9;margin:0 0 18px}
+.ps-card dl{margin:0;display:grid;gap:0}
+.ps-card dl>div{display:grid;grid-template-columns:minmax(125px,35%) minmax(0,1fr);gap:12px;padding:15px 0;border-bottom:1px solid #30445c}
+.ps-card dl>div:last-child{border-bottom:0}
+.ps-card dt{color:#a8c2d4}.ps-card dd{margin:0;color:#f8fafc;overflow-wrap:anywhere}
+.ps-card [hidden],.ps-panel[hidden]{display:none!important}
+.ps-link{display:block;text-decoration:none;background:#1c3955;border:1px solid #416d8c;color:#e7faff;border-radius:10px;padding:13px 15px;margin-top:10px}
+.ps-link:hover{border-color:#63d8e8;background:#244767}
+.ps-muted{color:#9eb3c5;font-size:13px;line-height:1.65}
+.ps-danger{border-color:#704654;background:#291d2b}
+.ps-danger .project-soft-delete{width:100%;margin-top:8px}
+.ps-footer{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;margin-top:15px}
+.ps-footer a{color:#c9e9f6;text-decoration:none;border:1px solid #416d8c;padding:10px 14px;border-radius:9px}
+@media(max-width:900px){.ps-layout{grid-template-columns:1fr}.ps-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ps-aside .ps-card{margin:0}}
+@media(max-width:600px){.ps-overview{padding:16px;gap:12px}.ps-overview-icon{width:56px;height:56px;font-size:27px}.ps-overview h2{font-size:23px}.ps-card{padding:16px}.ps-card dl>div{grid-template-columns:1fr;gap:5px}.ps-aside{grid-template-columns:1fr}.ps-tab{padding:12px 10px;font-size:14px}}
