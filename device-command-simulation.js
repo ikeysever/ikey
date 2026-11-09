@@ -126,7 +126,7 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
       const prior = commands.get(priorId);
       if (prior && prior.fingerprint !== fingerprint)
         return res.status(409).json({ success: false, code: 'IDEMPOTENCY_CONFLICT' });
-      if (prior) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(prior) });
+      if (prior) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(prior), simulated: true });
     }
     try {
       if (!authStore || typeof authStore.deviceAuthFindById !== 'function')
@@ -146,7 +146,7 @@ module.exports = function mountDeviceCommandSimulation(app, options = {}) {
       const raced = commands.get(racedId);
       if (raced && raced.fingerprint !== fingerprint)
         return res.status(409).json({ success: false, code: 'IDEMPOTENCY_CONFLICT' });
-      if (raced) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(raced) });
+      if (raced) return res.status(200).json({ success: true, duplicate: true, command: publicCommand(raced), simulated: true });
     }
 
     const time = now();
