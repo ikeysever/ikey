@@ -44,3 +44,36 @@ function ikeyJournalWrite_(args){
   return {revision:next};
  }finally{lock.releaseLock();}
 }
+
+/**
+ * Intent-first write for staging announcement handlers only.
+ * Append the durable journal intent BEFORE mutating the source. A pending tail
+ * blocks all sync reads until the operator reconciles source vs intent.
+ * This is NOT a multi-sheet transaction, and is deliberately not auto-retried.
+ * The caller must pass the actual announcement source mutation; this helper
+ * does not install or override any production handler.
+ */
+function ikeyJournalWriteIntent_(args){
+ if(!args||typeof args.openSheets!=='function'||typeof args.acquireLock!=='function'||typeof args.mutateSource!=='function')ikeyJournalFail_('JOURNAL_INVALID_HANDLER');
+ if(typeof args.id!=='string'||!args.id||args.id.length>200||typeof args.deleted!=='boolean'||!args.value||typeof args.value!=='object'||Array.isArray(args.value))ikeyJournalFail_('JOURNAL_INVALID_CHANGE');
+ var lock=args.acquireLock();
+ if(!lock||!lock.tryLock(15000))ikeyJournalFail_('JOURNAL_BUSY');
+ try{
+  var sheets=args.openSheets(),audit=ikeyJournalAudit_(sheets.state,sheets.log);
+  var next=audit.revision+1;
+  if(!Number.isSafeInteger(next))ikeyJournalFail_('JOURNAL_REVISION_OVERFLOW');
+  // The intent is visible to audit but is not committed until revision advances.
+  sheets.log.appendRow([next,args.id,next,args.deleted,JSON.stringify(args.value),new Date().toISOString()]);
+  SpreadsheetApp.flush();
+  // If mutation or commit fails, leave the pending tail for manual recovery.
+  args.mutateSource();
+  SpreadsheetApp.flush();
+  var rows=sheets.state.getDataRange().getValues(),matches=[];
+  for(var i=1;i<rows.length;i++)if(rows[i][0]==='revision')matches.push(i+1);
+  if(matches.length!==1)ikeyJournalFail_('JOURNAL_REVISION_INVALID');
+  sheets.state.getRange(matches[0],2).setValue(next);
+  SpreadsheetApp.flush();
+  ikeyJournalAudit_(sheets.state,sheets.log);
+  return {revision:next};
+ }finally{lock.releaseLock();}
+}
