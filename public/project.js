@@ -21,9 +21,6 @@
    byId('project-title').textContent=project.project_name;
    byId('project-name').textContent=project.project_name;
    byId('project-state').textContent=project.status==='active'?'啟用中':project.status==='inactive'?'已停用':'';
-   const link=byId('project-unlock-link');
-   link.href='/project-unlock.html?id='+encodeURIComponent(id);
-   link.removeAttribute('aria-disabled');link.removeAttribute('tabindex');
    byId('project-detail').removeAttribute('aria-busy');
    document.documentElement.dataset.projectReady='true';
    document.querySelectorAll('[data-pc-loading]').forEach(p=>p.hidden=true);
