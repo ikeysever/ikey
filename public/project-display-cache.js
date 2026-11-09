@@ -13,6 +13,7 @@ window.iKeyProjectCache=(()=>{
  function write(projects){
   try{sessionStorage.setItem(KEY,JSON.stringify({savedAt:Date.now(),projects:projects.map(clean).slice(0,100)}));}catch(_){}
  }
+ function upsert(project){if(!project||!project.project_id)return;const projects=read()||[];const index=projects.findIndex(p=>p.project_id===project.project_id);if(index>=0)projects[index]=clean(project);else projects.push(clean(project));write(projects);}
  function clear(){try{sessionStorage.removeItem(KEY);}catch(_){}}
  let pending=null;
  function fetchProjects(){
@@ -28,5 +29,5 @@ window.iKeyProjectCache=(()=>{
   return pending;
  }
  function prefetch(){return fetchProjects().catch(()=>null);}
- return {read,write,clear,prefetch,fetchProjects};
+ return {read,write,upsert,clear,prefetch,fetchProjects};
 })();
