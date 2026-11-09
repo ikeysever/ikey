@@ -56,3 +56,35 @@
 3. 完成安全的出廠憑證驗證、專案綁定及裝置心跳，再逐步串接既有指令生命週期。
 4. 未修改 main、未部署 Render/GAS、未啟用實體電子鎖。
 
+
+## 2026-11-09｜LINE 方案 B — 持久化契約與 Mock 測試（PR #117）
+
+### 問題與需求
+- LINE Developers 的簽名空 events Verify 已通過，但真實文字事件仍維持 503；沒有可安全使用的 GAS 原子綁定交易。
+- 使用者既有 Gen3 Session 必須維持原樣；LINE userId 不得代替 iKey user_id 或給予額外權限。
+- 驗證碼使用既有 8 位格式 IK-XXXX-XXXX、HMAC 摘要及五分鐘效期。
+
+### 盤點與設計演進
+- 讀取 PR #117、Render LINE ingress、Gen3 session、GAS 20261109 十檔來源快照及 Google Docs。GAS 快照為 V14 diagnostic candidate，**尚未與正式 GAS editor 確認相符**，因此先禁止部署。
+- 原先狀態：`lib/line-code-binding.js` 只有純函式與 fail-closed `ready`；沒有 durable store。
+- 新方案：不更動現有 Webhook / 登入路由；先定義獨立 GAS action allowlist、獨立挑戰與事件去重表 schema、序列化 Mock 模型。採分離模組，避免與其他 PR 並行修改 `server.js`。
+- 風險：Google Sheets 的 LockService 可序列化腳本執行，但多筆 Sheet 寫入**不是 ACID 交易**。正式上線前需 fault injection、idempotent reconciliation 與共用 rate limiting。不得只靠 HMAC 防線上猜碼。
+- `iKey_DeviceAuth_Verify.gs` 與 `iKey_DeviceAuth_Lookup.gs` 仍缺失，不推測內容。
+
+### 本次新增檔案
+- `docs/line-binding-staging-storage-contract-20261109.md`: Schema、action、競爭處理與啟用門檻。
+- `lib/line-binding-mock-store.js`: **測試專用**（不具正式持久化能力）的序列化 Mock。
+- `lib/line-binding-transport.js`: 嚴格 allowlist 的未啟用 GAS action transport。
+- `test/line-binding-storage-mock.test.js`: 五分鐘到期、重新發碼、去重、競爭、身分唯一性與 fail-closed 測試。
+
+### 測試與除錯
+- CI 在較早提交 `fd0a48f5138a6b47fa3e0ecbec103099813ed115` 的 `npm test`：**74 項、64 通過、10 失敗**；包含 UI/專案測試，以及 `line-ingress.test.js` 的預期 503/實際 200 差異。此結果不能視為本次 LINE 更動已通過整體回歸。
+- 新增的 Mock 測試在 CI 輸出中至少可確認首項通過；完整單檔測試及最新提交的完整回歸仍待確認。
+- 測試或部署若無證據，維持「待確認」，不宣稱已成功。
+- 無正式資料庫修改、無正式服務部署、無 PR 合併。
+
+### 下一步
+1. 確認 PR #117 最新 CI 結果，取得失敗工作日誌，區分既有跨分支衝突與本次新增測試失敗。
+2. 比對正式 GAS editor 及缺失的兩檔，建立隔離 staging Apps Script 與 staging 試算表。
+3. 實作 GAS lock/唯一性/去重/限速及跨列故障復原，再以 Mock + staging fault-injection 完整驗證。
+4. 維持原有 API 503，完成真實 signed webhook + Session 端到端測試後再提出啟用建議。
