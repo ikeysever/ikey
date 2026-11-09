@@ -24,7 +24,7 @@
    if(inventory.devices.length===0){
     const empty=document.createElement('p');
     empty.className='empty-state';
-    empty.textContent='此專案目前沒有已綁定的 iBOX。裝置綁定功能尚未開放。';
+    empty.textContent='此專案目前沒有已綁定的 iBOX。請使用「新增裝置」綁定出廠 iBOX。';
     grid.append(empty);
    }
    for(const device of inventory.devices){
@@ -44,8 +44,32 @@
    status.textContent='已讀取 '+inventory.devices.length+' 台已綁定裝置；連線與控制狀態尚未驗證。';
   }catch(e){error.hidden=false;error.textContent=e.message||'無法載入裝置管理';}
  };
+ const bindButton=get('device-bind-submit'),bindMessage=get('device-bind-message');
+ bindButton.addEventListener('click',async()=>{
+  const deviceId=get('factory-device-id').value.trim().toUpperCase();
+  const password=get('factory-device-password').value;
+  if(!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||password.length<8||password.length>128){
+   bindMessage.textContent='請輸入有效的 8 碼出廠 ID 與裝置密碼。';return;
+  }
+  bindButton.disabled=true;bindMessage.textContent='正在驗證出廠憑證並新增裝置…';
+  try{
+   const response=await fetch('/api/projects/'+encodeURIComponent(id)+'/devices',{
+    method:'POST',credentials:'same-origin',cache:'no-store',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({device_id:deviceId,password})
+   });
+   const data=await response.json();
+   if(!response.ok||data.success!==true)throw Error(data.message||'裝置新增失敗');
+   get('factory-device-password').value='';
+   get('add-dialog').close();
+   error.hidden=true;
+   await load();
+   status.textContent='裝置 '+deviceId+' 已完成綁定；連線與控制狀態仍須另外驗證。';
+  }catch(err){bindMessage.textContent=err.message||'無法連線至伺服器';}
+  finally{get('factory-device-password').value='';bindButton.disabled=false;}
+ });
  get('add-device').addEventListener('click',()=>get('add-dialog').showModal());
- get('add-dialog').addEventListener('close',()=>{get('factory-device-id').value='';get('factory-device-password').value='';});
+ get('add-dialog').addEventListener('close',()=>{get('factory-device-id').value='';get('factory-device-password').value='';bindMessage.textContent='';});
  get('device-search').addEventListener('input',()=>{
   // Search is ready for real device cards; empty/unverified state remains explicit.
   const q=get('device-search').value.trim().toLocaleLowerCase();
