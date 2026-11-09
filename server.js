@@ -246,6 +246,44 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   return res.status(503).json({success:false,code:'DEVICE_INVENTORY_UNAVAILABLE'});
  }
 });
+// Bind a factory-registered iBOX to exactly one project. Atomic primary-key insert
+// prevents two projects from claiming the same device concurrently.
+app.post('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req)||req.get('sec-fetch-site')==='cross-site')
+  return res.status(403).json({success:false,code:'INVALID_ORIGIN',message:'來源驗證失敗'});
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID',message:'專案 ID 不正確'});
+ const deviceId=req.body?.device_id,password=req.body?.password;
+ if(typeof deviceId!=='string'||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||typeof password!=='string'||password.length<8||password.length>128)
+  return res.status(400).json({success:false,code:'INVALID_REQUEST',message:'裝置 ID 或密碼格式不正確'});
+ try{
+  const p=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  const project=(p?.rows||[]).find(x=>x.project_id===projectId&&x.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND',message:'找不到專案'});
+  if(project.created_by_user_id!==req.projectUser.user_id)
+   return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER',message:'只有專案建立者可以新增裝置'});
+  const d=await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1});
+  const device=(d?.rows||[]).find(x=>x.device_id===deviceId&&x.status==='pre_registered');
+  const {passwordVerify}=require('./gen3-auth/core');
+  // Always verify against a valid dummy hash even when the ID is absent.
+  const crypto=require('node:crypto'),salt=Buffer.alloc(16);
+  const dummy='scrypt:v1:'+salt.toString('base64url')+':'+crypto.scryptSync('ikey-device-auth-dummy-verifier-never-use',salt,64).toString('base64url');
+  if(!passwordVerify(password,device?.password_hash||dummy)||!device)
+   return res.status(401).json({success:false,code:'INVALID_CREDENTIALS',message:'出廠裝置 ID 或密碼不正確'});
+  const now=new Date().toISOString();
+  // Project_Devices must enforce device_id as a unique primary key in storage.
+  const binding={device_id:deviceId,project_id:projectId,display_name:'iBOX',created_at:now,updated_at:now};
+  const inserted=await authStore.dbCall('db.insert',{table:'Project_Devices',primary_key:'device_id',data:binding});
+  if(inserted?.inserted!==true||inserted?.record?.device_id!==deviceId||inserted?.record?.project_id!==projectId)
+   return res.status(503).json({success:false,code:'BIND_UNVERIFIED',message:'無法確認裝置綁定，請重新整理裝置清單'});
+  return res.status(201).json({success:true,device_id:deviceId,project_id:projectId});
+ }catch(err){
+  console.warn('Project device binding rejected',err.name||'Error');
+  return res.status(409).json({success:false,code:'DEVICE_BIND_FAILED',message:'裝置可能已被綁定，或資料服務暫時無法完成新增'});
+ }
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
