@@ -113,7 +113,22 @@ el('device-unlock-test').addEventListener('click',async()=>{
   });
   const data=await response.json();
   if(!response.ok||data.success!==true)throw Error(data.message||data.code||'指令建立失敗');
-  if(selectedDeviceId===id)status.textContent='指令已建立，等待 ESP32 領取與回報。指令 ID：'+(data.result?.command_id||'待查詢');
+  const commandId=data.command?.command_id||data.result?.command_id;
+  if(!commandId)throw Error('伺服器未回傳指令 ID');
+  if(selectedDeviceId===id)status.textContent='模擬指令已建立：'+commandId+'，等待模擬裝置領取…';
+  // Only staging simulation readback; never claim physical execution from a click.
+  if(data.simulated!==true) return;
+  for(let attempt=0;attempt<16;attempt++){
+    if(selectedDeviceId!==id)break;
+    await new Promise(resolve=>setTimeout(resolve,1000));
+    const result=await fetch('/api/device-commands/'+encodeURIComponent(commandId),{credentials:'same-origin',cache:'no-store'});
+    if(!result.ok)throw Error('無法讀取模擬指令狀態');
+    const state=(await result.json()).command;
+    if(!state)throw Error('模擬指令不存在');
+    const names={pending:'等待領取',claimed:'已領取，等待回報',succeeded:'模擬回報成功',failed:'模擬回報失敗',timed_out:'模擬指令逾時'};
+    status.textContent='模擬測試｜'+(names[state.status]||state.status)+'｜'+commandId;
+    if(['succeeded','failed','timed_out'].includes(state.status))break;
+  }
  }catch(err){if(selectedDeviceId===id)status.textContent='無法建立指令：'+(err.message||'未知錯誤')}
  finally{btn.disabled=false}
 });
