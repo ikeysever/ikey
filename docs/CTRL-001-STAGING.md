@@ -27,3 +27,10 @@ Run `npm test` (or `node --test tests/device-command-simulation.test.js`) before
 
 ## Next
 Execute the regression suite, fix failures, then integrate durable, authorization-scoped command storage and device receipt handling on staging. Only after a separate authorization and safety acceptance should physical hardware testing begin.
+
+## T03 verification — 2026-11-09
+- Added `test-support/simulated-esp32-client.js`: non-actuating protocol emulator for GET next command and POST result.
+- Added two integration tests covering existing super-admin test endpoint through device polling and successful/failed receipts.
+- GitHub Actions run 42649398806: 13 tests passed, 0 failed.
+- This verifies HTTP protocol simulation only. Real ESP32 firmware, GPIO relay actuation, durable GAS queue, project binding/authorization, and production deployment remain unimplemented/unverified.
+- Existing draft PR #118 remains unmerged.
