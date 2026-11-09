@@ -56,3 +56,49 @@
 3. 完成安全的出廠憑證驗證、專案綁定及裝置心跳，再逐步串接既有指令生命週期。
 4. 未修改 main、未部署 Render/GAS、未啟用實體電子鎖。
 
+
+## 2026-11-09｜LINE 方案 B — 持久化契約與 Mock 測試（PR #117）
+
+### 問題與需求
+- LINE Developers 的簽名空 events Verify 已通過，但真實文字事件仍維持 503；沒有可安全使用的 GAS 原子綁定交易。
+- 使用者既有 Gen3 Session 必須維持原樣；LINE userId 不得代替 iKey user_id 或給予額外權限。
+- 驗證碼使用既有 8 位格式 IK-XXXX-XXXX、HMAC 摘要及五分鐘效期。
+
+### 盤點與設計演進
+- 讀取 PR #117、Render LINE ingress、Gen3 session、GAS 20261109 十檔來源快照及 Google Docs。GAS 快照為 V14 diagnostic candidate，**尚未與正式 GAS editor 確認相符**，因此先禁止部署。
+- 原先狀態：`lib/line-code-binding.js` 只有純函式與 fail-closed `ready`；沒有 durable store。
+- 新方案：不更動現有 Webhook / 登入路由；先定義獨立 GAS action allowlist、獨立挑戰與事件去重表 schema、序列化 Mock 模型。採分離模組，避免與其他 PR 並行修改 `server.js`。
+- 風險：Google Sheets 的 LockService 可序列化腳本執行，但多筆 Sheet 寫入**不是 ACID 交易**。正式上線前需 fault injection、idempotent reconciliation 與共用 rate limiting。不得只靠 HMAC 防線上猜碼。
+- `iKey_DeviceAuth_Verify.gs` 與 `iKey_DeviceAuth_Lookup.gs` 仍缺失，不推測內容。
+
+### 本次新增檔案
+- `docs/line-binding-staging-storage-contract-20261109.md`: Schema、action、競爭處理與啟用門檻。
+- `lib/line-binding-mock-store.js`: **測試專用**（不具正式持久化能力）的序列化 Mock。
+- `lib/line-binding-transport.js`: 嚴格 allowlist 的未啟用 GAS action transport。
+- `test/line-binding-storage-mock.test.js`: 五分鐘到期、重新發碼、去重、競爭、身分唯一性與 fail-closed 測試。
+
+### 測試與除錯
+- CI 在較早提交 `fd0a48f5138a6b47fa3e0ecbec103099813ed115` 的 `npm test`：**74 項、64 通過、10 失敗**；包含 UI/專案測試，以及 `line-ingress.test.js` 的預期 503/實際 200 差異。此結果不能視為本次 LINE 更動已通過整體回歸。
+- 新增的 Mock 測試在 CI 輸出中至少可確認首項通過；完整單檔測試及最新提交的完整回歸仍待確認。
+- 測試或部署若無證據，維持「待確認」，不宣稱已成功。
+- 無正式資料庫修改、無正式服務部署、無 PR 合併。
+
+### 下一步
+1. 確認 PR #117 最新 CI 結果，取得失敗工作日誌，區分既有跨分支衝突與本次新增測試失敗。
+2. 比對正式 GAS editor 及缺失的兩檔，建立隔離 staging Apps Script 與 staging 試算表。
+3. 實作 GAS lock/唯一性/去重/限速及跨列故障復原，再以 Mock + staging fault-injection 完整驗證。
+4. 維持原有 API 503，完成真實 signed webhook + Session 端到端測試後再提出啟用建議。
+
+## 2026-11-09 — LINE v2 implementation, offline verification and release authorization
+
+- Requirements: user Architecture Handoff V1.0; explicit Q06 amendment: five failures per LINE in rolling 15 minutes, blocked 15 minutes from fifth failure; reissue cannot clear block.
+- User authorized development branch writes/commits first, then explicitly authorized main merge and deployments without further approval. User subsequently prohibited further GAS editor use. GitHub snapshot is the authorized source baseline, not proof of deployed GAS equivalence.
+- Implemented: six-digit keyed challenges, appended existing-table schema, shared GAS/Node domain, lock + intent + verified row writes, ambiguous-state fences, durable rates and uniqueness; signed scoped GAS transport; Session-bound status/create/unbind, fresh password/hash recheck and CSRF; one-attempt notifications; read-only masked admin API; countdown/reissue/polling/unbind frontend.
+- Changed source groups: server.js; gen3-auth/sheets-store.js; lib/line-*; public/account.html and account-line.js; gas/line-binding-{domain,v2}.gs; candidate snapshot doPost. Exact files are in the associated commit. Original snapshot retained in ancestor 1db89cc70558a4c7dc71516c744359c6b8da7024.
+- No new challenge/event tables, no OAuth, no auto-retry queue. Original login, Session semantics, admin mutations and ESP32 functionality unchanged.
+- Baseline tested independently from clean original worktree: 74 / 64 pass / 10 fail. LINE test corrected for signed empty probe 200. Nine stale existing test assertions updated to current main behavior (strict authenticated guard, callback semicolon, removed cards/forms/routes, asset version, cache.put and inventory names/order). No production UI/control features changed to make those old assertions pass.
+- Final offline full suite: 92 / 92 pass; LINE subset 32 / 32 pass. Runtime Node v24.22.1. Actual GAS adapter executed in VM using fake Sheets; concurrency and write-fault tests use exclusive test queue, not actual GAS service. Browser-state tests use simulated DOM/timers, not rendered-layout acceptance.
+- Debugging: fixed collision retry being counted as cooldown, pending duplicate being treated as completed, partial reissue/consume fencing, unknown-state UI mutation enabling, notification receipt scope, CSRF non-ASCII length handling and late polling response invalidation.
+- Security: no credentials or raw codes in Git/logs; keyed digests and source pseudonyms, exact signed payload with 60-second freshness; separate secrets required at activation. Test-only literal secrets are synthetic.
+- Release remains feature-gated OFF pending actual GAS/schema deployment, complete source/backup/restore validation and real LINE acceptance. Read-only Actions capability check may inspect existing clasp access; it never pushes GAS, executes business functions or logs source.
+- At this entry's creation: no live Sheets/GAS/LINE settings modified; no formal backup/restore/live acceptance performed. Deployment result and exact commit/deploy IDs must be recorded after verification, never inferred from test results.

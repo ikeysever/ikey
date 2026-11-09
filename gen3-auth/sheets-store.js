@@ -22,6 +22,10 @@ function createSheetsStore() {
  }
  return {
    health:async()=>call("health"),
+   lineCall:async(action,payload)=>{
+     if(action!=="lineBindingV2")throw Error("LINE_ACTION_DENIED");
+     return call(action,payload);
+   },
    registerAtomic:async user=>call("registerAtomic",{user}),
    throttleAtomic:async(key,limit,window_ms)=>call("throttleAtomic",{key,limit,window_ms}),
    findByLogin:async identifier=>call("findByLogin",{identifier}),

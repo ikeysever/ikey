@@ -6,24 +6,23 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
-test('six cards and three settings forms exist',()=>{
+test('six immediate navigation cards lead to empty placeholders; no obsolete settings form is loaded',()=>{
  const html=read('public/project.html');
- for(const name of ['basic','auth','notify','devices','members','advanced'])assert.ok(html.includes('data-pc-open="'+name+'"'),name);
- for(const name of ['basic','auth','notify'])assert.ok(html.includes('data-pc-settings="'+name+'"'),name);
- assert.ok(html.includes('project-settings-edit.js'));
+ for(const name of ['basic','auth','notify','devices','members','advanced']){
+  assert.ok(html.includes('data-pc-open="'+name+'"'),name);
+  assert.ok(html.includes('data-pc-pane="'+name+'"'),name);
+ }
+ assert.doesNotMatch(html,/data-pc-settings=|project-settings-edit\.js/);
 });
-test('preload keeps cards disabled until verified fetch',()=>{
+test('verified project fetch updates placeholders without blocking immediate navigation',()=>{
  const js=read('public/project.js');
- for(const token of ["credentials:'same-origin'","cache:'no-store'","button.disabled=true","ikey:project-loaded","preloaded.hidden=true"])assert.ok(js.includes(token),token);
+ for(const token of ["credentials:'same-origin'","cache:'no-store'","ikey:project-loaded","projectReady='true'"])assert.ok(js.includes(token),token);
+ assert.ok(js.indexOf('if(!response.ok')<js.indexOf("projectReady='true'"));
+ assert.doesNotMatch(js,/method:'PATCH'/);
 });
-test('PATCH endpoint verifies ownership and persisted changes',()=>{
+test('obsolete project settings mutation endpoint is absent',()=>{
  const server=read('server.js');
- const start=server.indexOf("app.patch('/api/projects/:projectId/settings'");
- const end=server.indexOf("app.delete('/api/projects/:projectId'",start);
- assert.ok(start>=0&&end>start);
- const route=server.slice(start,end);
- for(const token of ['requireProjectUser','sameProjectOrigin','created_by_user_id!==req.projectUser.user_id','keys.some(k=>!allowed.includes(k))','db.update','尚未確認設定已儲存'])assert.ok(route.includes(token),token);
- assert.ok(!/unlock|relay|servo/i.test(route));
+ assert.ok(!server.includes("app.patch('/api/projects/:projectId/settings'"));
 });
 test('settings form submits a validated PATCH',()=>{
  const js=read('public/project-settings-edit.js');
