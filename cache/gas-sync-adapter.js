@@ -33,12 +33,15 @@ function createGasSyncAdapter({request,namespace='announcements',pageSize=100,ma
   const initial=cursor===null;
   if(!initial&&!token(cursor))throw fail('SYNC_CURSOR_INVALID');
   const result=await collect({action:initial?'snapshot.page':'changes.page',cursor,signal});
-  const changes=[],seen=new Set(),version=Date.now();
+  const changes=[],seen=new Map(),version=Date.now();
   for(const row of result.rows){
-   if(!obj(row)||!token(row.id)||seen.has(row.id)||!Number.isSafeInteger(row.version)||row.version<0||typeof row.deleted!=='boolean')throw fail('SYNC_ROW_INVALID');
-   seen.add(row.id);
+   if(!obj(row)||!token(row.id)||(initial&&seen.has(row.id))||!Number.isSafeInteger(row.version)||row.version<0||typeof row.deleted!=='boolean')throw fail('SYNC_ROW_INVALID');
+   
    if(!row.deleted&&!obj(row.value))throw fail('SYNC_ROW_INVALID');
-   changes.push({key:`${namespace}:${row.id}`,version:row.version,deleted:row.deleted,...(row.deleted?{}:{value:structuredClone(row.value)})});
+   if(!initial&&seen.has(row.id)&&seen.get(row.id)>=row.version)throw fail('SYNC_ROW_ORDER_INVALID');
+   seen.set(row.id,row.version);
+   const next={key:`${namespace}:${row.id}`,version:row.version,deleted:row.deleted,...(row.deleted?{}:{value:structuredClone(row.value)})};
+   if(initial)changes.push(next);else {const index=changes.findIndex(x=>x.key===next.key);if(index<0)changes.push(next);else changes[index]=next;}
   }
   if(initial)for(const key of snapshot.keys())if(key.startsWith(`${namespace}:`)&&!seen.has(key.slice(namespace.length+1))){
    const previous=snapshot.get(key);
