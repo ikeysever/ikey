@@ -3,7 +3,10 @@ on:
   pull_request:
     paths:
       - 'public/project-members.js'
+      - 'public/project-readonly-panels.js'
+      - 'public/project.html'
       - 'tests/project-members-display.test.js'
+      - 'tests/project-readonly-panels.test.js'
       - '.github/workflows/website-member-regression.yml'
   workflow_dispatch:
 jobs:
@@ -17,6 +20,8 @@ jobs:
         with:
           node-version: '24'
       - name: Verify JavaScript syntax
-        run: node --check public/project-members.js
+        run: |
+          node --check public/project-members.js
+          node --check public/project-readonly-panels.js
       - name: Run member UI regression tests
-        run: node --test tests/project-members-display.test.js
+        run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js
