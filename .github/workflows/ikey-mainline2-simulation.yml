@@ -54,4 +54,4 @@ jobs:
           test -z "$IKEY_DEVICE_TOKEN_SECRET"
           test -z "$IKEY_COMMAND_TRUST_SECRET"
       - name: Run only isolated in-memory simulation tests
-        run: node --test tests/device-command-simulation.test.js tests/device-auth-staging.test.js
+        run: node --test tests/device-command-simulation.test.js tests/device-auth-staging.test.js tests/gas-device-auth-contract.test.js
