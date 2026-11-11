@@ -1,0 +1,22 @@
+name: iKey website member UI regression
+on:
+  pull_request:
+    paths:
+      - 'public/project-members.js'
+      - 'tests/project-members-display.test.js'
+      - '.github/workflows/website-member-regression.yml'
+  workflow_dispatch:
+jobs:
+  member-ui:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify JavaScript syntax
+        run: node --check public/project-members.js
+      - name: Run member UI regression tests
+        run: node --test tests/project-members-display.test.js
