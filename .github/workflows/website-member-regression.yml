@@ -5,6 +5,9 @@ on:
       - 'public/project-members.js'
       - 'public/project-readonly-panels.js'
       - 'public/project.html'
+      - 'public/project-create.html'
+      - 'public/project-create.js'
+      - 'tests/project-create-five-step.test.js'
       - 'tests/project-members-display.test.js'
       - 'tests/project-readonly-panels.test.js'
       - '.github/workflows/website-member-regression.yml'
@@ -23,5 +26,6 @@ jobs:
         run: |
           node --check public/project-members.js
           node --check public/project-readonly-panels.js
+          node --check public/project-create.js
       - name: Run member UI regression tests
-        run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js
+        run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js
