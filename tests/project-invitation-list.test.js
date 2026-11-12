@@ -28,3 +28,29 @@ test('invalid schema, truncated rows, mixed project or duplicate records fail cl
   const {res}=await invoke(opts);assert.equal(res.code,503);assert.equal(res.body.invitations,undefined);
  }
 });
+
+test('full 100-row page cannot be reported as complete invitation inventory',async()=>{
+ const rows=Array.from({length:100},(_,i)=>({...invitation,invitation_id:'33333333-3333-4333-8333-'+String(i).padStart(12,'0')}));
+ const {res}=await invoke({rows});
+ assert.equal(res.code,503);
+ assert.equal(res.body.code,'INVITATION_LIST_UNVERIFIED');
+});
+test('reservation and redeemed states require verified actor and membership IDs',async()=>{
+ const actor='44444444-4444-4444-8444-444444444444';
+ const membership='55555555-5555-4555-8555-555555555555';
+ for(const row of [
+  {...invitation,status:'redeeming'},
+  {...invitation,status:'redeemed',redeemed_by_user_id:actor},
+  {...invitation,status:'pending',membership_id:membership},
+  {...invitation,status:'revoked',redeemed_by_user_id:actor,membership_id:membership},
+  {...invitation,status:'redeeming',redeemed_by_user_id:'bad',membership_id:membership}
+ ]){
+  const {res}=await invoke({rows:[row]});
+  assert.equal(res.code,503);
+  assert.equal(res.body.code,'INVITATION_STATE_UNVERIFIED');
+ }
+ const {res}=await invoke({rows:[{...invitation,status:'redeemed',redeemed_by_user_id:actor,membership_id:membership}]});
+ assert.equal(res.code,200);
+ assert.equal(JSON.stringify(res.body).includes(actor),false);
+ assert.equal(JSON.stringify(res.body).includes(membership),false);
+});
