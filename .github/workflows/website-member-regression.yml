@@ -10,6 +10,8 @@ on:
       - 'server.js'
       - 'lib/project-members-handler.js'
       - 'lib/project-create-contract.js'
+      - 'lib/project-list-handler.js'
+      - 'tests/project-list-handler.test.js'
       - 'tests/project-create-contract.test.js'
       - 'tests/project-members-route.test.js'
       - 'tests/project-create-five-step.test.js'
@@ -35,5 +37,6 @@ jobs:
           node --check server.js
           node --check lib/project-members-handler.js
           node --check lib/project-create-contract.js
+          node --check lib/project-list-handler.js
       - name: Run member UI regression tests
         run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js tests/project-members-route.test.js tests/project-create-contract.test.js
