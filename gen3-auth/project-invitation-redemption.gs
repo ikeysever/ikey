@@ -16,7 +16,7 @@ function ikeyRedeemInvitation_(p){
   const matching=read(invitations,ih).filter(x=>x.value.token_hash===tokenHash);
   if(matching.length!==1)throw Error('INVITATION_NOT_FOUND');
   const invite=matching[0],v=invite.value;
-  if(!['pending','redeeming'].includes(v.status)||v.role!=='member'||!uuid.test(String(v.project_id||''))||!uuid.test(String(v.created_by_user_id||''))||!Number.isFinite(Date.parse(v.expires_at))||Date.parse(v.expires_at)<=Date.now())throw Error('INVITATION_EXPIRED_OR_USED');
+  if(!['pending','redeeming'].includes(v.status)||v.role!=='member'||!uuid.test(String(v.project_id||''))||!uuid.test(String(v.created_by_user_id||''))||!Number.isFinite(Date.parse(v.expires_at))||(v.status==='pending'&&Date.parse(v.expires_at)<=Date.now()))throw Error('INVITATION_EXPIRED_OR_USED');
   if(v.redeemed_by_user_id&&v.redeemed_by_user_id!==actor)throw Error('INVITATION_RESERVED_BY_OTHER_USER');
   if(v.status==='redeeming'&&(!uuid.test(String(v.membership_id||''))||v.redeemed_by_user_id!==actor))throw Error('INVITATION_RECOVERY_UNVERIFIED');
   const project=read(projects,ph).filter(x=>x.value.project_id===v.project_id);
