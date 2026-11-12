@@ -40,3 +40,11 @@ test('project management device panel links to existing inventory page',()=>{
  assert.ok(js.includes("/project-devices.html?id="));
  assert.ok(js.includes('encodeURIComponent(project.project_id)'));
 });
+
+test('project creation is fail-closed until auth/me verifies session',()=>{
+ const js=read('public/project-create.js');
+ assert.match(js,/let authVerified=false/);
+ assert.match(js,/get\('create-content'\)\.hidden=true;show\(1\)/);
+ assert.match(js,/if\(!authVerified\)/);
+ assert.match(js,/authVerified=true;get\('create-loading'\)\.hidden=true;get\('create-content'\)\.hidden=false/);
+});
