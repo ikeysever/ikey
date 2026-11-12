@@ -26,7 +26,7 @@ test('other users cannot issue invitations or access invite schema',async()=>{
  assert.equal(res.code,403);assert.equal(calls.some(c=>c.action==='db.schema'),false);
 });
 test('missing or ambiguous project and incomplete storage fail closed',async()=>{
- for(const opts of [{rows:[]},{rows:[{project_id,created_by_user_id:owner,status:'deleted'}]},{rows:[{},{}]},{limited:true}]){
+ for(const opts of [{rows:[]},{rows:[{project_id:projectId,created_by_user_id:owner,status:'deleted'}]},{rows:[{},{}]},{limited:true}]){
   const {res,calls}=await invoke(opts);assert.ok([404,503].includes(res.code));assert.equal(calls.some(c=>c.action==='db.insert'),false);
  }
 });
