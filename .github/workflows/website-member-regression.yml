@@ -20,6 +20,7 @@ on:
       - 'gen3-auth/Code.gs'
       - 'gen3-auth/sheets-store.js'
       - 'tests/project-invitation-redemption.test.js'
+      - 'tests/project-invitation-gas-simulation.test.js'
       - 'tests/project-invitation-list.test.js'
       - 'tests/project-invitations-handler.test.js'
       - 'tests/project-list-handler.test.js'
