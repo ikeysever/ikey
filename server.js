@@ -184,6 +184,12 @@ const { createProjectMembersHandler } = require('./lib/project-members-handler')
 app.get('/api/projects/:projectId/members',requireProjectUser,createProjectMembersHandler(authStore));
 const {createProjectInvitationHandler}=require('./lib/project-invitations-handler');
 const issueProjectInvitation=createProjectInvitationHandler(authStore);
+const {createInvitationRedemptionHandler}=require('./lib/project-invitation-redemption-handler');
+const redeemProjectInvitation=createInvitationRedemptionHandler(authStore);
+app.post('/api/project-invitations/redeem',requireProjectUser,(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ return redeemProjectInvitation(req,res);
+});
 const {createInvitationListHandler}=require('./lib/project-invitation-list-handler');
 app.get('/api/projects/:projectId/invitations',requireProjectUser,createInvitationListHandler(authStore));
 app.post('/api/projects/:projectId/invitations',requireProjectUser,(req,res)=>{
