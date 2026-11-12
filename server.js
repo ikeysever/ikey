@@ -135,6 +135,7 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(unsupported.length)return res.status(400).json({success:false,code:'UNSUPPORTED_PROJECT_FIELDS',message:'目前不支援這些專案設定，尚未儲存任何資料',unsupported_fields:unsupported});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
  const description=typeof req.body?.description==='string'?req.body.description.trim():'';
+ if(req.body?.description!==undefined&&typeof req.body.description!=='string')return res.status(400).json({success:false,code:'INVALID_PROJECT_DESCRIPTION'});
  const authorization=req.body?.authorization_method;
  const schedule=req.body?.scheduled_authorization;
  const theme=req.body?.notification_theme??'midnight';
@@ -159,7 +160,7 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
   if(result?.inserted!==true||result?.record?.project_id!==project.project_id)return res.status(503).json({success:false,message:'專案尚未成功儲存'});
   if(featureModules.length&&result.record.feature_modules!==project.feature_modules)
    return res.status(503).json({success:false,code:'FEATURE_MODULE_WRITE_UNVERIFIED',message:'專案可能已建立，但功能模組儲存結果無法驗證，請勿重複送出'});
-  return res.status(201).json({success:true,project});
+  return res.status(201).json({success:true,project:{...project,feature_modules:featureModules}});
  }catch(err){console.warn('Project creation unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒，未確認建立成功'});}
 });
 // Unlock readiness is read-only. It never creates, queues or dispatches physical commands.
