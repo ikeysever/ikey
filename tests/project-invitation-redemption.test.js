@@ -38,3 +38,15 @@ test('redemption route and GAS handler require a lock',()=>{
  assert.match(gas,/members\.appendRow\(values\)/);
  assert.match(server,/app\.post\('\/api\/project-invitations\/redeem',requireProjectUser/);
 });
+
+test('malformed or forged GAS redemption receipt fails closed',async()=>{
+ for(const value of [
+  {redeemed:true,project_id:'not-a-uuid',membership_id:membershipId,role:'member'},
+  {redeemed:true,project_id:projectId,membership_id:'not-a-uuid',role:'member'},
+  {redeemed:true,project_id:projectId,membership_id:membershipId,role:'owner'}
+ ]){
+  const {res}=await invoke({value});
+  assert.equal(res.code,503);
+  assert.equal(res.body.code,'INVITATION_REDEMPTION_UNVERIFIED');
+ }
+});
