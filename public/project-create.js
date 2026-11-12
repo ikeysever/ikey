@@ -42,6 +42,17 @@
   const button=get('create-save');if(button.disabled)return;
   const form=new FormData(get('create-settings-form'));
   const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes',notification_theme:get('notify-theme-id')?.value||'midnight',notification_sound_pack:get('notify-sound-pack')?.value||'pulse',notification_volume:Number(get('notify-volume')?.value||50)};
+  const themes=['midnight','polar','emerald','copper','violet','graphite'];
+  const packs=['pulse','crystal','air','wood','future','click'];
+  if(!payload.project_name||payload.project_name.length>80||payload.description.length>1000){
+   get('create-save-error').textContent='專案名稱或說明格式不正確，請返回修改。';return;
+  }
+  if(!['application','self_registration'].includes(payload.authorization_method)||!['yes','no'].includes(form.get('scheduled_authorization'))){
+   get('create-save-error').textContent='授權方式尚未完成，請返回修改。';return;
+  }
+  if(!themes.includes(payload.notification_theme)||!packs.includes(payload.notification_sound_pack)||!Number.isInteger(payload.notification_volume)||payload.notification_volume<0||payload.notification_volume>100){
+   get('create-save-error').textContent='通知設定無效，請返回修改。';return;
+  }
   button.disabled=true;get('create-save-error').textContent='';button.textContent='正在儲存…';
   try{
    const response=await fetch('/api/projects',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
