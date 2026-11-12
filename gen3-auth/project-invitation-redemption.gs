@@ -25,9 +25,11 @@ function ikeyRedeemInvitation_(p){
   const existing=read(members,mh).filter(x=>x.value.project_id===v.project_id&&x.value.user_id===actor);
   if(existing.length>1)throw Error('INVITATION_MEMBERSHIP_DUPLICATE');
   if(existing.length&&!(v.status==='redeeming'&&existing[0].value.membership_id===v.membership_id&&existing[0].value.status==='active'&&existing[0].value.role==='member'))throw Error('INVITATION_ALREADY_MEMBER');
-  const id=v.status==='redeeming'?v.membership_id:Utilities.getUuid(),createdAt=new Date().toISOString();
+  // A partial Sheets write may persist actor/id while status is still pending.
+  // Preserve the original reservation ID; never silently mint a second membership.
+  if(v.status==='pending'&&v.membership_id&&(!uuid.test(String(v.membership_id))||v.redeemed_by_user_id!==actor))throw Error('INVITATION_RECOVERY_UNVERIFIED');
+  const id=v.membership_id||Utilities.getUuid(),createdAt=new Date().toISOString();
   if(v.status==='pending'){
-   if(v.membership_id)throw Error('INVITATION_RECOVERY_UNVERIFIED');
    // Reserve the invitation for this actor under the script lock. This also supports
    // retry after an append/flush failure without issuing a second membership.
    invitations.getRange(invite.row,ih.indexOf('redeemed_by_user_id')+1).setValue(actor);
