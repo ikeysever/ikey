@@ -38,3 +38,9 @@ test('missing invitation schema and unverified write do not return tokens',async
 test('only member role may be issued',async()=>{
  const {res,calls}=await invoke({role:'admin'});assert.equal(res.code,400);assert.equal(calls.length,0);
 });
+
+test('inactive projects cannot issue a usable invitation',async()=>{
+ const {res,calls}=await invoke({rows:[{project_id:projectId,created_by_user_id:owner,status:'inactive'}]});
+ assert.equal(res.code,404);
+ assert.equal(calls.some(x=>x.action==='db.insert'),false);
+});
