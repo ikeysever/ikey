@@ -53,6 +53,6 @@ jobs:
           node --check lib/project-invitations-handler.js
           node --check lib/project-invitation-list-handler.js
           node --check lib/project-invitation-redemption-handler.js
-          node --check gen3-auth/project-invitation-redemption.gs
+          node -e "new (require('node:vm').Script)(require('node:fs').readFileSync('gen3-auth/project-invitation-redemption.gs','utf8'))"
       - name: Run member UI regression tests
         run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js tests/project-members-route.test.js tests/project-create-contract.test.js
