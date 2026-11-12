@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {createProjectInvitationHandler,sha256}=require('../lib/project-invitations-handler');
 const projectId='11111111-1111-4111-8111-111111111111',owner='22222222-2222-4222-8222-222222222222',stranger='33333333-3333-4333-8333-333333333333',invitationId='44444444-4444-4444-8444-444444444444';
-const columns=['invitation_id','project_id','created_by_user_id','token_hash','role','expires_at','status','created_at'];
+const columns=['invitation_id','project_id','created_by_user_id','token_hash','role','expires_at','status','created_at','redeemed_by_user_id','membership_id'];
 async function invoke({actor=owner,rows=[{project_id:projectId,created_by_user_id:owner,status:'active'}],schema=columns,echo=true,role='member',limited=false}={}){
  const calls=[];
  const store={async dbCall(action,payload){calls.push({action,payload});if(action==='db.select')return {rows,limited};if(action==='db.schema')return {columns:schema};if(action==='db.insert')return {inserted:true,record:echo?payload.data:{invitation_id:invitationId}};}};
