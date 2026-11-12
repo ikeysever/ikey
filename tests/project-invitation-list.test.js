@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {createInvitationListHandler}=require('../lib/project-invitation-list-handler');
 const owner='11111111-1111-4111-8111-111111111111',projectId='22222222-2222-4222-8222-222222222222',invitationId='33333333-3333-4333-8333-333333333333';
-const columns=['invitation_id','project_id','created_by_user_id','token_hash','role','expires_at','status','created_at'];
+const columns=['invitation_id','project_id','created_by_user_id','token_hash','role','expires_at','status','created_at','redeemed_by_user_id','membership_id'];
 const invitation={invitation_id:invitationId,project_id:projectId,created_by_user_id:owner,token_hash:'a'.repeat(64),role:'member',expires_at:'2026-11-13T00:00:00Z',status:'pending',created_at:'2026-11-12T00:00:00Z'};
 async function invoke({actor=owner,rows=[invitation],projectRows=[{project_id:projectId,created_by_user_id:owner,status:'active'}],limited=false,schema=columns}={}){
  const calls=[];
