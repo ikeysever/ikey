@@ -48,3 +48,17 @@ test('project creation is fail-closed until auth/me verifies session',()=>{
  assert.match(js,/if\(!authVerified\)/);
  assert.match(js,/authVerified=true;get\('create-loading'\)\.hidden=true;get\('create-content'\)\.hidden=false/);
 });
+
+test('wizard offers six modules and submits selected IDs for persistence',()=>{
+ const html=read('public/project-create.html'),js=read('public/project-create.js');
+ for(const id of ['key_checkout','key_return','reservations','device_management','notifications','audit_log'])
+  assert.ok(html.includes('name="feature_modules" value="'+id+'"'));
+ assert.ok(html.includes('id="create-confirm-features"'));
+ assert.ok(js.includes("form.getAll('feature_modules')"));
+ assert.ok(js.includes('feature_modules:form.getAll'));
+});
+test('verified feature modules appear in project settings',()=>{
+ const js=read('public/project-readonly-panels.js');
+ assert.ok(js.includes("['功能模組','feature_modules']"));
+ assert.ok(js.includes("Array.isArray(value)"));
+});
