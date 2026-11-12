@@ -11,7 +11,7 @@ const adminId='33333333-3333-4333-8333-333333333333';
 function element(){
  return {textContent:'',children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);},addEventListener(name,fn){this[name]=fn;}};
 }
-function harness(payload){
+function harness(payload,{deferLoad=false}={}){
  const pane=element(),status=element(),list=element(),button=element();
  const nodes={'pc-member-status':status,'pc-member-list':list};
  const listeners={};
@@ -23,8 +23,8 @@ function harness(payload){
  };
  const fetch=async()=>({ok:true,json:async()=>payload});
  vm.runInNewContext(script,{document,fetch,URLSearchParams,location:{search:'?id='+projectId},encodeURIComponent},{timeout:1000});
- listeners['ikey:project-loaded']({detail:{project:{project_id:projectId}}});
- return {button,status,list};
+ if(!deferLoad)listeners['ikey:project-loaded']({detail:{project:{project_id:projectId}}});
+ return {button,status,list,projectLoaded:()=>listeners['ikey:project-loaded']({detail:{project:{project_id:projectId}}})};
 }
 test('renders authorized non-owner members instead of filtering them out',async()=>{
  const h=harness({success:true,membership_inventory_complete:true,members:[
@@ -43,4 +43,15 @@ test('incomplete inventory remains explicitly labeled, invalid entries ignored',
  await h.button.click();
  assert.equal(h.list.children.length,1);
  assert.match(h.status.textContent,/尚未確認完整名冊/);
+});
+
+test('opening members before project load queues and then fetches automatically',async()=>{
+ const h=harness({success:true,membership_inventory_complete:false,members:[{role:'owner',source:'project_creator',user_id:ownerId}]},{deferLoad:true});
+ await h.button.click();
+ assert.match(h.status.textContent,/完成後會自動驗證/);
+ assert.equal(h.list.children.length,0);
+ h.projectLoaded();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.list.children.length,1);
+ assert.match(h.status.textContent,/1 位可驗證成員/);
 });
