@@ -2,7 +2,7 @@
 (()=>{
  const fields={
   basic:[['專案名稱','project_name'],['專案說明','description'],['專案狀態','status'],['專案 ID','project_id']],
-  auth:[['加入授權方式','authorization_method'],['排程授權','scheduled_authorization']],
+  auth:[['加入授權方式','authorization_method'],['排程授權','scheduled_authorization'],['功能模組','feature_modules']],
   notify:[['通知主題','notification_theme'],['通知音色','notification_sound_pack'],['通知音量','notification_volume']],
   advanced:[['專案 ID','project_id'],['專案狀態','status']]
  };
@@ -23,7 +23,7 @@
    const dt=document.createElement('dt'),dd=document.createElement('dd');
    dt.textContent=label;
    const value=project[key];
-   dd.textContent=value===null||value===undefined||value===''?'尚未提供':key==='scheduled_authorization'?yesNo(value):key==='notification_volume'&&Number.isFinite(Number(value))?String(value)+'%':names[String(value)]||String(value);
+   dd.textContent=key==='feature_modules'?(Array.isArray(value)?(value.length?value.map(id=>({'key_checkout':'鑰匙借出','key_return':'鑰匙歸還','reservations':'預約排程','device_management':'設備管理','notifications':'通知提醒','audit_log':'操作紀錄'}[id]||id)).join('、'):'未選擇'):'尚未驗證'):value===null||value===undefined||value===''?'尚未提供':key==='scheduled_authorization'?yesNo(value):key==='notification_volume'&&Number.isFinite(Number(value))?String(value)+'%':names[String(value)]||String(value);
    list.append(dt,dd);
   }
   wrapper.append(list);
