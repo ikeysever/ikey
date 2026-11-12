@@ -37,6 +37,6 @@ test('wizard validates notification choices and payload before submitting',()=>{
 });
 test('project management device panel links to existing inventory page',()=>{
  const js=read('public/project-readonly-panels.js');
- assert.match(js,/project-devices\\.html\\?id=/);
- assert.match(js,/encodeURIComponent\\(project\\.project_id\\)/);
+ assert.ok(js.includes("/project-devices.html?id="));
+ assert.ok(js.includes('encodeURIComponent(project.project_id)'));
 });
