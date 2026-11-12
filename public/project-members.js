@@ -9,10 +9,15 @@
  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  if(!projectId||!uuid.test(projectId)){status.textContent='專案 ID 無效，無法載入成員。';return;}
  const roleLabels=Object.freeze({owner:'專案擁有者',admin:'專案管理員',manager:'管理員',member:'專案成員',viewer:'檢視者'});
- let ready=false,loading=false;
- document.addEventListener('ikey:project-loaded',event=>{ready=event.detail?.project?.project_id===projectId;});
- button.addEventListener('click',async()=>{
-  if(!ready||loading)return;
+ let ready=false,loading=false,pending=false;
+ document.addEventListener('ikey:project-loaded',event=>{
+  ready=event.detail?.project?.project_id===projectId;
+  if(ready&&pending){pending=false;loadMembers();}
+ });
+ button.addEventListener('click',()=>{loadMembers();});
+ async function loadMembers(){
+  if(!ready){pending=true;status.textContent='正在載入專案資料，完成後會自動驗證成員…';return;}
+  if(loading)return;
   loading=true;status.textContent='正在驗證專案成員…';list.replaceChildren();
   try{
    const response=await fetch('/api/projects/'+encodeURIComponent(projectId)+'/members',{credentials:'same-origin',cache:'no-store'});
@@ -42,5 +47,5 @@
   }catch{
    status.textContent='無法讀取成員資料，請稍後重試。';
   }finally{loading=false;}
- });
+ }
 })();
