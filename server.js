@@ -181,6 +181,12 @@ app.get('/api/projects/:projectId/unlock-readiness',requireProjectUser,async(req
 // Membership records and cross-project roles remain unavailable until schema validation.
 const { createProjectMembersHandler } = require('./lib/project-members-handler');
 app.get('/api/projects/:projectId/members',requireProjectUser,createProjectMembersHandler(authStore));
+const {createProjectInvitationHandler}=require('./lib/project-invitations-handler');
+const issueProjectInvitation=createProjectInvitationHandler(authStore);
+app.post('/api/projects/:projectId/invitations',requireProjectUser,(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ return issueProjectInvitation(req,res);
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
