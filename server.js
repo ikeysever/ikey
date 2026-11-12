@@ -130,10 +130,10 @@ app.get('/api/projects',requireProjectUser,async(req,res)=>{
 // Project settings update: owner-only, strict allowlist, verified persistence, no physical commands.
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
- const allowedCreateFields=new Set(['project_name','description','authorization_method','scheduled_authorization','notification_theme','notification_sound_pack','notification_volume']);
- if(!req.body||typeof req.body!=='object'||Array.isArray(req.body))
+ const unsupportedProjectCreateFields=require('./lib/project-create-contract').unsupportedProjectCreateFields;
+ const unsupported=unsupportedProjectCreateFields(req.body);
+ if(unsupported===null)
   return res.status(400).json({success:false,code:'INVALID_PROJECT_PAYLOAD',message:'專案資料格式不正確'});
- const unsupported=Object.keys(req.body).filter(key=>!allowedCreateFields.has(key));
  if(unsupported.length)return res.status(400).json({success:false,code:'UNSUPPORTED_PROJECT_FIELDS',message:'目前不支援這些專案設定，尚未儲存任何資料',unsupported_fields:unsupported});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
  const description=typeof req.body?.description==='string'?req.body.description.trim():'';
