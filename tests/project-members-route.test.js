@@ -39,7 +39,12 @@ test('missing and deleted projects return 404',async()=>{
  }
 });
 test('truncated, malformed, or unavailable storage fails closed',async()=>{
- for(const opts of [{limited:true},{rows:null},{throws:true},{rows:[{project_id:projectId,created_by_user_id:'bad',status:'active'}]}]){
+ for(const opts of [{limited:true},{rows:null},{throws:true}]){
   const {res}=await invoke(opts);assert.equal(res.code,503);
  }
+});
+
+test('malformed creator identity cannot enumerate members',async()=>{
+ const {res}=await invoke({rows:[{project_id:projectId,created_by_user_id:'bad',status:'active'}]});
+ assert.equal(res.code,403);assert.equal(res.body.code,'NOT_PROJECT_OWNER');
 });
