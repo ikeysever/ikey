@@ -123,29 +123,44 @@ function sameProjectOrigin(req){
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-binding-service').createLineBindingService(authStore);
 require('./lib/line-binding-router').mountLineBindingRoutes(app,{service:lineService,requireUser:requireProjectUser,csrfSecret:process.env.IKEY_LINE_TRUST_SECRET});
-app.get('/api/projects',requireProjectUser,async(req,res)=>{
- try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
- catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
-});
+const { createProjectListHandler } = require('./lib/project-list-handler');
+app.get('/api/projects',requireProjectUser,createProjectListHandler(authStore));
 // Project settings update: owner-only, strict allowlist, verified persistence, no physical commands.
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
+ const unsupportedProjectCreateFields=require('./lib/project-create-contract').unsupportedProjectCreateFields;
+ const unsupported=unsupportedProjectCreateFields(req.body);
+ if(unsupported===null)
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_PAYLOAD',message:'專案資料格式不正確'});
+ if(unsupported.length)return res.status(400).json({success:false,code:'UNSUPPORTED_PROJECT_FIELDS',message:'目前不支援這些專案設定，尚未儲存任何資料',unsupported_fields:unsupported});
  const name=typeof req.body?.project_name==='string'?req.body.project_name.trim():'';
  const description=typeof req.body?.description==='string'?req.body.description.trim():'';
+ if(req.body?.description!==undefined&&typeof req.body.description!=='string')return res.status(400).json({success:false,code:'INVALID_PROJECT_DESCRIPTION'});
  const authorization=req.body?.authorization_method;
  const schedule=req.body?.scheduled_authorization;
  const theme=req.body?.notification_theme??'midnight';
  const soundPack=req.body?.notification_sound_pack??'pulse';
  const volume=req.body?.notification_volume??50;
+ const featureModules=req.body?.feature_modules??[];
+ const {validateFeatureModules}=require('./lib/project-create-contract');
+ if(!validateFeatureModules(featureModules))return res.status(400).json({success:false,code:'INVALID_FEATURE_MODULES',message:'專案功能模組設定無效'});
  const allowedThemes=['midnight','polar','emerald','copper','violet','graphite'];
  const allowedSoundPacks=['pulse','crystal','air','wood','future','click'];
  if(!name||name.length>80||description.length>1000||!['application','self_registration'].includes(authorization)||typeof schedule!=='boolean'||!allowedThemes.includes(theme)||!allowedSoundPacks.includes(soundPack)||!Number.isInteger(volume)||volume<0||volume>100)return res.status(400).json({success:false,message:'專案設定資料不正確'});
  try{
+  if(featureModules.length){
+   const schema=await authStore.dbCall('db.schema',{table:'Projects'});
+   const columns=schema?.columns||schema?.Projects;
+   if(!Array.isArray(columns)||!columns.includes('feature_modules'))
+    return res.status(503).json({success:false,code:'FEATURE_MODULE_STORAGE_NOT_READY',message:'功能模組資料欄位尚未完成設定，專案未建立'});
+  }
   const now=new Date().toISOString();
-  const project={project_id:randomUUID(),project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:String(schedule),notification_theme:theme,notification_sound_pack:soundPack,notification_volume:String(volume),status:'active',created_at:now,updated_at:now};
+  const project={project_id:randomUUID(),project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:String(schedule),notification_theme:theme,notification_sound_pack:soundPack,notification_volume:String(volume),...(featureModules.length?{feature_modules:JSON.stringify(featureModules)}:{}),status:'active',created_at:now,updated_at:now};
   const result=await authStore.dbCall('db.insert',{table:'Projects',primary_key:'project_id',data:project});
   if(result?.inserted!==true||result?.record?.project_id!==project.project_id)return res.status(503).json({success:false,message:'專案尚未成功儲存'});
-  return res.status(201).json({success:true,project});
+  if(featureModules.length&&result.record.feature_modules!==project.feature_modules)
+   return res.status(503).json({success:false,code:'FEATURE_MODULE_WRITE_UNVERIFIED',message:'專案可能已建立，但功能模組儲存結果無法驗證，請勿重複送出'});
+  return res.status(201).json({success:true,project:{...project,feature_modules:featureModules}});
  }catch(err){console.warn('Project creation unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒，未確認建立成功'});}
 });
 // Unlock readiness is read-only. It never creates, queues or dispatches physical commands.
@@ -163,6 +178,24 @@ app.get('/api/projects/:projectId/unlock-readiness',requireProjectUser,async(req
 });
 // Verified owner-only member baseline. Invitations and roles remain disabled until the
 // membership schema and atomic authorization transactions are established.
+// Verified owner-only project membership baseline. Never invent invited members.
+// Membership records and cross-project roles remain unavailable until schema validation.
+const { createProjectMembersHandler } = require('./lib/project-members-handler');
+app.get('/api/projects/:projectId/members',requireProjectUser,createProjectMembersHandler(authStore));
+const {createProjectInvitationHandler}=require('./lib/project-invitations-handler');
+const issueProjectInvitation=createProjectInvitationHandler(authStore);
+const {createInvitationRedemptionHandler}=require('./lib/project-invitation-redemption-handler');
+const redeemProjectInvitation=createInvitationRedemptionHandler(authStore);
+app.post('/api/project-invitations/redeem',requireProjectUser,(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ return redeemProjectInvitation(req,res);
+});
+const {createInvitationListHandler}=require('./lib/project-invitation-list-handler');
+app.get('/api/projects/:projectId/invitations',requireProjectUser,createInvitationListHandler(authStore));
+app.post('/api/projects/:projectId/invitations',requireProjectUser,(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ return issueProjectInvitation(req,res);
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');

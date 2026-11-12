@@ -7,8 +7,6 @@
  if(!id||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)){
   showError('缺少有效的專案 ID。');return;
  }
- const cached=window.iKeyProjectCache?.read()?.find(p=>p.project_id===id);
- if(cached){byId('project-title').textContent=cached.project_name;byId('project-name').textContent=cached.project_name;}
  async function load(){
   retry.hidden=true;status.hidden=false;status.textContent='正在驗證專案資料…';
   try{
@@ -17,7 +15,6 @@
    if(!response.ok||data.success!==true||!Array.isArray(data.projects))throw Error('無法載入專案資料');
    const project=data.projects.find(p=>p.project_id===id);
    if(!project)throw Error('找不到專案，或目前帳號無權存取');
-   window.iKeyProjectCache?.write(data.projects);
    byId('project-title').textContent=project.project_name;
    byId('project-name').textContent=project.project_name;
    byId('project-state').textContent=project.status==='active'?'啟用中':project.status==='inactive'?'已停用':'';

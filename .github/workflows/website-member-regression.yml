@@ -1,0 +1,59 @@
+name: iKey website member UI regression
+on:
+  pull_request:
+    paths:
+      - 'public/project-members.js'
+      - 'public/projects.js'
+      - 'tests/projects-auth-cache.test.js'
+      - 'public/project-readonly-panels.js'
+      - 'public/project.html'
+      - 'public/project-create.html'
+      - 'public/project-create.js'
+      - 'server.js'
+      - 'lib/project-members-handler.js'
+      - 'lib/project-create-contract.js'
+      - 'lib/project-list-handler.js'
+      - 'lib/project-invitations-handler.js'
+      - 'lib/project-invitation-list-handler.js'
+      - 'lib/project-invitation-redemption-handler.js'
+      - 'gen3-auth/project-invitation-redemption.gs'
+      - 'gen3-auth/Code.gs'
+      - 'gen3-auth/sheets-store.js'
+      - 'tests/project-invitation-redemption.test.js'
+      - 'tests/project-invitation-gas-simulation.test.js'
+      - 'tests/project-invitation-list.test.js'
+      - 'tests/project-invitations-handler.test.js'
+      - 'tests/project-list-handler.test.js'
+      - 'tests/project-create-contract.test.js'
+      - 'tests/project-members-route.test.js'
+      - 'tests/project-create-five-step.test.js'
+      - 'tests/project-members-display.test.js'
+      - 'tests/project-readonly-panels.test.js'
+      - '.github/workflows/website-member-regression.yml'
+  workflow_dispatch:
+jobs:
+  member-ui:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify JavaScript syntax
+        run: |
+          node --check public/project-members.js
+          node --check public/projects.js
+          node --check public/project-readonly-panels.js
+          node --check public/project-create.js
+          node --check server.js
+          node --check lib/project-members-handler.js
+          node --check lib/project-create-contract.js
+          node --check lib/project-list-handler.js
+          node --check lib/project-invitations-handler.js
+          node --check lib/project-invitation-list-handler.js
+          node --check lib/project-invitation-redemption-handler.js
+          node -e "new (require('node:vm').Script)(require('node:fs').readFileSync('gen3-auth/project-invitation-redemption.gs','utf8'))"
+      - name: Run member UI regression tests
+        run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js tests/project-members-route.test.js tests/project-create-contract.test.js

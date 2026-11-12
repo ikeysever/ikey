@@ -70,17 +70,15 @@
  const creator=get('projects-creator'),creatorName=get('projects-creator-name');
  creator.addEventListener('change',()=>{creatorName.hidden=creator.value!=='name';});
  for(const href of ['/project-create.html','/project-create.css','/project-create.js']){const link=document.createElement('link');link.rel='prefetch';link.href=href;document.head.append(link);}
- try{const cached=sessionStorage.getItem('ikey-projects-refresh');if(cached){sessionStorage.removeItem('ikey-projects-refresh');projects=JSON.parse(cached).filter(complete);loading=false;loaded=true;}}catch{sessionStorage.removeItem('ikey-projects-refresh');}
- // A display snapshot is shown only after /api/auth/me confirms this session.
- // This prevents stale project names leaking after a different account signs in.
- const snapshot=window.iKeyProjectCache?.read();
+ // Never display sessionStorage or cached project names before this session is verified.
+ // A previous account may have used the same browser.
  render();
  async function reload(){
   const id=++requestId;if(!loaded)loading=true;error='';render();
   try{
    const response=await fetch('/api/projects',{credentials:'same-origin',cache:'no-store'});
    const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'無法載入專案');
-   if(id!==requestId)return;projects=(Array.isArray(data.projects)?data.projects:[]).filter(complete);window.iKeyProjectCache?.write(projects);loaded=true;loading=false;render();
+   if(id!==requestId)return;projects=(Array.isArray(data.projects)?data.projects:[]).filter(complete);loaded=true;loading=false;render();
   }catch(e){if(id!==requestId)return;loading=false;error=loaded?'無法更新專案，已顯示上次取得的資料':e.message||'專案載入失敗';render();}
  }
  async function start(){
@@ -88,7 +86,11 @@
    const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
    const auth=await response.json();
    if(!response.ok||!auth.authenticated){window.iKeyProjectCache?.clear();location.replace('/');return;}
-   if(!loaded&&snapshot){projects=snapshot.filter(complete);loaded=true;loading=false;render();}
+   // Authentication alone does not bind old browser caches to the current user.
+   // Only the freshly authorized /api/projects response may populate this list.
+   sessionStorage.removeItem('ikey-projects-refresh');
+   window.iKeyProjectCache?.clear();
+   render();
    reload();
   }catch(_){error='無法確認登入狀態，請檢查網路後重試。';loading=false;render();}
  }
