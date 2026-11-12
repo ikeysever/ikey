@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'public/project-members.js'
+      - 'public/projects.js'
+      - 'tests/projects-auth-cache.test.js'
       - 'public/project-readonly-panels.js'
       - 'public/project.html'
       - 'public/project-create.html'
@@ -32,6 +34,7 @@ jobs:
       - name: Verify JavaScript syntax
         run: |
           node --check public/project-members.js
+          node --check public/projects.js
           node --check public/project-readonly-panels.js
           node --check public/project-create.js
           node --check server.js
