@@ -13,7 +13,7 @@ async function invoke(rows,options={}){
 }
 test('returns only owned active projects and hides deleted ones',async()=>{
  const {res,calls}=await invoke([{project_id:a,created_by_user_id:owner,status:'active'},{project_id:b,created_by_user_id:owner,status:'deleted'}]);
- assert.equal(res.code,200);assert.deepEqual(res.body.projects,[{project_id:a,created_by_user_id:owner,status:'active'}]);
+ assert.equal(res.code,200);assert.deepEqual(res.body.projects,[{project_id:a,created_by_user_id:owner,status:'active',feature_modules:[]}]);
  assert.equal(res.headers['Cache-Control'],'no-store');
  assert.deepEqual(calls[0],{action:'db.select',payload:{table:'Projects',where:{created_by_user_id:owner},limit:100}});
 });
@@ -29,4 +29,13 @@ test('truncated or malformed storage fails closed',async()=>{
 });
 test('invalid authenticated actor never reaches storage',async()=>{
  const {res,calls}=await invoke([],{user:'bad'});assert.equal(res.code,403);assert.equal(calls.length,0);
+});
+
+test('persisted feature modules are decoded and invalid storage is rejected',async()=>{
+ const good=await invoke([{project_id:a,created_by_user_id:owner,status:'active',feature_modules:'["reservations","audit_log"]'}]);
+ assert.deepEqual(good.res.body.projects[0].feature_modules,['reservations','audit_log']);
+ for(const raw of ['invalid','["unknown"]','["reservations","reservations"]']){
+  const bad=await invoke([{project_id:a,created_by_user_id:owner,status:'active',feature_modules:raw}]);
+  assert.equal(bad.res.code,503);assert.equal(bad.res.body.code,'PROJECT_MODULES_UNVERIFIED');
+ }
 });
