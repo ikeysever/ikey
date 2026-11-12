@@ -11,13 +11,13 @@ const schemas={
  Project_Invitations:['invitation_id','project_id','created_by_user_id','token_hash','role','expires_at','status','created_at','redeemed_by_user_id','membership_id'],
  Project_Memberships:['membership_id','project_id','user_id','role','status','created_at']
 };
-function harness({failAppend=false,failFlush=false}={}){
+function harness({failAppend=false,failFlush=false,failFlushOn=0}={}){
  const data={
   Projects:[[projectId,owner,'active']],
   Project_Invitations:[['55555555-5555-4555-8555-555555555555',projectId,owner,hash,'member','2099-01-01T00:00:00Z','pending','2026-11-12T00:00:00Z','','']],
   Project_Memberships:[]
  };
- let locked=false,appendFailures=failAppend?1:0,flushFailures=failFlush?1:0,next=0;
+ let locked=false,appendFailures=failAppend?1:0,flushFailures=failFlush?1:0,flushCount=0,next=0;
  function sheet(name){
   const headers=schemas[name],rows=data[name];
   return {
@@ -35,7 +35,7 @@ function harness({failAppend=false,failFlush=false}={}){
   ikeyDbHeaders_:s=>Object.keys(sheets).map(k=>[sheets[k],schemas[k]]).find(x=>x[0]===s)[1],
   ikeyDbRecord_:(headers,values)=>Object.fromEntries(headers.map((h,i)=>[h,values[i]])),
   LockService:{getScriptLock(){return {tryLock(){if(locked)return false;locked=true;return true},releaseLock(){locked=false}}}},
-  SpreadsheetApp:{flush(){if(flushFailures-- >0)throw Error('FLUSH_FAILED')}},
+  SpreadsheetApp:{flush(){flushCount++;if(flushFailures-- >0||flushCount===failFlushOn)throw Error('FLUSH_FAILED')}},
   Utilities:{getUuid(){next++;return '66666666-6666-4666-8666-'+String(next).padStart(12,'0')}},
   Date,Error,String,Number,Array,Object
  };
@@ -72,4 +72,23 @@ test('duplicate membership and altered project owner fail closed',()=>{
  assert.throws(()=>h.redeem(),/INVITATION_ALREADY_MEMBER/);
  const x=harness();x.data.Projects[0][1]=other;
  assert.throws(()=>x.redeem(),/INVITATION_PROJECT_UNVERIFIED/);
+});
+
+test('failure after membership append recovers without duplicate membership',()=>{
+ const h=harness({failFlushOn:2});
+ assert.throws(()=>h.redeem(),/FLUSH_FAILED/);
+ assert.equal(h.data.Project_Invitations[0][6],'redeeming');
+ assert.equal(h.data.Project_Memberships.length,1);
+ h.redeem();
+ assert.equal(h.data.Project_Memberships.length,1);
+ assert.equal(h.data.Project_Invitations[0][6],'redeemed');
+});
+test('failure while finalizing invitation recovers existing membership',()=>{
+ const h=harness({failFlushOn:3});
+ assert.throws(()=>h.redeem(),/FLUSH_FAILED/);
+ assert.equal(h.data.Project_Memberships.length,1);
+ // Sheet mutation can be visible even when flush reports an error.
+ // A retry must never append a second membership.
+ assert.throws(()=>h.redeem(),/INVITATION_EXPIRED_OR_USED/);
+ assert.equal(h.data.Project_Memberships.length,1);
 });
