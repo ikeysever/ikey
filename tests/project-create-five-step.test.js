@@ -28,3 +28,15 @@ test('feature module selection is not falsely claimed persisted before backend s
  const html=read('public/project-create.html');
  assert.doesNotMatch(html,/功能模組已儲存/);
 });
+
+test('wizard validates notification choices and payload before submitting',()=>{
+ const js=read('public/project-create.js');
+ for(const fragment of ['themes.includes(payload.notification_theme)','packs.includes(payload.notification_sound_pack)','Number.isInteger(payload.notification_volume)','payload.notification_volume<0','payload.notification_volume>100','button.disabled=true']){
+  assert.ok(js.includes(fragment),fragment);
+ }
+});
+test('project management device panel links to existing inventory page',()=>{
+ const js=read('public/project-readonly-panels.js');
+ assert.match(js,/project-devices\\.html\\?id=/);
+ assert.match(js,/encodeURIComponent\\(project\\.project_id\\)/);
+});
