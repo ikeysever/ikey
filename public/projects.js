@@ -78,7 +78,7 @@
   try{
    const response=await fetch('/api/projects',{credentials:'same-origin',cache:'no-store'});
    const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'無法載入專案');
-   if(id!==requestId)return;projects=(Array.isArray(data.projects)?data.projects:[]).filter(complete);window.iKeyProjectCache?.write(projects);loaded=true;loading=false;render();
+   if(id!==requestId)return;projects=(Array.isArray(data.projects)?data.projects:[]).filter(complete);loaded=true;loading=false;render();
   }catch(e){if(id!==requestId)return;loading=false;error=loaded?'無法更新專案，已顯示上次取得的資料':e.message||'專案載入失敗';render();}
  }
  async function start(){
@@ -86,13 +86,10 @@
    const response=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});
    const auth=await response.json();
    if(!response.ok||!auth.authenticated){window.iKeyProjectCache?.clear();location.replace('/');return;}
-   try{
-    const cached=sessionStorage.getItem('ikey-projects-refresh');
-    sessionStorage.removeItem('ikey-projects-refresh');
-    if(cached){const parsed=JSON.parse(cached);if(Array.isArray(parsed)){projects=parsed.filter(complete);loaded=true;loading=false;}}
-   }catch{sessionStorage.removeItem('ikey-projects-refresh');}
-   const snapshot=window.iKeyProjectCache?.read();
-   if(!loaded&&Array.isArray(snapshot)){projects=snapshot.filter(complete);loaded=true;loading=false;}
+   // Authentication alone does not bind old browser caches to the current user.
+   // Only the freshly authorized /api/projects response may populate this list.
+   sessionStorage.removeItem('ikey-projects-refresh');
+   window.iKeyProjectCache?.clear();
    render();
    reload();
   }catch(_){error='無法確認登入狀態，請檢查網路後重試。';loading=false;render();}
