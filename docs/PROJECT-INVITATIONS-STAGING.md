@@ -36,3 +36,9 @@ membership_id,project_id,user_id,role,status,created_at
 Add `Project_Memberships` to staging `IKEY_DB_ALLOWED_TABLES`. The atomic GAS action itself must be deployed as part of the same staging GAS version. This code has not been deployed to production.
 
 **Remaining blockers:** actual staging GAS integration, concurrent redemption test with two authenticated accounts, member list/readback, fault-injection recovery tests, and role enforcement for member project access. Do not promote to main until resolved.
+
+## Partial reservation fault injection
+
+The staging GAS handler now also supports retries when Sheets persists only the reserving actor or actor plus membership ID while the invitation status is still `pending`. A different actor is rejected; the original actor reuses the previously stored membership ID. The executable GAS simulation covers failed status writes, failed membership append, failed flush after append, and finalization failure.
+
+This remains a simulation, **not a staging GAS deployment or two-account live concurrency verification**. GAS/Sheets do not provide a cross-sheet ACID transaction; a lock and idempotent recovery reduce replay and partial-write risk but do not replace integration tests.
