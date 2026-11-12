@@ -48,3 +48,9 @@ test('malformed creator identity cannot enumerate members',async()=>{
  const {res}=await invoke({rows:[{project_id:projectId,created_by_user_id:'bad',status:'active'}]});
  assert.equal(res.code,403);assert.equal(res.body.code,'NOT_PROJECT_OWNER');
 });
+
+test('ambiguous duplicate project rows fail closed',async()=>{
+ const row={project_id:projectId,created_by_user_id:ownerId,status:'active'};
+ const {res}=await invoke({rows:[row,{...row}]});
+ assert.equal(res.code,503);assert.equal(res.body.code,'MEMBERSHIP_UNVERIFIED');
+});
