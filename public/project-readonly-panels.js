@@ -27,11 +27,28 @@
    list.append(dt,dd);
   }
   wrapper.append(list);
+  if(paneName==='advanced'){
+   const link=document.createElement('a');
+   link.href='/project-other-settings.html?id='+encodeURIComponent(project.project_id);
+   link.textContent='查看其他設定（目前唯讀）';
+   wrapper.append(link);
+  }
   pane.append(wrapper);
+ }
+ function renderDevices(project){
+  const pane=document.querySelector('[data-pc-pane="devices"]');
+  if(!pane)return;
+  const old=pane.querySelector('[data-pc-device-link]');if(old)old.remove();
+  const link=document.createElement('a');
+  link.setAttribute('data-pc-device-link','');
+  link.href='/project-devices.html?id='+encodeURIComponent(project.project_id);
+  link.textContent='前往專案裝置清單、搜尋及綁定';
+  pane.append(link);
  }
  document.addEventListener('ikey:project-loaded',event=>{
   const project=event.detail?.project;
   if(!project||typeof project.project_id!=='string')return;
   for(const name of Object.keys(fields))render(name,project);
+  renderDevices(project);
  });
 })();
