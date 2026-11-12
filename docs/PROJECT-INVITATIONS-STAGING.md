@@ -21,3 +21,18 @@ The `IKEY_DB_ALLOWED_TABLES` Script Property must include `Project_Invitations` 
 3. Add owner invitation management UI and revocation only after atomic operations and readback are available.
 4. Run staging integration tests with two separate authenticated users, plus replay, expiry and cross-project tests.
 5. Never enable physical unlock based on invitation or unverified membership.
+
+## Atomic redemption implementation now present in staging branch
+
+`POST /api/project-invitations/redeem` accepts `{"invitation_token":"..."}` from an authenticated, same-origin session. Render hashes the token and invokes the dedicated keyed GAS action `project.invitation.redeem`. GAS uses `LockService.getScriptLock()` and marks the invitation `redeemed` before inserting a membership, so token replay cannot create duplicate memberships. A failed membership append may leave the invitation consumed without membership; reconciliation and operator recovery must be implemented before production.
+
+Additional staging tab required:
+
+```
+Project_Memberships
+membership_id,project_id,user_id,role,status,created_at
+```
+
+Add `Project_Memberships` to staging `IKEY_DB_ALLOWED_TABLES`. The atomic GAS action itself must be deployed as part of the same staging GAS version. This code has not been deployed to production.
+
+**Remaining blockers:** actual staging GAS integration, concurrent redemption test with two authenticated accounts, member list/readback, recovery for consumed-but-unwritten invitation, and role enforcement for member project access. Do not promote to main until resolved.
