@@ -2,10 +2,11 @@
 (()=>{
  const get=id=>document.getElementById(id);
  const stepLabel=get('create-step-label');
+ let authVerified=false;
  const basic=get('create-project-form'),settings=get('create-step2'),visual=get('create-step3'),audio=get('create-step4'),confirm=get('create-confirm');
  function show(step){basic.hidden=step!==1;settings.hidden=step!==2;visual.hidden=step!==3;audio.hidden=step!==4;confirm.hidden=step!==5;stepLabel.textContent=({1:'步驟 1 · 專案基本資料',2:'步驟 2 · 借還模式設定',3:'步驟 3 · 視覺設定',4:'步驟 4 · 音效設定',5:'步驟 5 · 確認設定'})[step];window.scrollTo({top:0,behavior:'instant'});}
  // No sensitive project data is exposed; the server session is checked in parallel.
- get('create-loading').hidden=true;get('create-content').hidden=false;show(1);
+ get('create-loading').hidden=false;get('create-content').hidden=true;show(1);
  basic.addEventListener('submit',event=>{
   event.preventDefault();const name=get('create-project-name').value.trim();
   if(!name||name.length>80){get('create-error').textContent='請輸入 1～80 字的專案名稱。';return;}
@@ -40,6 +41,7 @@
  get('create-back').addEventListener('click',()=>show(4));
  get('create-save').addEventListener('click',async()=>{
   const button=get('create-save');if(button.disabled)return;
+  if(!authVerified){get('create-save-error').textContent='尚未完成登入驗證，請稍後再試。';return;}
   const form=new FormData(get('create-settings-form'));
   const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes',notification_theme:get('notify-theme-id')?.value||'midnight',notification_sound_pack:get('notify-sound-pack')?.value||'pulse',notification_volume:Number(get('notify-volume')?.value||50)};
   const themes=['midnight','polar','emerald','copper','violet','graphite'];
@@ -91,5 +93,6 @@
   if(response.status===401){location.replace('/');return;}
   if(!response.ok)throw Error('AUTH_UNAVAILABLE');
   const data=await response.json();if(!data.authenticated){location.replace('/');return;}
- }catch{get('create-loading').hidden=false;get('create-loading').textContent='無法驗證登入狀態，請稍後重新整理。';get('create-content').hidden=true;}})();
+  authVerified=true;get('create-loading').hidden=true;get('create-content').hidden=false;
+ }catch{authVerified=false;get('create-loading').hidden=false;get('create-loading').textContent='無法驗證登入狀態，請稍後重新整理。';get('create-content').hidden=true;}})();
 })();
