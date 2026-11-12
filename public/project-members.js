@@ -14,7 +14,7 @@
   ready=event.detail?.project?.project_id===projectId;
   if(ready&&pending){pending=false;loadMembers();}
  });
- button.addEventListener('click',()=>{loadMembers();});
+ button.addEventListener('click',()=>loadMembers());
  async function loadMembers(){
   if(!ready){pending=true;status.textContent='正在載入專案資料，完成後會自動驗證成員…';return;}
   if(loading)return;
