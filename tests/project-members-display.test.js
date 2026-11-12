@@ -55,3 +55,10 @@ test('opening members before project load queues and then fetches automatically'
  assert.equal(h.list.children.length,1);
  assert.match(h.status.textContent,/1 位可驗證成員/);
 });
+
+test('project management HTML mounts member UI and script',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const html=fs.readFileSync(path.join(__dirname,'../public/project.html'),'utf8');
+ for(const id of ['pc-member-status','pc-member-list'])assert.ok(html.includes('id="'+id+'"'),id);
+ assert.ok(html.includes('src="/project-members.js?'));
+});
