@@ -64,3 +64,8 @@
 - `GET /api/projects/:projectId/members` 新增登入、UUID、專案存在、Owner 身分驗證；僅回傳可核實的建立者，並設定 `membership_inventory_complete:false`。無法驗證資料時回 503，非 Owner 回 403。
 - 成員面板在專案 API 尚未載入前被打開時，會排隊等待 `ikey:project-loaded`，成功後自動請求名冊，避免原本畫面停住。
 - 已新增成員路由契約測試、載入時序回歸測試；仍未建立完整的成員資料表與權限交易。
+
+## 2026-11-12 成員 API 可執行測試強化
+- 將成員唯讀 API 處理器抽離為 `lib/project-members-handler.js`，由 `server.js` 在登入驗證後掛載；儲存服務採依賴注入，方便測試且不需觸及正式 GAS。
+- `tests/project-members-route.test.js` 從字串契約測試升級為實際呼叫處理器，覆蓋 Owner、非 Owner、無效 UUID、已刪除專案、儲存結果截斷／格式錯誤／例外。
+- 完整成員邀請、角色變更與共享權限仍未啟用；不得將這個基線視為完整成員管理。
