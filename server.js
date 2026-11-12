@@ -123,10 +123,8 @@ function sameProjectOrigin(req){
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-binding-service').createLineBindingService(authStore);
 require('./lib/line-binding-router').mountLineBindingRoutes(app,{service:lineService,requireUser:requireProjectUser,csrfSecret:process.env.IKEY_LINE_TRUST_SECRET});
-app.get('/api/projects',requireProjectUser,async(req,res)=>{
- try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
- catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
-});
+const { createProjectListHandler } = require('./lib/project-list-handler');
+app.get('/api/projects',requireProjectUser,createProjectListHandler(authStore));
 // Project settings update: owner-only, strict allowlist, verified persistence, no physical commands.
 app.post('/api/projects',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,message:'來源驗證失敗'});
