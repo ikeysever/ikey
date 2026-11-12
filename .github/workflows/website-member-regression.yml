@@ -14,6 +14,8 @@ on:
       - 'lib/project-create-contract.js'
       - 'lib/project-list-handler.js'
       - 'lib/project-invitations-handler.js'
+      - 'lib/project-invitation-list-handler.js'
+      - 'tests/project-invitation-list.test.js'
       - 'tests/project-invitations-handler.test.js'
       - 'tests/project-list-handler.test.js'
       - 'tests/project-create-contract.test.js'
@@ -44,5 +46,6 @@ jobs:
           node --check lib/project-create-contract.js
           node --check lib/project-list-handler.js
           node --check lib/project-invitations-handler.js
+          node --check lib/project-invitation-list-handler.js
       - name: Run member UI regression tests
         run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js tests/project-members-route.test.js tests/project-create-contract.test.js
