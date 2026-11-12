@@ -250,7 +250,7 @@ function doPost(e) {
   if(!secret || secret.length<32 || data.api_key!==secret)return respond({ok:false,error:"UNAUTHORIZED"});
   const action=String(data.action||"");
   const payload=data.payload||{};
-  const result=action.indexOf("db.")===0 ? ikeyDbDispatch_(action,payload) : execute(action,payload);
+  const result=action==="project.invitation.redeem" ? ikeyRedeemInvitation_(payload) : (action.indexOf("db.")===0 ? ikeyDbDispatch_(action,payload) : execute(action,payload));
   return respond({ok:true,result});
  } catch(err){return respond({ok:false,error:String(err.message||"INTERNAL_ERROR")})}
 }
