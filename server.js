@@ -163,6 +163,25 @@ app.get('/api/projects/:projectId/unlock-readiness',requireProjectUser,async(req
 });
 // Verified owner-only member baseline. Invitations and roles remain disabled until the
 // membership schema and atomic authorization transactions are established.
+// Verified owner-only project membership baseline. Never invent invited members.
+// Membership records and cross-project roles remain unavailable until schema validation.
+app.get('/api/projects/:projectId/members',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const projectId=String(req.params.projectId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+  if(!Array.isArray(result?.rows)||result.limited)return res.status(503).json({success:false,code:'MEMBERSHIP_UNVERIFIED'});
+  const project=result.rows.find(p=>p.project_id===projectId&&p.status!=='deleted');
+  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const ownerId=String(project.created_by_user_id||'');
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(ownerId))
+   return res.status(503).json({success:false,code:'MEMBERSHIP_UNVERIFIED'});
+  return res.json({success:true,project_id:projectId,membership_inventory_complete:false,members:[{user_id:ownerId,role:'owner',source:'project_creator'}]});
+ }catch(error){console.warn('Project membership unavailable',error.name||'Error');return res.status(503).json({success:false,code:'MEMBERSHIP_UNAVAILABLE'});}
+});
 // Device pre-registration: only verified global super admins may create devices.
 // Storage must support atomic primary-key uniqueness for the Devices table.
 const { randomBytes } = require('node:crypto');
