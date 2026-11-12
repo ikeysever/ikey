@@ -11,8 +11,8 @@ on:
       - 'lib/project-members-handler.js'
       - 'lib/project-create-contract.js'
       - 'tests/project-create-contract.test.js'
-      - 'tests/project-members-route.test.js tests/project-create-contract.test.js'
-      - 'tests/project-create-five-step.test.js tests/project-members-route.test.js'
+      - 'tests/project-members-route.test.js'
+      - 'tests/project-create-five-step.test.js'
       - 'tests/project-members-display.test.js'
       - 'tests/project-readonly-panels.test.js'
       - '.github/workflows/website-member-regression.yml'
@@ -36,4 +36,4 @@ jobs:
           node --check lib/project-members-handler.js
           node --check lib/project-create-contract.js
       - name: Run member UI regression tests
-        run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js
+        run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js tests/project-members-route.test.js tests/project-create-contract.test.js
