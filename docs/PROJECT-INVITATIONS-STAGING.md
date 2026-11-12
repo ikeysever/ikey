@@ -9,7 +9,7 @@ The staging branch now exposes authenticated `POST /api/projects/:projectId/invi
 Create a separate `Project_Invitations` tab in the staging spreadsheet with exactly these header columns:
 
 ```
-invitation_id,project_id,created_by_user_id,token_hash,role,expires_at,status,created_at
+invitation_id,project_id,created_by_user_id,token_hash,role,expires_at,status,created_at,redeemed_by_user_id,membership_id
 ```
 
 The `IKEY_DB_ALLOWED_TABLES` Script Property must include `Project_Invitations` **in staging only**, after reviewing the generic database API's table authorization. The API fails closed with 503 when the table is unavailable or the schema is incomplete.
@@ -35,4 +35,4 @@ membership_id,project_id,user_id,role,status,created_at
 
 Add `Project_Memberships` to staging `IKEY_DB_ALLOWED_TABLES`. The atomic GAS action itself must be deployed as part of the same staging GAS version. This code has not been deployed to production.
 
-**Remaining blockers:** actual staging GAS integration, concurrent redemption test with two authenticated accounts, member list/readback, recovery for consumed-but-unwritten invitation, and role enforcement for member project access. Do not promote to main until resolved.
+**Remaining blockers:** actual staging GAS integration, concurrent redemption test with two authenticated accounts, member list/readback, fault-injection recovery tests, and role enforcement for member project access. Do not promote to main until resolved.
