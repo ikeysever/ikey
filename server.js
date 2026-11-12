@@ -157,6 +157,8 @@ app.post('/api/projects',requireProjectUser,async(req,res)=>{
   const project={project_id:randomUUID(),project_name:name,description,created_by_user_id:req.projectUser.user_id,authorization_method:authorization,scheduled_authorization:String(schedule),notification_theme:theme,notification_sound_pack:soundPack,notification_volume:String(volume),...(featureModules.length?{feature_modules:JSON.stringify(featureModules)}:{}),status:'active',created_at:now,updated_at:now};
   const result=await authStore.dbCall('db.insert',{table:'Projects',primary_key:'project_id',data:project});
   if(result?.inserted!==true||result?.record?.project_id!==project.project_id)return res.status(503).json({success:false,message:'專案尚未成功儲存'});
+  if(featureModules.length&&result.record.feature_modules!==project.feature_modules)
+   return res.status(503).json({success:false,code:'FEATURE_MODULE_WRITE_UNVERIFIED',message:'專案可能已建立，但功能模組儲存結果無法驗證，請勿重複送出'});
   return res.status(201).json({success:true,project});
  }catch(err){console.warn('Project creation unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒，未確認建立成功'});}
 });
