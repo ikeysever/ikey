@@ -11,20 +11,20 @@ const schemas={
  Project_Invitations:['invitation_id','project_id','created_by_user_id','token_hash','role','expires_at','status','created_at','redeemed_by_user_id','membership_id'],
  Project_Memberships:['membership_id','project_id','user_id','role','status','created_at']
 };
-function harness({failAppend=false,failFlush=false,failFlushOn=0}={}){
+function harness({failAppend=false,failFlush=false,failFlushOn=0,failSetOn=0}={}){
  const data={
   Projects:[[projectId,owner,'active']],
   Project_Invitations:[['55555555-5555-4555-8555-555555555555',projectId,owner,hash,'member','2099-01-01T00:00:00Z','pending','2026-11-12T00:00:00Z','','']],
   Project_Memberships:[]
  };
- let locked=false,appendFailures=failAppend?1:0,flushFailures=failFlush?1:0,flushCount=0,next=0;
+ let locked=false,appendFailures=failAppend?1:0,flushFailures=failFlush?1:0,flushCount=0,setCount=0,next=0;
  function sheet(name){
   const headers=schemas[name],rows=data[name];
   return {
    getLastRow(){return rows.length+1},
    getRange(row,col,n=1,width=1){return {
     getValues(){return rows.slice(row-2,row-2+n).map(r=>r.slice(col-1,col-1+width))},
-    setValue(v){rows[row-2][col-1]=v}
+    setValue(v){setCount++;if(setCount===failSetOn)throw Error('SET_FAILED');rows[row-2][col-1]=v}
    }},
    appendRow(values){if(appendFailures-- >0)throw Error('APPEND_FAILED');rows.push(values.slice())}
   };
@@ -91,4 +91,24 @@ test('failure while finalizing invitation recovers existing membership',()=>{
  // A retry must never append a second membership.
  assert.throws(()=>h.redeem(),/INVITATION_EXPIRED_OR_USED/);
  assert.equal(h.data.Project_Memberships.length,1);
+});
+
+test('partial reservation actor write recovers with same user and rejects another',()=>{
+ const h=harness({failSetOn:2});
+ assert.throws(()=>h.redeem(),/SET_FAILED/);
+ assert.equal(h.data.Project_Invitations[0][6],'pending');
+ assert.equal(h.data.Project_Invitations[0][8],actor);
+ assert.throws(()=>h.redeem(other),/INVITATION_RESERVED_BY_OTHER_USER/);
+ h.redeem();
+ assert.equal(h.data.Project_Memberships.length,1);
+ assert.equal(h.data.Project_Invitations[0][6],'redeemed');
+});
+test('partial reservation ID write reuses original membership ID',()=>{
+ const h=harness({failSetOn:3});
+ assert.throws(()=>h.redeem(),/SET_FAILED/);
+ const original=h.data.Project_Invitations[0][9];
+ assert.match(original,/^[0-9a-f-]{36}$/);
+ h.redeem();
+ assert.equal(h.data.Project_Memberships.length,1);
+ assert.equal(h.data.Project_Memberships[0][0],original);
 });
