@@ -2,7 +2,7 @@
 
 The staging branch now exposes authenticated `POST /api/projects/:projectId/invitations` with body `{"role":"member"}`. It is owner-only, same-origin, and generates a cryptographically random 24-byte token. Only SHA-256 of the token is stored. The token is returned once, after the database confirms the inserted record.
 
-**This is invitation issuance only, not a completed join workflow.** Do not send invitations to end users until token redemption, atomic single-use enforcement, and membership readback are implemented and tested.
+**The staging branch contains issuance, redemption, and owner-only membership readback code, but no live staging GAS integration has been verified.** Do not send invitations to end users until live integration, concurrency and authorization acceptance tests pass.
 
 ## Required staging storage
 
@@ -14,17 +14,17 @@ invitation_id,project_id,created_by_user_id,token_hash,role,expires_at,status,cr
 
 The `IKEY_DB_ALLOWED_TABLES` Script Property must include `Project_Invitations` **in staging only**, after reviewing the generic database API's table authorization. The API fails closed with 503 when the table is unavailable or the schema is incomplete.
 
-## Next implementation gates
+## Remaining release gates
 
-1. Atomic one-time invitation redemption must verify expiry, hash and target project, then create membership without a replay window.
-2. Introduce and validate a dedicated membership table and role transitions; do not treat the legacy `Project_Members` request-members table as project access without verifying its semantics.
-3. Add owner invitation management UI and revocation only after atomic operations and readback are available.
+1. Deploy the staging-only GAS redemption action to an isolated test deployment and verify expiry, hash, project status, and single-use behavior with actual Sheets writes.
+2. Provision and validate the dedicated staging `Project_Memberships` tab; define and test role transitions. Do not treat legacy `Project_Members` requests as access grants.
+3. Implement owner invitation management UI and revocation after live atomic operations and readback are verified.
 4. Run staging integration tests with two separate authenticated users, plus replay, expiry and cross-project tests.
 5. Never enable physical unlock based on invitation or unverified membership.
 
 ## Atomic redemption implementation now present in staging branch
 
-`POST /api/project-invitations/redeem` accepts `{"invitation_token":"..."}` from an authenticated, same-origin session. Render hashes the token and invokes the dedicated keyed GAS action `project.invitation.redeem`. GAS uses `LockService.getScriptLock()` and marks the invitation `redeemed` before inserting a membership, so token replay cannot create duplicate memberships. A failed membership append may leave the invitation consumed without membership; reconciliation and operator recovery must be implemented before production.
+`POST /api/project-invitations/redeem` accepts `{"invitation_token":"..."}` from an authenticated, same-origin session. Render hashes the token and invokes the dedicated keyed GAS action `project.invitation.redeem`. GAS uses `LockService.getScriptLock()` and a resumable two-phase flow: reserve the invitation as `redeeming` for the authenticated actor and a fixed membership ID, append or verify the membership, then finalize as `redeemed`. A retry by the same actor can recover interrupted writes; another actor cannot take over a reserved token. This is not a cross-sheet ACID transaction and must be validated against real Sheets behavior.
 
 Additional staging tab required:
 
@@ -35,7 +35,7 @@ membership_id,project_id,user_id,role,status,created_at
 
 Add `Project_Memberships` to staging `IKEY_DB_ALLOWED_TABLES`. The atomic GAS action itself must be deployed as part of the same staging GAS version. This code has not been deployed to production.
 
-**Remaining blockers:** actual staging GAS integration, concurrent redemption test with two authenticated accounts, member list/readback, fault-injection recovery tests, and role enforcement for member project access. Do not promote to main until resolved.
+**Remaining blockers:** actual staging GAS integration, concurrent redemption test with two authenticated accounts, owner invitation management UI, and role enforcement for member project access. Owner-only member readback and Node-based fault-injection simulation exist but are not live staging acceptance tests. Do not promote to main until resolved.
 
 ## Partial reservation fault injection
 
