@@ -33,3 +33,15 @@ test('unauthenticated session cannot reveal stale project cache',async()=>{
  assert.equal(h.requests.includes('/api/projects'),false);
  assert.equal(h.node('projects-count').textContent,'(載入中…)');
 });
+
+test('authenticated account does not display prior account cached projects',async()=>{
+ const h=harness(true);
+ h.resolveAuth({ok:true,json:async()=>({authenticated:true})});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.node('projects-count').textContent,'(0)');
+ assert.equal(h.node('projects-results').children.some(n=>n.textContent==='Private project'),false);
+});
+test('project list does not use browser cache as source of truth',()=>{
+ assert.equal(source.includes('iKeyProjectCache?.read()'),false);
+ assert.equal(source.includes('iKeyProjectCache?.write(projects)'),false);
+});
