@@ -36,6 +36,7 @@
   get('create-confirm-theme').textContent=document.querySelector('#notify-themes button[aria-pressed="true"] span:last-child')?.textContent||'午夜科技';
   get('create-confirm-sound').textContent=get('notify-sound-pack')?.selectedOptions[0]?.textContent||'鋼片琴';
   get('create-confirm-volume').textContent=(get('notify-volume')?.value||'50')+'%';
+  get('create-confirm-features').textContent=form.getAll('feature_modules').join('、')||'未選擇';
   show(5);
  });
  get('create-back').addEventListener('click',()=>show(4));
@@ -43,7 +44,7 @@
   const button=get('create-save');if(button.disabled)return;
   if(!authVerified){get('create-save-error').textContent='尚未完成登入驗證，請稍後再試。';return;}
   const form=new FormData(get('create-settings-form'));
-  const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes',notification_theme:get('notify-theme-id')?.value||'midnight',notification_sound_pack:get('notify-sound-pack')?.value||'pulse',notification_volume:Number(get('notify-volume')?.value||50)};
+  const payload={project_name:get('create-project-name').value.trim(),description:get('create-project-description').value.trim(),authorization_method:form.get('authorization_method'),scheduled_authorization:form.get('scheduled_authorization')==='yes',notification_theme:get('notify-theme-id')?.value||'midnight',notification_sound_pack:get('notify-sound-pack')?.value||'pulse',notification_volume:Number(get('notify-volume')?.value||50),feature_modules:form.getAll('feature_modules')};
   const themes=['midnight','polar','emerald','copper','violet','graphite'];
   const packs=['pulse','crystal','air','wood','future','click'];
   if(!payload.project_name||payload.project_name.length>80||payload.description.length>1000){
@@ -54,6 +55,10 @@
   }
   if(!themes.includes(payload.notification_theme)||!packs.includes(payload.notification_sound_pack)||!Number.isInteger(payload.notification_volume)||payload.notification_volume<0||payload.notification_volume>100){
    get('create-save-error').textContent='通知設定無效，請返回修改。';return;
+  }
+  const allowedModules=['key_checkout','key_return','reservations','device_management','notifications','audit_log'];
+  if(payload.feature_modules.length>allowedModules.length||new Set(payload.feature_modules).size!==payload.feature_modules.length||payload.feature_modules.some(id=>!allowedModules.includes(id))){
+   get('create-save-error').textContent='功能模組選擇無效，請返回修改。';return;
   }
   button.disabled=true;get('create-save-error').textContent='';button.textContent='正在儲存…';
   try{
