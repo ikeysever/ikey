@@ -15,6 +15,11 @@ on:
       - 'lib/project-list-handler.js'
       - 'lib/project-invitations-handler.js'
       - 'lib/project-invitation-list-handler.js'
+      - 'lib/project-invitation-redemption-handler.js'
+      - 'gen3-auth/project-invitation-redemption.gs'
+      - 'gen3-auth/Code.gs'
+      - 'gen3-auth/sheets-store.js'
+      - 'tests/project-invitation-redemption.test.js'
       - 'tests/project-invitation-list.test.js'
       - 'tests/project-invitations-handler.test.js'
       - 'tests/project-list-handler.test.js'
@@ -47,5 +52,7 @@ jobs:
           node --check lib/project-list-handler.js
           node --check lib/project-invitations-handler.js
           node --check lib/project-invitation-list-handler.js
+          node --check lib/project-invitation-redemption-handler.js
+          node --check gen3-auth/project-invitation-redemption.gs
       - name: Run member UI regression tests
         run: node --test tests/project-members-display.test.js tests/project-readonly-panels.test.js tests/project-create-five-step.test.js tests/project-members-route.test.js tests/project-create-contract.test.js
