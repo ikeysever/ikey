@@ -272,40 +272,61 @@ app.get('/api/devices/:deviceId/status',requireProjectUser,async(req,res)=>{
     return res.status(503).json({success:false,message:'裝置資料服務尚未就緒'});
   }
 });
-// Read-only project device choices: only verified owner bindings may appear.
+// Project device inventory and binding: project owners/admins may bind; members can only view authorization.
+async function projectDeviceContext(projectId,userId){
+ const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId},limit:1});
+ const project=(result.rows||[]).find(p=>p.project_id===projectId&&p.status!=='deleted');
+ if(!project)return null;
+ const owner=project.created_by_user_id===userId;
+ const access=owner?null:(await authStore.dbCall('db.select',{table:'Project_Access',where:{project_id:projectId,user_id:userId,entry_type:'member',status:'approved'},limit:2})).rows?.[0];
+ if(!owner&&!access)return {project,denied:true};
+ return {project,owner,role:owner?'owner':access.role,can_manage:owner||access.role==='admin'};
+}
+const validProjectDeviceId=id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  const id=String(req.params.projectId||'');
- if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
-  return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ if(!validProjectDeviceId(id))return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
  try{
-  const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:id},limit:1});
-  const project=(result?.rows||[]).find(p=>p.project_id===id&&p.status!=='deleted');
-  if(!project)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
-  if(project.created_by_user_id!==req.projectUser.user_id)return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const ctx=await projectDeviceContext(id,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(ctx.denied)return res.status(403).json({success:false,code:'NOT_PROJECT_MEMBER'});
   const rows=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:id},limit:100});
   if(!Array.isArray(rows?.rows)||rows.limited)return res.status(503).json({success:false,code:'DEVICE_LIST_UNVERIFIED'});
-  return res.json({success:true,devices:rows.rows.filter(d=>d.project_id===id&&/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||''))).map(d=>({
+  return res.json({success:true,can_manage:ctx.can_manage,role:ctx.role,devices:rows.rows.filter(d=>d.project_id===id&&/^[A-HJ-NP-Z2-9]{8}$/.test(String(d.device_id||''))).map(d=>({
    project_id:id,device_id:d.device_id,device_name:String(d.display_name||'iBOX').slice(0,80),
-   control_ready:false,connection_status:'unverified'
+   registration_status:'pre_registered',control_ready:false,connection_status:'unverified'
   }))});
- }catch(e){return res.status(503).json({success:false,code:'DEVICE_LIST_UNAVAILABLE',message:'裝置清單暫時無法驗證'});}
+ }catch(e){console.warn('Project device list unavailable',e.message);return res.status(503).json({success:false,code:'DEVICE_LIST_UNAVAILABLE',message:'裝置清單暫時無法驗證'});}
 });
-// Project-owner device association. These endpoints only change database bindings;
-// they never send commands to the physical device.
-async function ownedProject(userId,projectId){
- const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId,created_by_user_id:userId},limit:1});
- return (result.rows||[]).find(p=>p.status!=='deleted')||null;
-}
+app.get('/api/projects/:projectId/devices/available',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const id=String(req.params.projectId||'');
+ if(!validProjectDeviceId(id))return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const ctx=await projectDeviceContext(id,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(!ctx.can_manage)return res.status(403).json({success:false,code:'NOT_PROJECT_ADMIN'});
+  const devices=await authStore.dbCall('db.select',{table:'Devices',where:{status:'pre_registered'},limit:100});
+  const bound=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:id},limit:100});
+  if(devices.limited||bound.limited)return res.status(503).json({success:false,code:'INVENTORY_LIMIT'});
+  const attached=new Set((bound.rows||[]).map(x=>x.device_id));
+  return res.json({success:true,devices:(devices.rows||[]).filter(x=>/^[A-HJ-NP-Z2-9]{8}$/.test(String(x.device_id||''))).map(x=>({device_id:x.device_id,registration_status:'pre_registered',connection_status:'unverified',already_added:attached.has(x.device_id)}))});
+ }catch(e){console.warn('Available device inventory unavailable',e.message);return res.status(503).json({success:false,message:'無法讀取預登錄裝置'});}
+});
 app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
  const projectId=String(req.params.projectId||''),deviceId=String(req.body?.device_id||'').toUpperCase();
- if(!/^[0-9a-f-]{36}$/i.test(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId))
+ if(!validProjectDeviceId(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId))
   return res.status(400).json({success:false,code:'INVALID_BINDING'});
  try{
-  if(!await ownedProject(req.projectUser.user_id,projectId))return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
-  const device=(await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1})).rows[0];
+  const ctx=await projectDeviceContext(projectId,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(!ctx.can_manage)return res.status(403).json({success:false,code:'NOT_PROJECT_ADMIN'});
+  const device=(await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1})).rows?.[0];
   if(!device||device.status!=='pre_registered')return res.status(404).json({success:false,code:'DEVICE_NOT_AVAILABLE'});
+  const exists=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:projectId,device_id:deviceId},limit:1});
+  if(exists.rows?.length)return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND',message:'此裝置已加入專案'});
   const now=new Date().toISOString();
   const result=await authStore.dbCall('db.insert',{table:'Project_Devices',primary_key:'binding_id',data:{
    binding_id:randomUUID(),project_id:projectId,device_id:deviceId,
@@ -313,19 +334,23 @@ app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,re
    lock_mode:'manual',heartbeat_interval_minutes:'5',auto_firmware_update:'false',
    bound_by:req.projectUser.user_id,bound_at:now,updated_at:now
   }});
+  if(!result.inserted)return res.status(503).json({success:false,code:'BINDING_UNAVAILABLE'});
   return res.status(201).json({success:true,binding_id:result.record.binding_id,device_id:deviceId});
  }catch(e){
-  if(e.message==='SUPABASE_DUPLICATE_KEY')return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND'});
-  return res.status(503).json({success:false,code:'BINDING_UNAVAILABLE'});
+  if(e.message==='SUPABASE_DUPLICATE_KEY')return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND',message:'此裝置已加入專案'});
+  console.warn('Device binding unavailable',e.message);
+  return res.status(503).json({success:false,code:'BINDING_UNAVAILABLE',message:'無法加入裝置'});
  }
 });
 app.delete('/api/projects/:projectId/devices/:deviceId/binding',requireProjectUser,async(req,res)=>{
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
  const projectId=String(req.params.projectId||''),deviceId=String(req.params.deviceId||'').toUpperCase();
- if(!/^[0-9a-f-]{36}$/i.test(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||req.body?.confirm_device_id!==deviceId)
+ if(!validProjectDeviceId(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||req.body?.confirm_device_id!==deviceId)
   return res.status(400).json({success:false,code:'INVALID_UNBIND_REQUEST'});
  try{
-  if(!await ownedProject(req.projectUser.user_id,projectId))return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const ctx=await projectDeviceContext(projectId,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(!ctx.can_manage)return res.status(403).json({success:false,code:'NOT_PROJECT_ADMIN'});
   const result=await authStore.dbCall('db.delete',{table:'Project_Devices',where:{project_id:projectId,device_id:deviceId}});
   return res.json({success:true,removed:result.count});
  }catch(e){return res.status(503).json({success:false,code:'UNBIND_UNAVAILABLE'});}
