@@ -149,7 +149,9 @@ function sameProjectOrigin(req){
  const origin=req.get('origin');if(!origin)return true;
  try{const u=new URL(origin);const proto=req.secure||req.get('x-forwarded-proto')==='https'?'https:':'http:';return u.protocol===proto&&u.host===req.get('host');}catch{return false;}
 }
-// Project invitations and membership operations use the authenticated project session.\nrequire('./lib/project-members-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});\n// LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
+// Project invitations and membership operations use the authenticated project session.
+require('./lib/project-members-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
+// LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-binding-service').createLineBindingService(authStore);
 require('./lib/line-binding-router').mountLineBindingRoutes(app,{service:lineService,requireUser:requireProjectUser,csrfSecret:process.env.IKEY_LINE_TRUST_SECRET});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
