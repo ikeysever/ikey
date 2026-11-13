@@ -295,6 +295,52 @@ async function projectDeviceContext(projectId,userId){
  return {project,owner,role:owner?'owner':access.role,can_manage:owner||access.role==='admin'};
 }
 const validProjectDeviceId=id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+const ALERT_KEYS=['approval_granted','unlock_success','approval_pending','unlock_activity','battery_low','abnormal_open','device_offline','inventory_low','extension_alert','environment_sensor_abnormal','temperature_humidity_threshold','fire_alert'];
+const ALERT_NUMBERS={battery_percent:[1,100],offline_minutes:[1,10080],inventory_min:[0,100000],temperature_min:[-50,150],temperature_max:[-50,150],humidity_min:[0,100],humidity_max:[0,100]};
+function validAlertSettings(value){
+ if(!value||typeof value!=='object'||Array.isArray(value))return false;
+ if(Object.keys(value).some(k=>!ALERT_KEYS.includes(k)&&!Object.hasOwn(ALERT_NUMBERS,k)))return false;
+ return Object.entries(value).every(([k,v])=>ALERT_KEYS.includes(k)?typeof v==='boolean':typeof v==='number'&&Number.isFinite(v)&&v>=ALERT_NUMBERS[k][0]&&v<=ALERT_NUMBERS[k][1])
+  &&(value.temperature_min===undefined||value.temperature_max===undefined||value.temperature_min<value.temperature_max)
+  &&(value.humidity_min===undefined||value.humidity_max===undefined||value.humidity_min<value.humidity_max);
+}
+app.get('/api/projects/:projectId/alert-settings',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ try{
+  const ctx=await projectDeviceContext(req.params.projectId,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(ctx.denied||!ctx.can_manage)return res.status(403).json({success:false,code:'NOT_PROJECT_ADMIN'});
+  const result=await authStore.dbCall('db.select',{table:'Project_Alert_Settings',where:{project_id:req.params.projectId},limit:100});
+  if(result.limited)throw Error('SETTINGS_LIMIT');
+  return res.json({success:true,defaults:result.rows.find(x=>x.device_id===null)?.settings||{},overrides:result.rows.filter(x=>x.device_id!==null).map(x=>({device_id:x.device_id,settings:x.settings})),alerts_active:false});
+ }catch(e){console.warn('Alert settings read failed',e.message);return res.status(503).json({success:false,code:'ALERT_SETTINGS_UNAVAILABLE'});}
+});
+app.put('/api/projects/:projectId/alert-settings',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const deviceId=req.body?.device_id??null,settings=req.body?.settings;
+ if(!validProjectDeviceId(req.params.projectId)||!(deviceId===null||/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId))||!validAlertSettings(settings))return res.status(400).json({success:false,code:'INVALID_ALERT_SETTINGS'});
+ try{
+  const ctx=await projectDeviceContext(req.params.projectId,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(ctx.denied||!ctx.can_manage)return res.status(403).json({success:false,code:'NOT_PROJECT_ADMIN'});
+  if(deviceId){
+   const binding=await authStore.dbCall('db.select',{table:'Project_Devices',where:{project_id:req.params.projectId,device_id:deviceId},limit:1});
+   if(!binding.rows?.length)return res.status(404).json({success:false,code:'DEVICE_NOT_BOUND'});
+  }
+  const settingId=req.params.projectId+(deviceId?':'+deviceId:'');
+  const existing=await authStore.dbCall('db.select',{table:'Project_Alert_Settings',where:{setting_id:settingId},limit:1});
+  const data={settings,updated_at:new Date().toISOString()};
+  if(existing.rows?.length){
+   const result=await authStore.dbCall('db.update',{table:'Project_Alert_Settings',where:{setting_id:settingId},data});
+   if(result.count!==1)throw Error('UPDATE_UNCONFIRMED');
+  }else{
+   const result=await authStore.dbCall('db.insert',{table:'Project_Alert_Settings',primary_key:'setting_id',data:{setting_id:settingId,project_id:req.params.projectId,device_id:deviceId,...data}});
+   if(!result.inserted)throw Error('INSERT_UNCONFIRMED');
+  }
+  return res.json({success:true,device_id:deviceId,settings,alerts_active:false});
+ }catch(e){console.warn('Alert settings save failed',e.message);return res.status(503).json({success:false,code:'ALERT_SETTINGS_SAVE_FAILED'});}
+});
 app.get('/api/projects/:projectId/settings-permissions',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  const id=String(req.params.projectId||'');
