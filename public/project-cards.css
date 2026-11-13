@@ -1,6 +1,6 @@
 /* iKey project cards - isolated presentation layer */
 .pc-root{max-width:1200px!important;width:100%;border:0!important;background:transparent!important;padding:0!important}
-.pc-root[hidden],.pc-pane[hidden],#pc-menu[hidden],#pc-content[hidden]{display:none!important}
+ .pc-card[hidden],.pc-root[hidden],.pc-pane[hidden],#pc-menu[hidden],#pc-content[hidden]{display:none!important}
 .pc-top{display:flex;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(120deg,#172f4e,#101c30);border:1px solid #35546e;border-radius:18px;padding:24px;margin-bottom:16px}
 .pc-top h2{font-size:28px!important;margin:5px 0 10px!important;color:#f8fafc}.pc-top p{margin:0;color:#b5c9da}.pc-kicker{color:#63d8e8;font-size:12px;letter-spacing:1px}.pc-state{display:inline-block;background:#1a463f;color:#a5f5d7;border-radius:18px;padding:3px 11px;font-size:13px}
 .pc-return,.pc-link{color:#c9f7ff;text-decoration:none;border:1px solid #52728a;border-radius:10px;padding:11px 14px;display:inline-block}
