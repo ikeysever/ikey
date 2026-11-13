@@ -159,7 +159,8 @@ function sameProjectOrigin(req){
 }
 // Project invitations and membership operations use the authenticated project session.
 require('./lib/project-members-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
-require('./lib/project-access-requests-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
+const lineNotifications=require('./lib/line-notification-dispatcher').createLineNotificationDispatcher(authStore);
+require('./lib/project-access-requests-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin,lineNotifications});
 require('./lib/admin-slot-unlock-router')(app,{store:authStore,requireProjectUser,sameProjectOrigin});
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-supabase-binding-service').createSupabaseLineBindingService(authStore);
