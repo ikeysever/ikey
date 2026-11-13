@@ -82,4 +82,39 @@
   }catch(e){setStatus('未確認開鎖完成：'+e.message)}
   finally{busy=false;update()}
  });
+ const slotInput=$('quick-slot-code'),slotStatus=$('quick-slot-status'),slotOpen=$('quick-slot-unlock');
+ let verifiedSlot=null,slotBusy=false;
+ const slotCode=()=>slotInput.value.trim().toUpperCase();
+ const slotMessage=s=>{slotStatus.textContent=s};
+ const slotPost=async(path,code)=>{
+  const response=await fetch(path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({slot_code:code}),cache:'no-store'});
+  const result=await response.json();if(!response.ok||result.success!==true)throw Error(result.message||'操作未完成');
+  return result;
+ };
+ slotInput.addEventListener('input',()=>{slotInput.value=slotInput.value.toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,40);verifiedSlot=null;slotOpen.disabled=true;slotMessage('請查詢格位與管理權限。')});
+ $('quick-slot-resolve').addEventListener('click',async()=>{
+  const code=slotCode();if(!/^[A-Z0-9_-]{4,40}$/.test(code)){slotMessage('請輸入 4～40 位有效格位編號。');return;}
+  slotMessage('正在驗證格位與專案管理員權限…');slotOpen.disabled=true;verifiedSlot=null;
+  try{const result=await slotPost('/api/admin/slots/resolve',code);verifiedSlot=result;slotOpen.disabled=false;slotMessage('已驗證：'+result.project_name+' / '+result.device_id+' / 第 '+result.slot_number+' 格。裝置指令服務尚未啟用，無法實際開鎖。')}
+  catch(e){slotMessage('驗證失敗：'+e.message)}
+ });
+ slotOpen.addEventListener('click',async()=>{
+  if(!verifiedSlot||verifiedSlot.slot_code!==slotCode()||slotBusy)return;
+  slotBusy=true;slotOpen.disabled=true;slotMessage('正在由伺服器重新確認管理員權限與指令狀態…');
+  try{const result=await slotPost('/api/admin/slots/unlock',slotCode());slotMessage(result.execution_verified===true?'裝置已確認執行':'請求已受理，尚未收到裝置執行回報')}
+  catch(e){slotMessage('未開鎖：'+e.message)}
+  finally{slotBusy=false;slotOpen.disabled=!verifiedSlot}
+ });
+ $('quick-slot-scan').addEventListener('click',async()=>{
+  if(!('NDEFReader' in window)){slotMessage('此瀏覽器不支援 Web NFC，請手動輸入格位編號。');return;}
+  try{
+   const reader=new NDEFReader();await reader.scan();slotMessage('請靠近格位 NFC 標籤。');
+   reader.onreading=event=>{
+    let code='';
+    for(const record of event.message.records){if(record.recordType==='text'){try{code=new TextDecoder(record.encoding||'utf-8').decode(record.data).trim().toUpperCase()}catch{}}}
+    if(!/^[A-Z0-9_-]{4,40}$/.test(code)){slotMessage('標籤沒有有效格位編號，請手動輸入。');return;}
+    slotInput.value=code;verifiedSlot=null;slotOpen.disabled=true;slotMessage('已掃描格位 '+code+'，請按「查詢格位與管理權限」。');
+   };
+  }catch(e){slotMessage('NFC 掃描失敗：'+e.message)}
+ });
 })();
