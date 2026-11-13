@@ -43,7 +43,7 @@
   }catch(e){if(sequence===loadSequence){device.replaceChildren(new Option('裝置資料載入失敗',''));setStatus('無法取得專案裝置：'+e.message)}}
   finally{if(sequence===loadSequence){loading=false;update()}}
  }
- $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices()});
+ $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices();loadAdminRegistration()});
  device.addEventListener('change',()=>{manual.value='';update()});
  manual.addEventListener('input',()=>{
   const normalized=manual.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);
@@ -81,6 +81,43 @@
    else setStatus('開鎖請求已受理，但尚未收到實體裝置成功回報；不能判定開鎖完成。');
   }catch(e){setStatus('未確認開鎖完成：'+e.message)}
   finally{busy=false;update()}
+ });
+ const registerProject=$('quick-slot-project'),registerDevice=$('quick-slot-device'),registerMessage=$('quick-slot-register-status');
+ let managedDevices=[];
+ function renderRegisterDevices(){
+  const p=registerProject.value;
+  registerDevice.replaceChildren(new Option('請選擇 iBOX',''));
+  for(const d of managedDevices.filter(x=>x.project_id===p))registerDevice.add(new Option((d.device_name||'iBOX')+' · '+d.device_id,d.device_id));
+ }
+ registerProject.addEventListener('change',renderRegisterDevices);
+ async function loadAdminRegistration(){
+  registerProject.replaceChildren(new Option('正在讀取可管理專案…',''));registerDevice.replaceChildren(new Option('請先選擇專案',''));
+  try{
+   const data=await request('/api/projects');
+   const projects=(data.projects||[]).filter(p=>p.project_id&&p.status!=='deleted');
+   const outcomes=await Promise.allSettled(projects.map(p=>request('/api/projects/'+encodeURIComponent(p.project_id)+'/devices')));
+   managedDevices=[];registerProject.replaceChildren(new Option('請選擇專案',''));
+   for(let i=0;i<projects.length;i++){
+    const o=outcomes[i],p=projects[i];
+    if(o.status!=='fulfilled'||o.value.can_manage!==true)continue;
+    registerProject.add(new Option(p.project_name,p.project_id));
+    managedDevices.push(...(o.value.devices||[]).filter(d=>d.project_id===p.project_id));
+   }
+   registerMessage.textContent=registerProject.options.length>1?'可登錄管理專案的格位。':'目前沒有可管理的專案。';
+  }catch(e){registerMessage.textContent='無法載入管理專案：'+e.message}
+ }
+ $('quick-slot-register').addEventListener('click',async()=>{
+  const project_id=registerProject.value,device_id=registerDevice.value;
+  const slot_code=$('quick-slot-register-code').value.trim().toUpperCase();
+  const slot_number=Number($('quick-slot-number').value);
+  if(!project_id||!device_id||!/^[A-Z0-9_-]{4,40}$/.test(slot_code)||!Number.isSafeInteger(slot_number)||slot_number<1){registerMessage.textContent='請填寫專案、iBOX、4～40 位格位編號與正整數格位序號。';return;}
+  registerMessage.textContent='正在登錄格位…';
+  try{
+   const response=await fetch('/api/admin/slots/register',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id,device_id,slot_code,slot_number}),cache:'no-store'});
+   const result=await response.json();if(!response.ok||result.success!==true)throw Error(result.message||'登錄失敗');
+   registerMessage.textContent='已登錄格位 '+slot_code+'，對應 '+device_id+' 第 '+slot_number+' 格。實體開鎖尚未啟用。';
+   slotInput.value=slot_code;verifiedSlot=null;slotOpen.disabled=true;
+  }catch(e){registerMessage.textContent='登錄失敗：'+e.message}
  });
  const slotInput=$('quick-slot-code'),slotStatus=$('quick-slot-status'),slotOpen=$('quick-slot-unlock');
  let verifiedSlot=null,slotBusy=false;
