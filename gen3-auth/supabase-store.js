@@ -71,7 +71,6 @@ function createSupabaseStore(options){
  }
  return {...adapter,throttleAtomic,findById,findByLogin,registerAtomic,recordLoginFailureAtomic,recordLoginSuccessAtomic,completeLoginAtomic,createSession,findSessionByHash,resolveSession,revokeSessionByHash,touchSession,revokeSession,audit,adminAccountList,adminAccountAction,
    // Pending integrations remain explicitly disabled instead of silently calling GAS.
-   lineCall:async()=>{throw Error('LINE_NOT_IMPLEMENTED');},
    projectCall:async()=>{throw Error('PROJECT_LEGACY_ACTION_NOT_IMPLEMENTED');},
    commandProbe:async()=>{throw Error('COMMAND_PROBE_DISABLED');}
  };
