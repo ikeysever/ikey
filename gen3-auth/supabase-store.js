@@ -8,12 +8,10 @@ function createSupabaseStore(options){
  const update=async(table,where,data)=>adapter.dbCall('db.update',{table,where,data});
  const one=async(table,where)=>(await select(table,where))[0]||null;
  const now=()=>new Date().toISOString();
- const counters=new Map();
  async function throttleAtomic(key,limit,windowMs){
-   const t=Date.now(),row=counters.get(key);
-   if(counters.size>5000)for(const [k,v] of counters)if(v.until<=t)counters.delete(k);
-   if(!row||row.until<=t){counters.set(key,{n:1,until:t+windowMs});return true;}
-   row.n++;return row.n<=limit;
+   const result=await adapter.rpc('ikey_auth_throttle',{p_key:key,p_limit:limit,p_window_ms:windowMs});
+   if(typeof result!=='boolean')throw Error('SUPABASE_THROTTLE_UNCONFIRMED');
+   return result;
  }
  async function findById(user_id){return one('Gen3_Users',{user_id});}
  async function findByLogin(identifier){return one('Gen3_Users',{username:String(identifier).toLowerCase()});}
@@ -24,13 +22,16 @@ function createSupabaseStore(options){
    catch(e){if(e.message==='SUPABASE_DUPLICATE_KEY')return false;throw e;}
  }
  async function recordLoginFailureAtomic(user_id){
-   const user=await findById(user_id);if(!user)return null;
-   const n=Number(user.failed_login_attempts||0)+1;
-   const locked=n>=5;
-   await update('Gen3_Users',{user_id},{failed_login_attempts:String(n),account_status:locked?'temporarily_locked':user.account_status,locked_until:locked?new Date(Date.now()+900000).toISOString():user.locked_until||'',updated_at:now()});
-   return findById(user_id);
+   const result=await adapter.rpc('ikey_auth_failure',{p_user_id:user_id});
+   return Array.isArray(result)?result[0]||null:null;
+ }
+ async function completeLoginAtomic(user_id,session){
+   const result=await adapter.rpc('ikey_auth_login',{p_user_id:user_id,p_session:session});
+   return Array.isArray(result)?result[0]||null:null;
  }
  async function recordLoginSuccessAtomic(user_id){
+   const user=await findById(user_id);
+   if(!user) return null;
    await update('Gen3_Users',{user_id},{failed_login_attempts:'0',locked_until:'',account_status:'active',updated_at:now()});
    return findById(user_id);
  }
@@ -78,7 +79,7 @@ function createSupabaseStore(options){
    await audit({user_id:actor.user.user_id,event_type:action,result:'success',auth_method:'session'});
    return {target:{user_id:target.user_id},revoked_sessions};
  }
- return {...adapter,throttleAtomic,findById,findByLogin,registerAtomic,recordLoginFailureAtomic,recordLoginSuccessAtomic,createSession,findSessionByHash,resolveSession,revokeSessionByHash,touchSession,revokeSession,audit,adminAccountList,adminAccountAction,
+ return {...adapter,throttleAtomic,findById,findByLogin,registerAtomic,recordLoginFailureAtomic,recordLoginSuccessAtomic,completeLoginAtomic,createSession,findSessionByHash,resolveSession,revokeSessionByHash,touchSession,revokeSession,audit,adminAccountList,adminAccountAction,
    // Pending integrations remain explicitly disabled instead of silently calling GAS.
    lineCall:async()=>{throw Error('LINE_NOT_IMPLEMENTED');},
    projectCall:async()=>{throw Error('PROJECT_LEGACY_ACTION_NOT_IMPLEMENTED');},
