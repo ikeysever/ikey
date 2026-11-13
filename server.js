@@ -4,8 +4,8 @@ const path = require('node:path');
 const app = express();
 app.disable('x-powered-by');
 // LINE webhook requires raw request bytes for HMAC verification.
-let lineService;
-require('./lib/line-ingress').mountLineIngress(app, { getService: () => lineService });
+let lineService, lineMenuService;
+require('./lib/line-ingress').mountLineIngress(app, { getService: () => lineService, getMenuService: () => lineMenuService });
 app.use(express.json({ limit: '16kb' }));
 // Server-side API request timing and per-minute counts; no credentials or payloads logged.
 const requestMinuteStats = new Map();
@@ -154,6 +154,7 @@ require('./lib/project-members-router')(app,{store:authStore,requireUser:require
 require('./lib/project-access-requests-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-binding-service').createLineBindingService(authStore);
+lineMenuService=require('./lib/line-menu-service').createLineMenuService(authStore);
 require('./lib/line-binding-router').mountLineBindingRoutes(app,{service:lineService,requireUser:requireProjectUser,csrfSecret:process.env.IKEY_LINE_TRUST_SECRET});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});const own=(result?.rows||[]).filter(row=>row.status!=='deleted');const access=await authStore.dbCall('db.select',{table:'Project_Access',where:{entry_type:'member',user_id:req.projectUser.user_id,status:'approved'},limit:100});for(const a of access.rows||[]){if(own.some(p=>p.project_id===a.project_id))continue;const p=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:a.project_id},limit:1});if(p.rows?.[0]&&p.rows[0].status!=='deleted')own.push(p.rows[0]);}return res.json({success:true,projects:own});}
