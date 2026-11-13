@@ -165,6 +165,7 @@ require('./lib/admin-slot-unlock-router')(app,{store:authStore,requireProjectUse
 lineService=require('./lib/line-supabase-binding-service').createSupabaseLineBindingService(authStore);
 lineMenuService=require('./lib/line-menu-service').createLineMenuService(authStore);
 require('./lib/line-binding-router').mountLineBindingRoutes(app,{service:lineService,requireUser:requireProjectUser,csrfSecret:process.env.IKEY_LINE_TRUST_SECRET||process.env.IKEY_LINE_CODE_SECRET});
+require('./lib/line-notification-preferences-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
  try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});const own=(result?.rows||[]).filter(row=>row.status!=='deleted');const access=await authStore.dbCall('db.select',{table:'Project_Access',where:{entry_type:'member',user_id:req.projectUser.user_id,status:'approved'},limit:100});for(const a of access.rows||[]){if(own.some(p=>p.project_id===a.project_id))continue;const p=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:a.project_id},limit:1});if(p.rows?.[0]&&p.rows[0].status!=='deleted')own.push(p.rows[0]);}return res.json({success:true,projects:own});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
