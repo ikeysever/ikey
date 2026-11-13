@@ -310,6 +310,22 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   }))});
  }catch(e){console.warn('Project device list unavailable',e.message);return res.status(503).json({success:false,code:'DEVICE_LIST_UNAVAILABLE',message:'裝置清單暫時無法驗證'});}
 });
+app.patch('/api/projects/:projectId/devices/:deviceId/display-name',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const projectId=String(req.params.projectId||''),deviceId=String(req.params.deviceId||'').toUpperCase();
+ const name=typeof req.body?.display_name==='string'?req.body.display_name.trim():'';
+ if(!validProjectDeviceId(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||!name||name.length>80||/[\\x00-\\x1f]/.test(name))
+  return res.status(400).json({success:false,code:'INVALID_DISPLAY_NAME',message:'名稱需為 1～80 個字元'});
+ try{
+  const ctx=await projectDeviceContext(projectId,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(!ctx.can_manage)return res.status(403).json({success:false,code:'NOT_PROJECT_ADMIN'});
+  const result=await authStore.dbCall('db.update',{table:'Project_Devices',where:{project_id:projectId,device_id:deviceId},data:{display_name:name,updated_at:new Date().toISOString()}});
+  if(result.count!==1)return res.status(404).json({success:false,code:'DEVICE_NOT_BOUND',message:'找不到專案綁定裝置'});
+  return res.json({success:true,device_id:deviceId,display_name:name});
+ }catch(e){console.warn('Device rename failed',e.message);return res.status(503).json({success:false,code:'RENAME_UNAVAILABLE',message:'裝置名稱更新失敗'});}
+});
 app.get('/api/projects/:projectId/devices/available',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  const id=String(req.params.projectId||'');
