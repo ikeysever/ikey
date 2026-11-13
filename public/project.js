@@ -31,6 +31,9 @@
    }
    const allowed=Object.values(permissions).some(value=>value===true);
    byId('pc-menu').hidden=!allowed;
+   const explanation=byId('pc-permission-message');
+   explanation.hidden=allowed;
+   explanation.textContent=allowed?'':permissionsData.role==='member'?'你目前是此專案的一般成員，因此無法使用專案管理設定。請聯絡專案擁有者將你的身分調整為管理員。':'目前沒有可使用的管理設定。請確認你的專案身分。';
    byId('pc-menu').setAttribute('aria-label',allowed?'專案設定功能':'沒有可使用的專案管理功能');
    document.documentElement.dataset.projectPermissionsReady='true';
    byId('project-detail').removeAttribute('aria-busy');
@@ -38,7 +41,7 @@
    document.querySelectorAll('[data-pc-loading]').forEach(p=>p.hidden=true);
    document.dispatchEvent(new CustomEvent('ikey:project-loaded',{detail:{project}}));
    status.hidden=true;
-  }catch(err){byId('pc-menu').hidden=true;delete document.documentElement.dataset.projectPermissionsReady;showError(err.message||'專案資料載入失敗');}
+  }catch(err){byId('pc-menu').hidden=true;byId('pc-permission-message').hidden=false;byId('pc-permission-message').textContent='無法確認專案管理權限，已暫停顯示管理設定。';delete document.documentElement.dataset.projectPermissionsReady;showError(err.message||'專案資料載入失敗');}
  }
  retry.addEventListener('click',load);load();
 })();
