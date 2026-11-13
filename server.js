@@ -289,6 +289,45 @@ app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
   }))});
  }catch(e){return res.status(503).json({success:false,code:'DEVICE_LIST_UNAVAILABLE',message:'裝置清單暫時無法驗證'});}
 });
+// Project-owner device association. These endpoints only change database bindings;
+// they never send commands to the physical device.
+async function ownedProject(userId,projectId){
+ const result=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:projectId,created_by_user_id:userId},limit:1});
+ return (result.rows||[]).find(p=>p.status!=='deleted')||null;
+}
+app.post('/api/projects/:projectId/devices/bind',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const projectId=String(req.params.projectId||''),deviceId=String(req.body?.device_id||'').toUpperCase();
+ if(!/^[0-9a-f-]{36}$/i.test(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId))
+  return res.status(400).json({success:false,code:'INVALID_BINDING'});
+ try{
+  if(!await ownedProject(req.projectUser.user_id,projectId))return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const device=(await authStore.dbCall('db.select',{table:'Devices',where:{device_id:deviceId},limit:1})).rows[0];
+  if(!device||device.status!=='pre_registered')return res.status(404).json({success:false,code:'DEVICE_NOT_AVAILABLE'});
+  const now=new Date().toISOString();
+  const result=await authStore.dbCall('db.insert',{table:'Project_Devices',primary_key:'binding_id',data:{
+   binding_id:randomUUID(),project_id:projectId,device_id:deviceId,
+   display_name:String(req.body?.display_name||'iBOX').slice(0,80),
+   lock_mode:'manual',heartbeat_interval_minutes:'5',auto_firmware_update:'false',
+   bound_by:req.projectUser.user_id,bound_at:now,updated_at:now
+  }});
+  return res.status(201).json({success:true,binding_id:result.record.binding_id,device_id:deviceId});
+ }catch(e){
+  if(e.message==='SUPABASE_DUPLICATE_KEY')return res.status(409).json({success:false,code:'DEVICE_ALREADY_BOUND'});
+  return res.status(503).json({success:false,code:'BINDING_UNAVAILABLE'});
+ }
+});
+app.delete('/api/projects/:projectId/devices/:deviceId/binding',requireProjectUser,async(req,res)=>{
+ if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
+ const projectId=String(req.params.projectId||''),deviceId=String(req.params.deviceId||'').toUpperCase();
+ if(!/^[0-9a-f-]{36}$/i.test(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId)||req.body?.confirm_device_id!==deviceId)
+  return res.status(400).json({success:false,code:'INVALID_UNBIND_REQUEST'});
+ try{
+  if(!await ownedProject(req.projectUser.user_id,projectId))return res.status(403).json({success:false,code:'NOT_PROJECT_OWNER'});
+  const result=await authStore.dbCall('db.delete',{table:'Project_Devices',where:{project_id:projectId,device_id:deviceId}});
+  return res.json({success:true,removed:result.count});
+ }catch(e){return res.status(503).json({success:false,code:'UNBIND_UNAVAILABLE'});}
+});
 // Fail closed: never acknowledge an unlock until device execution receipts are verified.
 app.post('/api/projects/:projectId/devices/:deviceId/unlock',requireProjectUser,(req,res)=>{
  res.set('Cache-Control','no-store');
