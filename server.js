@@ -295,12 +295,17 @@ async function projectDeviceContext(projectId,userId){
  return {project,owner,role:owner?'owner':access.role,can_manage:owner||access.role==='admin'};
 }
 const validProjectDeviceId=id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
-const ALERT_KEYS=['approval_granted','unlock_success','approval_pending','unlock_activity','battery_low','abnormal_open','device_offline','inventory_low','extension_alert','environment_sensor_abnormal','temperature_humidity_threshold','fire_alert'];
+const ALERT_KEYS=['approval_granted','unlock_success','approval_pending','unlock_activity','battery_low','abnormal_open','device_offline','inventory_low','extension_alert','environment_sensor_abnormal','temperature_humidity_threshold','fire_alert','extension_temperature_humidity_enabled','extension_fire_enabled','extension_other_enabled'];
 const ALERT_NUMBERS={battery_percent:[1,100],offline_minutes:[1,10080],inventory_min:[0,100000],temperature_min:[-50,150],temperature_max:[-50,150],humidity_min:[0,100],humidity_max:[0,100]};
 function validAlertSettings(value){
  if(!value||typeof value!=='object'||Array.isArray(value))return false;
  if(Object.keys(value).some(k=>!ALERT_KEYS.includes(k)&&!Object.hasOwn(ALERT_NUMBERS,k)))return false;
  return Object.entries(value).every(([k,v])=>ALERT_KEYS.includes(k)?typeof v==='boolean':typeof v==='number'&&Number.isFinite(v)&&v>=ALERT_NUMBERS[k][0]&&v<=ALERT_NUMBERS[k][1])
+  &&(!value.temperature_humidity_threshold||value.extension_temperature_humidity_enabled===true)
+  &&(!value.environment_sensor_abnormal||value.extension_temperature_humidity_enabled===true)
+  &&(!value.fire_alert||value.extension_fire_enabled===true)
+  &&(!value.extension_alert||value.extension_other_enabled===true)
+  &&(value.extension_temperature_humidity_enabled!==false||!['temperature_min','temperature_max','humidity_min','humidity_max'].some(k=>Object.hasOwn(value,k)))
   &&(value.temperature_min===undefined||value.temperature_max===undefined||value.temperature_min<value.temperature_max)
   &&(value.humidity_min===undefined||value.humidity_max===undefined||value.humidity_min<value.humidity_max);
 }
