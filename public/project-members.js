@@ -1,29 +1,19 @@
 'use strict';
 (()=>{
- const pane=document.querySelector('[data-pc-pane="members"]');
- const status=document.getElementById('pc-member-status');
- const list=document.getElementById('pc-member-list');
- const button=document.querySelector('[data-pc-open="members"]');
- if(!pane||!status||!list||!button)return;
- const projectId=new URLSearchParams(location.search).get('id');
- let ready=false,loading=false;
- document.addEventListener('ikey:project-loaded',event=>{ready=event.detail?.project?.project_id===projectId;});
- button.addEventListener('click',async()=>{
-  if(!ready||loading)return;
-  loading=true;status.textContent='正在驗證專案成員…';list.replaceChildren();
-  try{
-   const response=await fetch('/api/projects/'+encodeURIComponent(projectId)+'/members',{credentials:'same-origin',cache:'no-store'});
-   const data=await response.json();
-   if(!response.ok||data.success!==true||!Array.isArray(data.members))throw Error('成員資料驗證失敗');
-   for(const member of data.members){
-    if(member.role!=='owner'||member.source!=='project_creator'||typeof member.user_id!=='string')continue;
-    const item=document.createElement('li');
-    const role=document.createElement('strong');role.textContent='專案建立者（Owner）';
-    const user=document.createElement('span');user.textContent='使用者 ID：'+member.user_id;
-    item.append(role,user);list.append(item);
-   }
-   status.textContent=data.membership_inventory_complete===false?'已驗證專案建立者；其他成員名冊尚未完成整合。':'成員資料已載入。';
-  }catch(err){status.textContent='無法讀取成員資料，請稍後重試。';}
-  finally{loading=false;}
- });
+const pane=document.querySelector('[data-pc-pane="members"]'),trigger=document.querySelector('[data-pc-open="members"]');
+if(!pane||!trigger)return;
+const id=new URLSearchParams(location.search).get('id');let ready=false;
+const style=document.createElement('style');style.textContent='.member-panel{background:rgba(20,31,52,.78);border:1px solid #344c65;border-radius:16px;padding:22px;margin:16px 0}.member-panel h3{margin:0 0 12px}.member-panel p{color:#a6b2c5}.member-panel button{padding:10px 14px;border:1px solid #52718b;background:#1b3150;color:#f8fafc;border-radius:10px;font:inherit}.member-panel button:disabled{opacity:.55}.member-table{width:100%;border-collapse:collapse;min-width:580px}.member-table td,.member-table th{padding:12px;border-bottom:1px solid #34465a;text-align:left}.member-scroll{overflow-x:auto}.member-code{display:inline-block;padding:12px;border:1px solid #34465a;border-radius:10px;overflow-wrap:anywhere}';document.head.append(style);
+const area=document.createElement('div');area.innerHTML='<section class="member-panel"><h3>專案邀請碼</h3><p>邀請碼必須由後端正式核發，不使用虛構代碼。</p><div class="member-code" id="member-invite">尚未取得邀請碼</div> <button id="member-copy" disabled>複製邀請碼</button><p id="member-invite-hint">邀請碼核發 API 尚未接通。</p></section><section class="member-panel"><h3>成員審核</h3><p>待審核申請名單尚未接通後端；核准與拒絕功能待管理員權限規格確認後開放。</p><div class="member-scroll"><table class="member-table"><thead><tr><th>帳號</th><th>帳號名稱</th><th>申請狀態</th><th>操作</th></tr></thead><tbody><tr><td colspan="4">尚無可驗證的申請資料</td></tr></tbody></table></div></section><section class="member-panel"><h3>專案成員</h3><p id="member-status" role="status">等待載入</p><button id="member-refresh" type="button">重新整理</button><div class="member-scroll"><table class="member-table"><thead><tr><th>帳號</th><th>帳號名稱</th><th>帳號狀態</th><th>專案角色</th><th>權限操作</th></tr></thead><tbody id="member-rows"></tbody></table></div><p>升級管理員需正式權限 API 與稽核，現階段不執行權限變更。</p></section>';
+pane.append(area);
+const $=id=>document.getElementById(id),roles={owner:'專案建立者',admin:'管理員',member:'一般使用者',user:'一般使用者'},states={active:'啟用',disabled:'停用',pending:'待審核',approved:'已核准',rejected:'已拒絕'};
+function add(row,value){const td=document.createElement('td');td.textContent=value;row.append(td);return td}
+async function load(){if(!ready||!id)return;$('member-status').textContent='正在讀取正式成員資料…';$('member-rows').replaceChildren();
+try{const r=await fetch('/api/projects/'+encodeURIComponent(id)+'/members',{credentials:'same-origin',cache:'no-store'}),d=await r.json();if(!r.ok||d.success!==true||!Array.isArray(d.members))throw Error(d.message||'讀取失敗');
+for(const m of d.members){const tr=document.createElement('tr');add(tr,m.username||m.account||m.user_id||'—');add(tr,m.display_name||m.name||'未提供');add(tr,states[m.account_status||m.status]||'未提供');add(tr,roles[m.role]||'未確認');const td=add(tr,'');const b=document.createElement('button');b.disabled=true;b.textContent=m.role==='owner'?'建立者（受保護）':'設為管理員（待開放）';td.append(b);$('member-rows').append(tr)}
+$('member-status').textContent=d.membership_inventory_complete===false?'已讀取部分成員；完整名冊尚未整合。':'已讀取 '+d.members.length+' 筆成員。';
+}catch(e){$('member-status').textContent=e.message||'無法讀取成員資料'}}
+document.addEventListener('ikey:project-loaded',e=>{ready=e.detail?.project?.project_id===id;if(ready&&!pane.hidden)load()});
+trigger.addEventListener('click',()=>{if(ready)load()});$('member-refresh').onclick=load;
+$('member-copy').onclick=async()=>{const code=$('member-invite').dataset.code;if(!code)return;try{await navigator.clipboard.writeText(code);$('member-invite-hint').textContent='已複製邀請碼'}catch{$('member-invite-hint').textContent='複製失敗'}};
 })();
