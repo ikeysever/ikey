@@ -82,6 +82,24 @@
   }catch(e){setStatus('未確認開鎖完成：'+e.message)}
   finally{busy=false;update()}
  });
+ const renameProject=$('quick-rename-project'),renameDevice=$('quick-rename-device'),renameName=$('quick-rename-name'),renameStatus=$('quick-rename-status');
+ function renderRenameDevices(){
+  renameDevice.replaceChildren(new Option('請選擇 iBOX',''));
+  for(const d of managedDevices.filter(x=>x.project_id===renameProject.value))renameDevice.add(new Option((d.device_name||'iBOX')+' · '+d.device_id,d.device_id));
+ }
+ renameProject.addEventListener('change',renderRenameDevices);
+ renameDevice.addEventListener('change',()=>{const d=managedDevices.find(x=>x.project_id===renameProject.value&&x.device_id===renameDevice.value);renameName.value=d?.device_name||''});
+ $('quick-rename-submit').addEventListener('click',async()=>{
+  const projectId=renameProject.value,deviceId=renameDevice.value,name=renameName.value.trim();
+  if(!projectId||!deviceId||!name||name.length>80){renameStatus.textContent='請選擇專案、iBOX 並輸入 1～80 字元名稱。';return;}
+  renameStatus.textContent='正在儲存…';
+  try{
+   const response=await fetch('/api/projects/'+encodeURIComponent(projectId)+'/devices/'+encodeURIComponent(deviceId)+'/display-name',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:name})});
+   const result=await response.json();if(!response.ok||!result.success)throw Error(result.message||'更新失敗');
+   const d=managedDevices.find(x=>x.project_id===projectId&&x.device_id===deviceId);if(d)d.device_name=name;
+   renderRenameDevices();renameDevice.value=deviceId;renameStatus.textContent='已更新 iBOX 名稱：'+name+'（裝置 ID 不變）';await loadDevices();
+  }catch(e){renameStatus.textContent='更新失敗：'+e.message}
+ });
  const registerProject=$('quick-slot-project'),registerDevice=$('quick-slot-device'),registerMessage=$('quick-slot-register-status');
  let managedDevices=[];
  function renderRegisterDevices(){
@@ -96,14 +114,14 @@
    const data=await request('/api/projects');
    const projects=(data.projects||[]).filter(p=>p.project_id&&p.status!=='deleted');
    const outcomes=await Promise.allSettled(projects.map(p=>request('/api/projects/'+encodeURIComponent(p.project_id)+'/devices')));
-   managedDevices=[];registerProject.replaceChildren(new Option('請選擇專案',''));
+   managedDevices=[];registerProject.replaceChildren(new Option('請選擇專案',''));renameProject.replaceChildren(new Option('請選擇專案',''));
    for(let i=0;i<projects.length;i++){
     const o=outcomes[i],p=projects[i];
     if(o.status!=='fulfilled'||o.value.can_manage!==true)continue;
-    registerProject.add(new Option(p.project_name,p.project_id));
+    registerProject.add(new Option(p.project_name,p.project_id));renameProject.add(new Option(p.project_name,p.project_id));
     managedDevices.push(...(o.value.devices||[]).filter(d=>d.project_id===p.project_id));
    }
-   registerMessage.textContent=registerProject.options.length>1?'可登錄管理專案的格位。':'目前沒有可管理的專案。';
+   renderRenameDevices();registerMessage.textContent=registerProject.options.length>1?'可登錄管理專案的格位。':'目前沒有可管理的專案。';
   }catch(e){registerMessage.textContent='無法載入管理專案：'+e.message}
  }
  $('quick-slot-register').addEventListener('click',async()=>{
