@@ -2,68 +2,85 @@
 (()=>{
  const $=id=>document.getElementById(id),dialog=$('quick-unlock-dialog');
  if(!dialog)return;
- const project=$('quick-project'),device=$('quick-device'),manual=$('quick-device-input'),status=$('quick-unlock-status'),submit=$('quick-unlock-submit');
- let devices=[],projects=[],busy=false,loading=false,loadSequence=0;
+ const project=$('quick-project'),manual=$('quick-device-input'),options=$('quick-device-options'),count=$('quick-device-count'),status=$('quick-unlock-status'),submit=$('quick-unlock-submit');
+ let devices=[],projects=[],loading=false,loadSequence=0;
+ const checked=new Set();
  const setStatus=s=>{status.textContent=s};
  const request=async url=>{const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});const data=await r.json();if(!r.ok||data.success!==true)throw Error(data.message||'無法取得資料');return data};
  const scoped=()=>devices.filter(d=>d.project_id===project.value);
- const selected=()=>{
-  if(!project.value)return null;
-  const typed=manual.value.trim().toUpperCase();
-  if(typed)return scoped().find(d=>d.device_id===typed)||null;
-  return scoped().find(d=>d.device_id===device.value)||null;
+ const key=d=>d.project_id+':'+d.device_id;
+ const chosen=()=>scoped().filter(d=>checked.has(key(d)));
+ const update=()=>{
+  const n=chosen().length;
+  count.textContent='已選 '+n+' 台';
+  // Physical unlock execution is not available; selection must never imply readiness.
+  submit.disabled=true;
  };
- const update=()=>{submit.disabled=true;};
- const renderDevices=()=>{
-  device.replaceChildren(new Option('請選擇 iBOX',''));
-  for(const d of scoped())device.add(new Option((d.device_name||'iBOX')+' · '+d.device_id+(d.control_ready===true?'':'（開鎖服務未就緒）'),d.device_id));
-  device.disabled=!project.value||!scoped().length;
-  manual.value='';update();
-  setStatus(!project.value?'請先選擇專案。':scoped().length?'已載入 '+scoped().length+' 台 iBOX；開鎖指令服務尚未啟用，不能執行實體開鎖。':'此專案目前沒有已綁定的 iBOX。');
- };
+ function renderDevices(){
+  const query=manual.value.trim().toLocaleLowerCase();
+  const matches=scoped().filter(d=>(d.device_id+' '+(d.device_name||'iBOX')).toLocaleLowerCase().includes(query));
+  options.replaceChildren();
+  if(!project.value||!matches.length){
+   const p=document.createElement('p');p.textContent=!project.value?'請先選擇專案。':scoped().length?'找不到符合搜尋條件的 iBOX。':'此專案尚未綁定 iBOX。';options.append(p);
+  }
+  for(const d of matches){
+   const label=document.createElement('label');label.className='quick-device-option';
+   const box=document.createElement('input');box.type='checkbox';box.checked=checked.has(key(d));
+   box.addEventListener('change',()=>{if(box.checked)checked.add(key(d));else checked.delete(key(d));update()});
+   const info=document.createElement('span');const name=document.createElement('strong');name.textContent=d.device_name||'iBOX';
+   const details=document.createElement('small');details.textContent=d.device_id+' · '+(d.control_ready===true?'待驗證指令服務':'開鎖服務未就緒');
+   info.append(name,details);label.append(box,info);options.append(label);
+  }
+  update();
+ }
+ function changeProject(){
+  checked.clear();manual.value='';renderDevices();
+  setStatus(!project.value?'請先選擇專案。':'可搜尋並勾選此專案的 iBOX；目前開鎖指令服務尚未啟用。');
+ }
  async function loadDevices(){
-  const sequence=++loadSequence;loading=true;devices=[];projects=[];manual.value='';project.disabled=true;device.disabled=true;
-  project.replaceChildren(new Option('正在載入專案…',''));device.replaceChildren(new Option('請先選擇專案',''));update();
+  const sequence=++loadSequence;loading=true;devices=[];projects=[];checked.clear();manual.value='';project.disabled=true;
+  project.replaceChildren(new Option('正在載入專案…',''));renderDevices();
   try{
    const result=await request('/api/projects');
    projects=(result.projects||[]).filter(p=>p.project_id&&p.status!=='deleted');
    const outcomes=await Promise.allSettled(projects.map(p=>request('/api/projects/'+encodeURIComponent(p.project_id)+'/devices')));
    if(sequence!==loadSequence)return;
-   const errors=[];
-   project.replaceChildren(new Option('請選擇專案',''));
+   const errors=[];project.replaceChildren(new Option('請選擇專案',''));
    for(let i=0;i<projects.length;i++){
     const p=projects[i],o=outcomes[i];
     if(o.status==='rejected'){errors.push(p.project_name||p.project_id);continue;}
     project.add(new Option(p.project_name||'未命名專案',p.project_id));
     for(const d of o.value.devices||[])if(d.project_id===p.project_id)devices.push({...d,project_name:p.project_name});
    }
-   project.disabled=project.options.length<2;renderDevices();
-   if(errors.length)setStatus('部分專案讀取失敗：'+errors.join('、')+'。請確認資料庫或稍後重試。');
+   project.disabled=project.options.length<2;changeProject();
+   if(errors.length)setStatus('部分專案讀取失敗：'+errors.join('、')+'。請稍後重試。');
   }catch(e){if(sequence===loadSequence){project.replaceChildren(new Option('專案資料載入失敗',''));setStatus('無法取得專案資料：'+e.message)}}
   finally{if(sequence===loadSequence){loading=false;update()}}
  }
  $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices();loadAdminRegistration()});
- project.addEventListener('change',renderDevices);
- device.addEventListener('change',()=>{manual.value='';update()});
- manual.addEventListener('input',()=>{
-  manual.value=manual.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);update();
-  if(!project.value){setStatus('請先選擇專案。');return;}
-  if(manual.value.length===8)setStatus(selected()?'已找到此專案的 iBOX，但實體開鎖服務尚未啟用。':'此 iBOX 不屬於所選專案，請檢查編號。');
+ project.addEventListener('change',changeProject);
+ manual.addEventListener('input',renderDevices);
+ $('quick-device-select-all').addEventListener('click',()=>{
+  const q=manual.value.trim().toLocaleLowerCase();
+  for(const d of scoped())if((d.device_id+' '+(d.device_name||'iBOX')).toLocaleLowerCase().includes(q))checked.add(key(d));
+  renderDevices();
  });
+ $('quick-device-clear').addEventListener('click',()=>{checked.clear();renderDevices()});
  $('quick-nfc-start').addEventListener('click',async()=>{
   if(!project.value){setStatus('請先選擇專案。');return;}
-  if(!('NDEFReader' in window)){setStatus('此瀏覽器不支援 Web NFC，請手動輸入。');return;}
+  if(!('NDEFReader' in window)){setStatus('此瀏覽器不支援 Web NFC，請手動搜尋裝置編號。');return;}
   try{
    const reader=new NDEFReader();await reader.scan();setStatus('請靠近 iBOX NFC 標籤。');
    reader.onreading=event=>{
     let id='';
     for(const record of event.message.records)if(record.recordType==='text'){try{id=new TextDecoder(record.encoding||'utf-8').decode(record.data).trim().toUpperCase()}catch{}}
-    if(!/^[A-HJ-NP-Z2-9]{8}$/.test(id)){setStatus('標籤不是有效的 iBOX 編號。');return;}
-    manual.value=id;device.value='';update();setStatus(selected()?'已辨識此專案的 iBOX；實體開鎖尚未啟用。':'此裝置未綁定所選專案。');
+    const d=scoped().find(d=>d.device_id===id);
+    if(!d){setStatus('NFC 裝置未綁定至所選專案。');return;}
+    checked.add(key(d));manual.value='';renderDevices();setStatus('已勾選 '+d.device_id+'；實體開鎖服務尚未啟用。');
    };
   }catch(e){setStatus('NFC 無法啟動：'+e.message)}
  });
- submit.addEventListener('click',()=>{setStatus('開鎖服務尚未啟用；未發送任何控制指令。')});
+ submit.addEventListener('click',()=>setStatus('實體開鎖服務尚未啟用，未發送控制指令。'));
  const renameProject=$('quick-rename-project'),renameDevice=$('quick-rename-device'),renameName=$('quick-rename-name'),renameStatus=$('quick-rename-status');
  function renderRenameDevices(){
   renameDevice.replaceChildren(new Option('請選擇 iBOX',''));
