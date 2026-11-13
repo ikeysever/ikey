@@ -77,6 +77,8 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Serve public CSS/JS/images before authenticated API routers; never expose protected HTML here.
+app.use((req,res,next)=>{if((req.method==='GET'||req.method==='HEAD')&&/^\/(?:style\.css|app\.js|home\.css|home\.js|quick-unlock\.(?:css|js)|announcements-home\.(?:css|js)|assets\/)/.test(req.path)){return express.static(path.join(__dirname,'public'),{fallthrough:true,immutable:false})(req,res,next);}next();});
 // Public entry point must never require a project session. Auth is enforced on APIs and protected pages.
 app.get('/',(_req,res)=>{res.set('Cache-Control','no-store');return res.sendFile(path.join(__dirname,'public','index.html'));});
 app.get('/ping', (_req, res) => res.status(200).json({ ok: true, service: 'ikey', version: '3.1' }));
