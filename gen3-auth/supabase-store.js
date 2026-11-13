@@ -8,12 +8,10 @@ function createSupabaseStore(options){
  const update=async(table,where,data)=>adapter.dbCall('db.update',{table,where,data});
  const one=async(table,where)=>(await select(table,where))[0]||null;
  const now=()=>new Date().toISOString();
- const counters=new Map();
  async function throttleAtomic(key,limit,windowMs){
-   const t=Date.now(),row=counters.get(key);
-   if(counters.size>5000)for(const [k,v] of counters)if(v.until<=t)counters.delete(k);
-   if(!row||row.until<=t){counters.set(key,{n:1,until:t+windowMs});return true;}
-   row.n++;return row.n<=limit;
+   const result=await adapter.rpc('ikey_auth_throttle',{p_key:key,p_limit:limit,p_window_ms:windowMs});
+   if(typeof result!=='boolean')throw Error('SUPABASE_THROTTLE_UNCONFIRMED');
+   return result;
  }
  async function findById(user_id){return one('Gen3_Users',{user_id});}
  async function findByLogin(identifier){return one('Gen3_Users',{username:String(identifier).toLowerCase()});}
@@ -24,13 +22,16 @@ function createSupabaseStore(options){
    catch(e){if(e.message==='SUPABASE_DUPLICATE_KEY')return false;throw e;}
  }
  async function recordLoginFailureAtomic(user_id){
-   const user=await findById(user_id);if(!user)return null;
-   const n=Number(user.failed_login_attempts||0)+1;
-   const locked=n>=5;
-   await update('Gen3_Users',{user_id},{failed_login_attempts:String(n),account_status:locked?'temporarily_locked':user.account_status,locked_until:locked?new Date(Date.now()+900000).toISOString():user.locked_until||'',updated_at:now()});
-   return findById(user_id);
+   const result=await adapter.rpc('ikey_auth_failure',{p_user_id:user_id});
+   return Array.isArray(result)?result[0]||null:null;
+ }
+ async function completeLoginAtomic(user_id,session){
+   const result=await adapter.rpc('ikey_auth_login',{p_user_id:user_id,p_session:session});
+   return Array.isArray(result)?result[0]||null:null;
  }
  async function recordLoginSuccessAtomic(user_id){
+   const user=await findById(user_id);
+   if(!user) return null;
    await update('Gen3_Users',{user_id},{failed_login_attempts:'0',locked_until:'',account_status:'active',updated_at:now()});
    return findById(user_id);
  }
@@ -61,26 +62,15 @@ function createSupabaseStore(options){
    return {accounts:rows.map(({password_hash,...safe})=>safe),limited:rows.length===100};
  }
  async function adminAccountAction(action,payload){
-   const actor=await resolveSession(payload.actor_session_hash);
-   if(!actor||actor.user.global_role!=='super_admin')throw Error('ADMIN_DENIED');
-   const target=await findById(payload.target_user_id);
-   if(!target||target.global_role==='super_admin'||target.user_id===actor.user.user_id)throw Error('ADMIN_TARGET_DENIED');
-   if(action==='adminAccountSetStatus'){
-     if(!['active','disabled'].includes(payload.status))throw Error('INVALID_STATUS');
-     await update('Gen3_Users',{user_id:target.user_id},{account_status:payload.status,updated_at:now()});
-   }else if(action==='adminAccountResetPassword'){
-     if(typeof payload.password_hash!=='string'||!payload.password_hash.startsWith('scrypt:v1:'))throw Error('INVALID_HASH');
-     await update('Gen3_Users',{user_id:target.user_id},{password_hash:payload.password_hash,updated_at:now()});
-   }else if(action!=='adminAccountRevokeSessions')throw Error('ACTION_DENIED');
-   const sessions=await select('Auth_Sessions',{user_id:target.user_id},100);
-   let revoked_sessions=0;
-   for(const s of sessions)if(!s.revoked_at){await revokeSession(s.session_id,'admin');revoked_sessions++;}
-   await audit({user_id:actor.user.user_id,event_type:action,result:'success',auth_method:'session'});
-   return {target:{user_id:target.user_id},revoked_sessions};
+   if(!['adminAccountSetStatus','adminAccountResetPassword','adminAccountRevokeSessions'].includes(action))throw Error('ACTION_DENIED');
+   return adapter.rpc('ikey_admin_account_action',{
+     p_actor_session_hash:payload.actor_session_hash,p_action:action,
+     p_target_user_id:payload.target_user_id,
+     p_status:payload.status||null,p_password_hash:payload.password_hash||null
+   });
  }
- return {...adapter,throttleAtomic,findById,findByLogin,registerAtomic,recordLoginFailureAtomic,recordLoginSuccessAtomic,createSession,findSessionByHash,resolveSession,revokeSessionByHash,touchSession,revokeSession,audit,adminAccountList,adminAccountAction,
+ return {...adapter,throttleAtomic,findById,findByLogin,registerAtomic,recordLoginFailureAtomic,recordLoginSuccessAtomic,completeLoginAtomic,createSession,findSessionByHash,resolveSession,revokeSessionByHash,touchSession,revokeSession,audit,adminAccountList,adminAccountAction,
    // Pending integrations remain explicitly disabled instead of silently calling GAS.
-   lineCall:async()=>{throw Error('LINE_NOT_IMPLEMENTED');},
    projectCall:async()=>{throw Error('PROJECT_LEGACY_ACTION_NOT_IMPLEMENTED');},
    commandProbe:async()=>{throw Error('COMMAND_PROBE_DISABLED');}
  };
