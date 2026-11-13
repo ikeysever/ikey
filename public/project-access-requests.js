@@ -18,7 +18,13 @@ if(['pending','approved'].includes(x.status)){const cancel=txt('button','撤銷�
 if(requests.can_review&&x.status==='pending'){for(const [decision,label] of [['approved','核准'],['rejected','拒絕']]){const b=txt('button',label);b.onclick=async()=>{b.disabled=true;try{const result=await call(api+'/access-requests/'+encodeURIComponent(x.request_id)+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})});$('pa-message').textContent=result.message;await load()}catch(e){$('pa-message').textContent=e.message;b.disabled=false}};card.append(b)}}list.append(card)}
 $('pa-message').textContent='排程資料已更新（'+requests.requests.length+' 筆）';if(!requests.requests.length)list.append(txt('p','目前沒有申請紀錄。可在上方填寫原因、時段及裝置，提交第一筆申請。'));
 }catch(e){$('pa-message').textContent=e.message}}
-$('pa-form').addEventListener('submit',async e=>{e.preventDefault();const b=$('pa-submit');b.disabled=true;$('pa-message').textContent='正在提交申請…';try{const result=await call(api+'/access-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:$('pa-reason').value,device_id:$('pa-device').value,start_at:new Date($('pa-start').value).toISOString(),end_at:new Date($('pa-end').value).toISOString()})});$('pa-message').textContent=result.message;$('pa-form').reset();await load()}catch(err){$('pa-message').textContent=err.message}finally{b.disabled=false}});
+$('pa-form').addEventListener('submit',async e=>{e.preventDefault();const b=$('pa-submit');b.disabled=true;$('pa-message').textContent='正在提交申請…';try{const startValue=$('pa-start').value,endValue=$('pa-end').value;
+const startMs=new Date(startValue).getTime(),endMs=new Date(endValue).getTime();
+if(!Number.isFinite(startMs)||!Number.isFinite(endMs))throw Error('請填寫開始與結束時間');
+if(startMs<Date.now()-60000)throw Error('開始時間已過，請改成現在之後的時間');
+if(endMs<=startMs)throw Error('結束時間必須晚於開始時間');
+if(endMs-startMs>7*86400000)throw Error('使用時段最多 7 天');
+const result=await call(api+'/access-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:$('pa-reason').value,device_id:$('pa-device').value,start_at:new Date($('pa-start').value).toISOString(),end_at:new Date($('pa-end').value).toISOString()})});$('pa-message').textContent=result.message;$('pa-form').reset();await load()}catch(err){$('pa-message').textContent=err.message}finally{b.disabled=false}});
 let ready=false;document.addEventListener('ikey:project-loaded',e=>{ready=e.detail?.project?.project_id===id;if(ready&&!pane.hidden)load()});trigger.addEventListener('click',()=>{if(ready)load()});
 if(new URLSearchParams(location.search).get('pane')==='auth'){requestAnimationFrame(()=>trigger.click());}
 })();
