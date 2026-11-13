@@ -295,6 +295,18 @@ async function projectDeviceContext(projectId,userId){
  return {project,owner,role:owner?'owner':access.role,can_manage:owner||access.role==='admin'};
 }
 const validProjectDeviceId=id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+app.get('/api/projects/:projectId/settings-permissions',requireProjectUser,async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const id=String(req.params.projectId||'');
+ if(!validProjectDeviceId(id))return res.status(400).json({success:false,code:'INVALID_PROJECT_ID'});
+ try{
+  const ctx=await projectDeviceContext(id,req.projectUser.user_id);
+  if(!ctx)return res.status(404).json({success:false,code:'PROJECT_NOT_FOUND'});
+  if(ctx.denied)return res.status(403).json({success:false,code:'NOT_PROJECT_MEMBER'});
+  const canManage=ctx.can_manage===true;
+  return res.json({success:true,project_id:id,role:ctx.role,permissions:{basic:canManage,auth:canManage,notify:canManage,devices:canManage,members:canManage,advanced:ctx.owner===true}});
+ }catch(e){console.warn('Project settings permissions unavailable',e.message);return res.status(503).json({success:false,code:'PERMISSIONS_UNAVAILABLE'});}
+});
 app.get('/api/projects/:projectId/devices',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  const id=String(req.params.projectId||'');
