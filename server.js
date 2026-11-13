@@ -149,11 +149,11 @@ function sameProjectOrigin(req){
  const origin=req.get('origin');if(!origin)return true;
  try{const u=new URL(origin);const proto=req.secure||req.get('x-forwarded-proto')==='https'?'https:':'http:';return u.protocol===proto&&u.host===req.get('host');}catch{return false;}
 }
-// LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
+// Project invitations and membership operations use the authenticated project session.\nrequire('./lib/project-members-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});\n// LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-binding-service').createLineBindingService(authStore);
 require('./lib/line-binding-router').mountLineBindingRoutes(app,{service:lineService,requireUser:requireProjectUser,csrfSecret:process.env.IKEY_LINE_TRUST_SECRET});
 app.get('/api/projects',requireProjectUser,async(req,res)=>{
- try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});return res.json({success:true,projects:(result?.rows||[]).filter(row=>row.status!=='deleted')});}
+ try{const result=await authStore.dbCall('db.select',{table:'Projects',where:{created_by_user_id:req.projectUser.user_id},limit:100});const own=(result?.rows||[]).filter(row=>row.status!=='deleted');const access=await authStore.dbCall('db.select',{table:'Project_Access',where:{entry_type:'member',user_id:req.projectUser.user_id,status:'approved'},limit:100});for(const a of access.rows||[]){if(own.some(p=>p.project_id===a.project_id))continue;const p=await authStore.dbCall('db.select',{table:'Projects',where:{project_id:a.project_id},limit:1});if(p.rows?.[0]&&p.rows[0].status!=='deleted')own.push(p.rows[0]);}return res.json({success:true,projects:own});}
  catch(err){console.warn('Project list unavailable',err.message);return res.status(503).json({success:false,message:'專案資料服務尚未就緒'});}
 });
 // Project settings update: owner-only, strict allowlist, verified persistence, no physical commands.
