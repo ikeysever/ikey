@@ -26,3 +26,27 @@ test('insert requires exact primary key and verifies returned row',async()=>{
  const result=await store.dbCall('db.insert',{table:'Projects',primary_key:'project_id',data:{project_id:'p1'}});
  assert.equal(result.inserted,true);
 });
+
+test('401 error categorization never leaks server-provided details',async()=>{
+ const secret='PRIVATE-SECRET-DO-NOT-LOG';
+ const store=createSupabaseDataAdapter({...options,key:secret,fetchImpl:async()=>({
+   ok:false,status:401,json:async()=>({code:'invalid_api_key',message:'Sensitive '+secret})
+ })});
+ await assert.rejects(store.dbCall('db.select',{table:'Projects'}),err=>{
+   assert.equal(err.message,'SUPABASE_STORAGE_HTTP_401_INVALID_API_KEY');
+   assert.ok(!err.message.includes(secret));
+   return true;
+ });
+});
+test('unrecognized error payload is not reflected into logs',async()=>{
+ const store=createSupabaseDataAdapter({...options,fetchImpl:async()=>({
+   ok:false,status:401,json:async()=>({code:'LEAK_ME',message:'sensitive'})
+ })});
+ await assert.rejects(store.dbCall('db.select',{table:'Projects'}),/SUPABASE_STORAGE_HTTP_401_UNCLASSIFIED/);
+});
+test('malformed error response fails closed without leaking payload',async()=>{
+ const store=createSupabaseDataAdapter({...options,fetchImpl:async()=>({
+   ok:false,status:403,json:async()=>{throw Error('SECRET_PAYLOAD')}
+ })});
+ await assert.rejects(store.dbCall('db.select',{table:'Projects'}),err=>err.message==='SUPABASE_STORAGE_HTTP_403_UNCLASSIFIED');
+});
