@@ -77,6 +77,8 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Public entry point must never require a project session. Auth is enforced on APIs and protected pages.
+app.get('/',(_req,res)=>{res.set('Cache-Control','no-store');return res.sendFile(path.join(__dirname,'public','index.html'));});
 app.get('/ping', (_req, res) => res.status(200).json({ ok: true, service: 'ikey', version: '3.1' }));
 app.get('/api/health', (_req, res) => res.status(200).json({ ok: true, service: 'ikey-api', version: '3.1' }));
 // Fail closed until the existing Gen3 Apps Script and its schema are verified.
