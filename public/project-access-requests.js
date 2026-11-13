@@ -19,4 +19,5 @@ if(!requests.requests.length)list.append(txt('p','目前沒有申請紀錄。'))
 }catch(e){$('pa-message').textContent=e.message}}
 $('pa-form').addEventListener('submit',async e=>{e.preventDefault();const b=$('pa-submit');b.disabled=true;$('pa-message').textContent='正在提交申請…';try{const result=await call(api+'/access-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:$('pa-reason').value,device_id:$('pa-device').value,start_at:new Date($('pa-start').value).toISOString(),end_at:new Date($('pa-end').value).toISOString()})});$('pa-message').textContent=result.message;$('pa-form').reset();await load()}catch(err){$('pa-message').textContent=err.message}finally{b.disabled=false}});
 let ready=false;document.addEventListener('ikey:project-loaded',e=>{ready=e.detail?.project?.project_id===id;if(ready&&!pane.hidden)load()});trigger.addEventListener('click',()=>{if(ready)load()});
+if(new URLSearchParams(location.search).get('pane')==='auth'){requestAnimationFrame(()=>trigger.click());}
 })();
