@@ -21,12 +21,24 @@
    byId('project-title').textContent=project.project_name;
    byId('project-name').textContent=project.project_name;
    byId('project-state').textContent=project.status==='active'?'啟用中':project.status==='inactive'?'已停用':'';
+   const permissionsResponse=await fetch('/api/projects/'+encodeURIComponent(id)+'/settings-permissions',{credentials:'same-origin',cache:'no-store'});
+   const permissionsData=await permissionsResponse.json();
+   if(!permissionsResponse.ok||permissionsData.success!==true||!permissionsData.permissions)throw Error('無法驗證專案設定權限');
+   const permissions=permissionsData.permissions;
+   for(const card of document.querySelectorAll('#pc-menu [data-pc-open]')){
+    const section=card.getAttribute('data-pc-open');
+    card.hidden=permissions[section]!==true;
+   }
+   const allowed=Object.values(permissions).some(value=>value===true);
+   byId('pc-menu').hidden=!allowed;
+   byId('pc-menu').setAttribute('aria-label',allowed?'專案設定功能':'沒有可使用的專案管理功能');
+   document.documentElement.dataset.projectPermissionsReady='true';
    byId('project-detail').removeAttribute('aria-busy');
    document.documentElement.dataset.projectReady='true';
    document.querySelectorAll('[data-pc-loading]').forEach(p=>p.hidden=true);
    document.dispatchEvent(new CustomEvent('ikey:project-loaded',{detail:{project}}));
    status.hidden=true;
-  }catch(err){showError(err.message||'專案資料載入失敗');}
+  }catch(err){byId('pc-menu').hidden=true;delete document.documentElement.dataset.projectPermissionsReady;showError(err.message||'專案資料載入失敗');}
  }
  retry.addEventListener('click',load);load();
 })();
