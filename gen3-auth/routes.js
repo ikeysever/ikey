@@ -118,7 +118,7 @@ function createRouter(store) {
       if(!active(user)) return res.status(403).json({success:false,message:"帳號目前無法登入"});
       // Fast path is opt-in only after the matching Apps Script action is deployed.
       // Preserve the established flow until the backend version is verified.
-      const fastLogin=process.env.GEN3_FAST_LOGIN==="1" && typeof store.completeLoginAtomic==="function";
+      const fastLogin=(process.env.GEN3_FAST_LOGIN==="1" || process.env.IKEY_STORAGE_BACKEND==='supabase') && typeof store.completeLoginAtomic==="function";
       const session=newSession(user.user_id);
       let updated;
       if(fastLogin) {
