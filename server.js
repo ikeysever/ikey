@@ -82,8 +82,15 @@ app.get('/api/health', (_req, res) => res.status(200).json({ ok: true, service: 
 // Fail closed until the existing Gen3 Apps Script and its schema are verified.
 let authStore = null;
 try {
-  const { createSheetsStore } = require('./gen3-auth/sheets-store');
-  authStore = createSheetsStore();
+  if(process.env.IKEY_STORAGE_BACKEND==='supabase'){
+    const {createSupabaseStore}=require('./gen3-auth/supabase-store');
+    authStore=createSupabaseStore();
+    console.info('iKey storage backend: SUPABASE');
+  }else{
+    const {createSheetsStore}=require('./gen3-auth/sheets-store');
+    authStore=createSheetsStore();
+    console.info('iKey storage backend: GAS');
+  }
 } catch (error) {
   console.warn('Gen3 authentication storage is not configured:', error.message);
 }
