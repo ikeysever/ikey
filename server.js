@@ -9,12 +9,13 @@ require('./lib/line-ingress').mountLineIngress(app, { getService: () => lineServ
 app.use(express.json({ limit: '16kb' }));
 // Server-side API request timing and per-minute counts; no credentials or payloads logged.
 const requestMinuteStats = new Map();
+let statsMinute = -1;
 app.use('/api', (req, res, next) => {
   const started = process.hrtime.bigint();
   res.on('finish', () => {
     const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
     const minute = Math.floor(Date.now() / 60000);
-    const key = minute + ':' + req.method + ':' + req.path;
+    const key = minute + ':' + req.method + ':' + (req.route?.path || 'middleware');
     const stat = requestMinuteStats.get(key) || { count: 0, totalMs: 0, maxMs: 0, errors: 0 };
     stat.count++;
     stat.totalMs += elapsedMs;
@@ -22,6 +23,8 @@ app.use('/api', (req, res, next) => {
     if (res.statusCode >= 400) stat.errors++;
     requestMinuteStats.set(key, stat);
     if (elapsedMs >= 3000) console.info('API slow request', req.method, req.path.split('?')[0], res.statusCode, Math.round(elapsedMs) + 'ms');
+    if (minute === statsMinute) return;
+    statsMinute = minute;
     for (const [k, v] of requestMinuteStats) {
       if (Number(k.split(':', 1)[0]) >= minute) continue;
       console.info('API minute stats', k, 'count', v.count, 'avg_ms', Math.round(v.totalMs / v.count), 'max_ms', Math.round(v.maxMs), 'errors', v.errors);
@@ -83,18 +86,18 @@ app.use((req,res,next)=>{if((req.method==='GET'||req.method==='HEAD')&&/^\/(?:st
 app.get('/',(_req,res)=>{res.set('Cache-Control','no-store');return res.sendFile(path.join(__dirname,'public','index.html'));});
 app.get('/ping', (_req, res) => res.status(200).json({ ok: true, service: 'ikey', version: '3.1' }));
 app.get('/api/health', (_req, res) => res.status(200).json({ ok: true, service: 'ikey-api', version: '3.1' }));
-// Fail closed until the existing Gen3 Apps Script and its schema are verified.
+// Select only an explicitly configured storage backend.
 let authStore = null;
 try {
   if(process.env.IKEY_STORAGE_BACKEND==='supabase'){
     const {createSupabaseStore}=require('./gen3-auth/supabase-store');
     authStore=createSupabaseStore();
     console.info('iKey storage backend: SUPABASE');
-  }else{
+  }else if(process.env.IKEY_STORAGE_BACKEND==='gas'){
     const {createSheetsStore}=require('./gen3-auth/sheets-store');
     authStore=createSheetsStore();
     console.info('iKey storage backend: GAS');
-  }
+  }else throw Error('IKEY_STORAGE_BACKEND_INVALID');
 } catch (error) {
   console.warn('Gen3 authentication storage is not configured:', error.message);
 }
@@ -105,31 +108,32 @@ if(process.env.IKEY_SUPABASE_SECRET_KEY){
   const keyFamily=key.startsWith('sb_secret_')?'SECRET_OPAQUE':
     key.startsWith('sb_publishable_')?'PUBLISHABLE_WRONG_ROLE':
     key.split('.').length===3?'JWT_LEGACY':'UNRECOGNIZED';
-  console.info('Supabase staging credential family:',keyFamily);
+  console.info('Supabase credential family:',keyFamily);
 }
 // Non-blocking, read-only Supabase connectivity check. No secret or row contents logged.
-// GAS remains authoritative until an explicitly verified cutover.
+// Check project reads independently of auth readiness.
 if(process.env.IKEY_SUPABASE_URL && process.env.IKEY_SUPABASE_SECRET_KEY){
   try{
     const {createSupabaseDataAdapter}=require('./lib/supabase-data-adapter');
     const probe=createSupabaseDataAdapter();
     probe.dbCall('db.select',{table:'Projects',limit:1})
-      .then(result=>console.info('Supabase staging probe:',Array.isArray(result.rows)?'READY':'INVALID_RESPONSE'))
-      .catch(err=>console.warn('Supabase staging probe: FAILED',String(err.message||'UNKNOWN').replace(/[^A-Z0-9_]/gi,'').slice(0,60)));
-  }catch(_err){console.warn('Supabase staging probe: CONFIG_ERROR');}
+      .then(result=>console.info('Supabase probe:',Array.isArray(result.rows)?'READY':'INVALID_RESPONSE'))
+      .catch(err=>console.warn('Supabase probe: FAILED',String(err.message||'UNKNOWN').replace(/[^A-Z0-9_]/gi,'').slice(0,60)));
+  }catch(_err){console.warn('Supabase probe: CONFIG_ERROR');}
 }else{
-  console.info('Supabase staging probe: NOT_CONFIGURED');
+  console.info('Supabase probe: NOT_CONFIGURED');
 }
 const { createRouter } = require('./gen3-auth/routes');
-app.get('/api/auth/status', async (_req, res) => {
+app.get(['/api/auth/status', '/api/ready'], async (req, res) => {
+  const unavailable = body => res.status(req.path === '/api/ready' ? 503 : 200).json(body);
   res.set('Cache-Control', 'no-store');
-  if (!authStore) return res.json({ ready: false, enabled: false, registration: false, reason: 'CONFIG_MISSING' });
+  if (!authStore) return unavailable({ ready: false, enabled: false, registration: false, reason: 'CONFIG_MISSING' });
   try {
     const health = await authStore.health();
     const ready = health?.storage === true && health?.version === 'gen3-username-v3';
-    return res.json({ ready, enabled: ready, registration: ready, reason: ready ? null : 'SCHEMA_NOT_READY' });
+    return res.status(!ready && req.path === '/api/ready' ? 503 : 200).json({ ready, enabled: ready, registration: ready, reason: ready ? null : 'SCHEMA_NOT_READY' });
   } catch (_error) {
-    return res.json({ ready: false, enabled: false, registration: false, reason: 'STORAGE_UNAVAILABLE' });
+    return unavailable({ ready: false, enabled: false, registration: false, reason: 'STORAGE_UNAVAILABLE' });
   }
 });
 app.use('/api/auth', createRouter(authStore));

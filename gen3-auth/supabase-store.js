@@ -38,10 +38,7 @@ function createSupabaseStore(options){
  async function createSession(session){await insert('Auth_Sessions','session_id',session);return session;}
  async function findSessionByHash(session_token_hash){return one('Auth_Sessions',{session_token_hash});}
  async function resolveSession(hash){
-   const session=await findSessionByHash(hash);
-   if(!session||session.revoked_at||Date.parse(session.expires_at)<=Date.now())return null;
-   const user=await findById(session.user_id);
-   return user?{session,user}:null;
+   return adapter.rpc('ikey_resolve_session',{p_hash:hash});
  }
  async function revokeSessionByHash(hash){
    const session=await findSessionByHash(hash);if(!session)return false;
