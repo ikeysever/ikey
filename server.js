@@ -88,6 +88,15 @@ try {
   console.warn('Gen3 authentication storage is not configured:', error.message);
 }
 // Non-blocking, read-only Supabase connectivity check. No secret or row contents logged.
+// Report only the configured key family, never its length, prefix bytes, or contents.
+if(process.env.IKEY_SUPABASE_SECRET_KEY){
+  const key=process.env.IKEY_SUPABASE_SECRET_KEY;
+  const keyFamily=key.startsWith('sb_secret_')?'SECRET_OPAQUE':
+    key.startsWith('sb_publishable_')?'PUBLISHABLE_WRONG_ROLE':
+    key.split('.').length===3?'JWT_LEGACY':'UNRECOGNIZED';
+  console.info('Supabase staging credential family:',keyFamily);
+}
+// Non-blocking, read-only Supabase connectivity check. No secret or row contents logged.
 // GAS remains authoritative until an explicitly verified cutover.
 if(process.env.IKEY_SUPABASE_URL && process.env.IKEY_SUPABASE_SECRET_KEY){
   try{
