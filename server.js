@@ -87,6 +87,19 @@ try {
 } catch (error) {
   console.warn('Gen3 authentication storage is not configured:', error.message);
 }
+// Non-blocking, read-only Supabase connectivity check. No secret or row contents logged.
+// GAS remains authoritative until an explicitly verified cutover.
+if(process.env.IKEY_SUPABASE_URL && process.env.IKEY_SUPABASE_SECRET_KEY){
+  try{
+    const {createSupabaseDataAdapter}=require('./lib/supabase-data-adapter');
+    const probe=createSupabaseDataAdapter();
+    probe.dbCall('db.select',{table:'Projects',limit:1})
+      .then(result=>console.info('Supabase staging probe:',Array.isArray(result.rows)?'READY':'INVALID_RESPONSE'))
+      .catch(err=>console.warn('Supabase staging probe: FAILED',String(err.message||'UNKNOWN').replace(/[^A-Z0-9_]/gi,'').slice(0,60)));
+  }catch(_err){console.warn('Supabase staging probe: CONFIG_ERROR');}
+}else{
+  console.info('Supabase staging probe: NOT_CONFIGURED');
+}
 const { createRouter } = require('./gen3-auth/routes');
 app.get('/api/auth/status', async (_req, res) => {
   res.set('Cache-Control', 'no-store');
