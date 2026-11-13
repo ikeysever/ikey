@@ -1,6 +1,7 @@
 'use strict';
-const VERSION='ikey-shell-20261109-network-first-v2';
-const SHELL=['/home.html','/projects.html','/project.html','/project-devices.html','/project-other-settings.html','/home.css','/home.js','/projects.js','/project.js','/project-devices.js','/project-other-settings.js','/project-subpages.css','/project-display-cache.js','/assets/brand/ikey-nextgen.svg'];
+const VERSION='ikey-shell-20261113-network-first-v3';
+const SHELL=['/home.html','/projects.html','/home.css','/home.js','/projects.js','/project-display-cache.js','/assets/brand/ikey-nextgen.svg'];
+const DYNAMIC=new Set(['/project.html','/project.js','/project-cards.css','/project-alert-settings.js','/project-sidebar.js','/project-members.js','/project-devices-pane.js','/project-access-requests.js','/project-devices.html','/project-devices.js','/project-other-settings.html','/project-other-settings.js','/project-subpages.css']);
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(VERSION).then(cache=>Promise.allSettled(SHELL.map(url=>cache.add(new Request(url,{cache:'reload'}))))).then(()=>self.skipWaiting()));
 });
@@ -8,25 +9,15 @@ self.addEventListener('activate',event=>event.waitUntil(Promise.all([caches.keys
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/')||url.pathname.startsWith('/auth/')||url.pathname==='/'||url.pathname==='/index.html')return;
+ if(DYNAMIC.has(url.pathname)){
+  event.respondWith(fetch(request,{cache:'no-store'}).catch(()=>Response.error()));
+  return;
+ }
  if(request.mode==='navigate'){
   if(!SHELL.includes(url.pathname))return;
-  event.respondWith(caches.open(VERSION).then(async cache=>{
-   try{
-    const response=await fetch(request,{cache:'no-store'});
-    if(response.ok)event.waitUntil(cache.put(url.pathname,response.clone()));
-    return response;
-   }catch{
-    return (await cache.match(url.pathname))||Response.error();
-   }
-  }));
+  event.respondWith(fetch(request,{cache:'no-store'}).catch(async()=>await caches.match(url.pathname)||Response.error()));
   return;
  }
  if(!SHELL.includes(url.pathname))return;
- event.respondWith(caches.open(VERSION).then(async cache=>{
-  const hit=await cache.match(url.pathname);
-  if(hit)return hit;
-  const response=await fetch(request);
-  if(response.ok)event.waitUntil(cache.put(url.pathname,response.clone()));
-  return response;
- }));
+ event.respondWith(fetch(request,{cache:'no-store'}).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(VERSION).then(cache=>cache.put(url.pathname,copy)))}return response}).catch(async()=>await caches.match(url.pathname)||Response.error()));
 });
