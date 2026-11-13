@@ -2,3 +2,17 @@
 #quick-unlock-dialog input#quick-device-input{display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:13px;background:#091525;color:#f8fafc;border:1px solid #55718b;border-radius:10px;font-size:15px;letter-spacing:.08em}#quick-unlock-dialog input#quick-device-input:focus{outline:2px solid #63d8e8;outline-offset:1px}#quick-device-hint{margin:-8px 0 16px;color:#a6b2c5;font-size:13px;line-height:1.5}
 
 .quick-admin-slot{margin-top:22px;padding:16px;border:1px solid #56718d;border-radius:12px;background:#102139}.quick-admin-slot h3{margin:0 0 8px;color:#f8fafc}.quick-admin-slot p{color:#a6b2c5;line-height:1.5}.quick-admin-slot input{display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:12px;background:#091525;color:#f8fafc;border:1px solid #56718d;border-radius:9px}.quick-admin-slot button{margin:8px 6px 6px 0;padding:10px 14px;border-radius:9px}.quick-admin-slot button:disabled{opacity:.5;cursor:not-allowed}
+
+.quick-device-picker{display:grid;gap:10px;margin:14px 0}
+.quick-device-picker>label{font-weight:600;color:#f8fafc}
+.quick-device-picker>input{width:100%;box-sizing:border-box;background:#0b192b;border:1px solid #496987;border-radius:10px;color:#f8fafc;padding:12px}
+.quick-device-picker-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.quick-device-picker-tools button{padding:7px 10px;border:1px solid #47758e;border-radius:8px;background:#183751;color:#e6f6ff;cursor:pointer}
+.quick-device-picker-tools span{margin-left:auto;color:#a6b2c5}
+.quick-device-options{display:grid;gap:6px;max-height:240px;overflow-y:auto;padding:8px;background:#0b192b;border:1px solid #38516e;border-radius:10px}
+.quick-device-options>p{margin:8px;color:#a6b2c5}
+.quick-device-option{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;cursor:pointer;background:#14263d;color:#f8fafc}
+.quick-device-option:hover{background:#203955}
+.quick-device-option input{width:18px;height:18px;accent-color:#63d8e8;flex-shrink:0}
+.quick-device-option span{display:grid;gap:3px;min-width:0}
+.quick-device-option small{color:#a6b2c5;overflow-wrap:anywhere}
