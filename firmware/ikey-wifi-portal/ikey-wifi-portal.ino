@@ -9,19 +9,58 @@
 #include <DNSServer.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
+#include <time.h>
+
+// Public ISRG Root X1 trust anchor. If Render changes its issuing CA,
+// connections intentionally fail closed until the trust store is updated.
+static const char ROOT_CA[] PROGMEM = R"CERT(-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----)CERT";
 
 const char* DEVICE_ID = "YOUR8ID";
 const char* DEVICE_PASSWORD = "YOUR_DEVICE_PASSWORD";
 const char* SERVER = "https://ikey.onrender.com";
-const char* SETUP_AP_PASSWORD = "iKeySetup88"; // Change before deployment; 8+ characters.
+const char* SETUP_AP_PASSWORD = "CHANGE_TO_UNIQUE_12_CHAR_SECRET"; // Set a DIFFERENT 12+ character secret per device before flashing.
+// Never publish a real provisioning password in a public repository.
 constexpr int BOOT_BUTTON_PIN = 0;
 constexpr uint32_t BOOT_HOLD_MS = 5000;
-constexpr uint32_t AP_IDLE_TIMEOUT_MS = 10UL * 60UL * 1000UL;
+constexpr uint32_t AP_IDLE_TIMEOUT_MS = 5UL * 60UL * 1000UL;
+constexpr uint32_t AP_MAX_REQUESTS = 30;
+uint32_t apRequestCount=0;
+uint8_t failedProvisionAttempts=0;
 constexpr uint32_t POLL_MS = 2500;
 WebServer portal(80);
 DNSServer dns;
 Preferences prefs;
-String wifiSsid, wifiPass, token, apName, portalNotice;
+String wifiSsid, wifiPass, token, apName, portalNotice, portalNonce;
 uint32_t tokenAt=0,lastPoll=0,lastAuthAttempt=0,lastReconnect=0,holdStart=0,apStarted=0;
 bool setupMode=false,portalRoutesReady=false,buttonLatched=false,hasSavedWiFi=false;
 
@@ -36,8 +75,11 @@ void noCache() {
 }
 bool backendRequest(const String& path, const char* method, const String& body, String& response, int& code) {
  WiFiClientSecure client;
- // TEST ONLY: setInsecure disables TLS certificate verification. Replace before controlling a real lock.
- client.setInsecure();
+ // TLS certificate chain + hostname verification (no insecure fallback).
+ // Valid wall clock is required to verify certificate validity.
+ time_t now=time(nullptr);
+ if(now<1735689600){Serial.println("[TLS] Time not synchronized");return false;}
+ client.setCACert(ROOT_CA);
  HTTPClient http;
  if (!http.begin(client, String(SERVER)+path)) return false;
  http.setTimeout(8000);
@@ -92,7 +134,7 @@ String portalPage() {
  WiFi.scanDelete();
  String page=R"HTML(<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>iKey iBOX Wi-Fi 設定</title><style>body{font-family:system-ui;background:#0b1220;color:#f8fafc;padding:24px;max-width:560px;margin:auto}section{background:#1b3150;border:1px solid #45617a;border-radius:18px;padding:24px}h1{color:#63d8e8}label{display:block;margin:18px 0 6px}select,input,button{width:100%;box-sizing:border-box;padding:14px;border-radius:10px;font:inherit}input,select{background:#0b1220;color:white;border:1px solid #8195ab}button{margin-top:22px;background:#63d8e8;color:#07101b;border:0;font-weight:700}small{color:#a6b2c5}p{line-height:1.6}</style></head><body><section><h1>iKey · iBOX</h1><h2>Wi-Fi 網路設定</h2><p>僅支援 2.4 GHz Wi-Fi。設定期間不接收開鎖指令。</p>)HTML";
  if (portalNotice.length()) page+="<p role='status'>"+htmlEscape(portalNotice)+"</p>";
- page+="<form action='/save' method='POST'><label for='ssid'>選擇 Wi-Fi</label><select id='ssid' name='ssid' required>"+options+"</select>";
+ page+="<form action='/save' method='POST'><input type='hidden' name='nonce' value='"+htmlEscape(portalNonce)+"'><label for='ssid'>選擇 Wi-Fi</label><select id='ssid' name='ssid' required>"+options+"</select>";
  page+="<label for='password'>Wi-Fi 密碼</label><input id='password' name='password' type='password' maxlength='63' autocomplete='off'>";
  page+="<button type='submit'>測試連線並儲存</button></form><p><small>若清單沒有你的網路，重新整理此頁。連線成功後 iBOX 會自動返回正常模式。</small></p></section></body></html>";
  return page;
@@ -100,13 +142,20 @@ String portalPage() {
 void leaveSetup() {
  dns.stop(); portal.stop();
  WiFi.softAPdisconnect(true); WiFi.mode(WIFI_STA);
- setupMode=false; token=""; lastAuthAttempt=millis()-15001;
+ setupMode=false; token=""; portalNonce=""; lastAuthAttempt=millis()-15001;
  Serial.println("[WIFI] Setup portal closed; normal mode");
 }
 void saveWiFi() {
  if (!setupMode) {portal.send(403,"text/plain","Not in setup mode");return;}
+ if (++apRequestCount>AP_MAX_REQUESTS || failedProvisionAttempts>=5) {
+  noCache();portal.send(429,"text/plain","Too many attempts");return;
+ }
+ String origin=portal.header("Origin");
+ if (origin!="http://192.168.4.1" || portal.arg("nonce")!=portalNonce || !portalNonce.length()) {
+  noCache();portal.send(403,"text/plain","Invalid origin");return;
+ }
  String ssid=portal.arg("ssid"),password=portal.arg("password");
- if (!ssid.length() || ssid.length()>32 || password.length()>63) {
+ if (!ssid.length() || ssid.length()>32 || password.length()>63 || (password.length()>0 && password.length()<8)) {
   noCache();portal.send(400,"text/plain; charset=utf-8","Wi-Fi 資料格式不正確");return;
  }
  // Keep SoftAP active while testing the new station connection.
@@ -117,19 +166,29 @@ void saveWiFi() {
  bool connected=WiFi.status()==WL_CONNECTED;
  bool serverOK=false;
  if (connected) {
+  configTime(0,0,"pool.ntp.org","time.google.com");
+  uint32_t t0=millis();
+  while(time(nullptr)<1735689600 && millis()-t0<10000) delay(100);
   String response; int code=0;
   // The protected endpoint must return 401 without a token; this proves HTTPS reached the iKey backend.
   token="";
   serverOK=backendRequest("/api/device/me","GET","",response,code) && code==401;
  }
  if (!connected || !serverOK) {
+  failedProvisionAttempts++;
   portalNotice=connected?"已連上 Wi-Fi，但無法確認 iKey 伺服器。未儲存。":"Wi-Fi 連線失敗，請檢查密碼與 2.4 GHz 網路。未儲存。";
   noCache();portal.send(200,"text/html; charset=utf-8",portalPage());
   return;
  }
  prefs.begin("ikey-wifi",false);
- prefs.putString("ssid",ssid); prefs.putString("pass",password);
+ size_t savedSsid=prefs.putString("ssid",ssid);
+ size_t savedPass=prefs.putString("pass",password);
  prefs.end();
+ if(savedSsid!=ssid.length() || savedPass!=password.length()){
+  noCache();portal.send(500,"text/plain; charset=utf-8","Wi-Fi 儲存失敗，請重新嘗試");
+  Serial.println("[WIFI] NVS persistence failed");
+  return;
+ }
  wifiSsid=ssid;wifiPass=password;hasSavedWiFi=true;
  noCache();
  portal.send(200,"text/html; charset=utf-8","<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><body style='font-family:system-ui;background:#0b1220;color:#63d8e8;padding:32px'><h1>Wi-Fi 設定成功</h1><p>已儲存設定，iBOX 即將恢復正常模式。</p></body>");
@@ -140,14 +199,27 @@ void saveWiFi() {
 void enterSetup() {
  if (setupMode) return;
  setupMode=true; token=""; // Stop polling immediately: no remote unlock while provisioning.
- apStarted=millis();portalNotice="";
+ apStarted=millis();portalNotice="";apRequestCount=0;failedProvisionAttempts=0;
+ uint64_t nonce1=((uint64_t)esp_random()<<32)|esp_random();
+ uint64_t nonce2=((uint64_t)esp_random()<<32)|esp_random();
+ char nonceBuf[33];snprintf(nonceBuf,sizeof(nonceBuf),"%016llx%016llx",(unsigned long long)nonce1,(unsigned long long)nonce2);
+ portalNonce=String(nonceBuf);
+ if(portalNonce.length()!=32){Serial.println("[SECURITY] Nonce generation failed");setupMode=false;return;}
+ if (strlen(SETUP_AP_PASSWORD)<12 || String(SETUP_AP_PASSWORD)=="CHANGE_TO_UNIQUE_12_CHAR_SECRET") {
+  Serial.println("[SECURITY] Configure a unique 12+ char AP password before flashing");
+  setupMode=false;return;
+ }
  WiFi.mode(WIFI_AP_STA);
  uint64_t mac=ESP.getEfuseMac();
  char suffix[5];snprintf(suffix,sizeof(suffix),"%04X",(unsigned)(mac&0xFFFF));
  apName="iKey-Setup-"+String(suffix);
- WiFi.softAP(apName.c_str(),SETUP_AP_PASSWORD);
+ if (!WiFi.softAP(apName.c_str(),SETUP_AP_PASSWORD,1,false,1)) {
+  Serial.println("[ERROR] SoftAP failed");setupMode=false;return;
+ }
  dns.start(53,"*",WiFi.softAPIP());
  if (!portalRoutesReady) {
+  const char* trackedHeaders[]={"Origin"};
+  portal.collectHeaders(trackedHeaders,1);
   portal.on("/",HTTP_GET,[](){noCache();portal.send(200,"text/html; charset=utf-8",portalPage());});
   portal.on("/save",HTTP_POST,saveWiFi);
   portal.onNotFound([](){portal.sendHeader("Location","http://192.168.4.1/",true);portal.send(302,"text/plain","");});
@@ -178,22 +250,31 @@ void setup() {
  hasSavedWiFi=wifiSsid.length()>0;
  if (!hasSavedWiFi) {enterSetup();return;}
  WiFi.mode(WIFI_STA);WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
+ configTime(0,0,"pool.ntp.org","time.google.com");
 }
 void loop() {
  checkBootButton();
  if (setupMode) {
   dns.processNextRequest();portal.handleClient();
-  if (millis()-apStarted>AP_IDLE_TIMEOUT_MS && hasSavedWiFi) {
-   leaveSetup();WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
+  if (millis()-apStarted>AP_IDLE_TIMEOUT_MS) {
+   Serial.println("[WIFI] Setup timed out");
+   leaveSetup();
+   if (hasSavedWiFi) WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
+   else { Serial.println("[WIFI] No saved network; hold BOOT 5s to reopen setup"); }
   }
   delay(10);return;
  }
+ if (!hasSavedWiFi) {delay(50);return;}
  if (WiFi.status()!=WL_CONNECTED) {
   if (millis()-lastReconnect>20000) {
    lastReconnect=millis();WiFi.disconnect();WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
    Serial.println("[WIFI] Reconnecting");
   }
   delay(20);return;
+ }
+ if (time(nullptr)<1735689600) {
+  configTime(0,0,"pool.ntp.org","time.google.com");
+  delay(50);return;
  }
  if (token.isEmpty() || millis()-tokenAt>12UL*60UL*1000UL) {
   if (millis()-lastAuthAttempt>15000) {lastAuthAttempt=millis();authenticate();}
