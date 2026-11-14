@@ -13,10 +13,14 @@
 const char* DEVICE_ID = "YOUR8ID";
 const char* DEVICE_PASSWORD = "YOUR_DEVICE_PASSWORD";
 const char* SERVER = "https://ikey.onrender.com";
-const char* SETUP_AP_PASSWORD = "iKeySetup88"; // Change before deployment; 8+ characters.
+const char* SETUP_AP_PASSWORD = "CHANGE_TO_UNIQUE_12_CHAR_SECRET"; // Set a DIFFERENT 12+ character secret per device before flashing.
+// Never publish a real provisioning password in a public repository.
 constexpr int BOOT_BUTTON_PIN = 0;
 constexpr uint32_t BOOT_HOLD_MS = 5000;
-constexpr uint32_t AP_IDLE_TIMEOUT_MS = 10UL * 60UL * 1000UL;
+constexpr uint32_t AP_IDLE_TIMEOUT_MS = 5UL * 60UL * 1000UL;
+constexpr uint32_t AP_MAX_REQUESTS = 30;
+uint32_t apRequestCount=0;
+uint8_t failedProvisionAttempts=0;
 constexpr uint32_t POLL_MS = 2500;
 WebServer portal(80);
 DNSServer dns;
@@ -183,8 +187,11 @@ void loop() {
  checkBootButton();
  if (setupMode) {
   dns.processNextRequest();portal.handleClient();
-  if (millis()-apStarted>AP_IDLE_TIMEOUT_MS && hasSavedWiFi) {
-   leaveSetup();WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
+  if (millis()-apStarted>AP_IDLE_TIMEOUT_MS) {
+   Serial.println("[WIFI] Setup timed out");
+   leaveSetup();
+   if (hasSavedWiFi) WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
+   else ESP.restart(); // First-run returns to a fresh 5-minute setup window.
   }
   delay(10);return;
  }
