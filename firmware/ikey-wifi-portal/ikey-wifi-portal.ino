@@ -147,6 +147,13 @@ void leaveSetup() {
 }
 void saveWiFi() {
  if (!setupMode) {portal.send(403,"text/plain","Not in setup mode");return;}
+ if (++apRequestCount>AP_MAX_REQUESTS || failedProvisionAttempts>=5) {
+  noCache();portal.send(429,"text/plain","Too many attempts");return;
+ }
+ String origin=portal.header("Origin");
+ if (origin.length() && origin!="http://192.168.4.1") {
+  noCache();portal.send(403,"text/plain","Invalid origin");return;
+ }
  String ssid=portal.arg("ssid"),password=portal.arg("password");
  if (!ssid.length() || ssid.length()>32 || password.length()>63) {
   noCache();portal.send(400,"text/plain; charset=utf-8","Wi-Fi 資料格式不正確");return;
@@ -159,12 +166,16 @@ void saveWiFi() {
  bool connected=WiFi.status()==WL_CONNECTED;
  bool serverOK=false;
  if (connected) {
+  configTime(0,0,"pool.ntp.org","time.google.com");
+  uint32_t t0=millis();
+  while(time(nullptr)<1735689600 && millis()-t0<10000) delay(100);
   String response; int code=0;
   // The protected endpoint must return 401 without a token; this proves HTTPS reached the iKey backend.
   token="";
   serverOK=backendRequest("/api/device/me","GET","",response,code) && code==401;
  }
  if (!connected || !serverOK) {
+  failedProvisionAttempts++;
   portalNotice=connected?"已連上 Wi-Fi，但無法確認 iKey 伺服器。未儲存。":"Wi-Fi 連線失敗，請檢查密碼與 2.4 GHz 網路。未儲存。";
   noCache();portal.send(200,"text/html; charset=utf-8",portalPage());
   return;
@@ -182,14 +193,22 @@ void saveWiFi() {
 void enterSetup() {
  if (setupMode) return;
  setupMode=true; token=""; // Stop polling immediately: no remote unlock while provisioning.
- apStarted=millis();portalNotice="";
+ apStarted=millis();portalNotice="";apRequestCount=0;failedProvisionAttempts=0;
+ if (strlen(SETUP_AP_PASSWORD)<12 || String(SETUP_AP_PASSWORD)=="CHANGE_TO_UNIQUE_12_CHAR_SECRET") {
+  Serial.println("[SECURITY] Configure a unique 12+ char AP password before flashing");
+  setupMode=false;return;
+ }
  WiFi.mode(WIFI_AP_STA);
  uint64_t mac=ESP.getEfuseMac();
  char suffix[5];snprintf(suffix,sizeof(suffix),"%04X",(unsigned)(mac&0xFFFF));
  apName="iKey-Setup-"+String(suffix);
- WiFi.softAP(apName.c_str(),SETUP_AP_PASSWORD);
+ if (!WiFi.softAP(apName.c_str(),SETUP_AP_PASSWORD,1,false,1)) {
+  Serial.println("[ERROR] SoftAP failed");setupMode=false;return;
+ }
  dns.start(53,"*",WiFi.softAPIP());
  if (!portalRoutesReady) {
+  const char* trackedHeaders[]={"Origin"};
+  portal.collectHeaders(trackedHeaders,1);
   portal.on("/",HTTP_GET,[](){noCache();portal.send(200,"text/html; charset=utf-8",portalPage());});
   portal.on("/save",HTTP_POST,saveWiFi);
   portal.onNotFound([](){portal.sendHeader("Location","http://192.168.4.1/",true);portal.send(302,"text/plain","");});
@@ -240,6 +259,10 @@ void loop() {
    Serial.println("[WIFI] Reconnecting");
   }
   delay(20);return;
+ }
+ if (time(nullptr)<1735689600) {
+  configTime(0,0,"pool.ntp.org","time.google.com");
+  delay(50);return;
  }
  if (token.isEmpty() || millis()-tokenAt>12UL*60UL*1000UL) {
   if (millis()-lastAuthAttempt>15000) {lastAuthAttempt=millis();authenticate();}
