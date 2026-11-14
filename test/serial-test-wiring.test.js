@@ -35,3 +35,15 @@ test('firmware never actuates physical lock',()=>{
  assert.match(firmware,/TEST_UNLOCK_SUCCESS/);
  assert.doesNotMatch(firmware,/digitalWrite\s*\(|analogWrite\s*\(|ledcWrite\s*\(/);
 });
+
+test('super-admin device settings uses serial-only endpoints and not disabled physical unlock route',()=>{
+ const page=fs.readFileSync(path.join(root,'public/super-admin.html'),'utf8');
+ const start=page.indexOf("el('device-unlock-test').addEventListener");
+ const end=page.indexOf("el('device-delete').addEventListener",start);
+ const handler=page.slice(start,end);
+ assert.match(handler,/api\/serial-test\/admin\/commands/);
+ assert.doesNotMatch(handler,/api\/devices\/.*\/commands/);
+ assert.match(handler,/TEST_UNLOCK_SUCCESS/);
+ assert.match(router,/global_role!=='super_admin'/);
+ assert.match(router,/SYSTEM_SERIAL_TEST/);
+});
