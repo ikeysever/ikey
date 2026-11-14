@@ -3,7 +3,7 @@
  const $=id=>document.getElementById(id),dialog=$('quick-unlock-dialog');
  if(!dialog)return;
  const project=$('quick-project'),manual=$('quick-device-input'),options=$('quick-device-options'),count=$('quick-device-count'),status=$('quick-unlock-status'),submit=$('quick-unlock-submit');
- let devices=[],projects=[],loading=false,loadSequence=0;
+ let devices=[],projects=[],loading=false,loadSequence=0,serialTestEnabled=false;
  const checked=new Set();
  const setStatus=s=>{status.textContent=s};
  const request=async url=>{const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});const data=await r.json();if(!r.ok||data.success!==true)throw Error(data.message||'無法取得資料');return data};
@@ -14,7 +14,7 @@
   const n=chosen().length;
   count.textContent='已選 '+n+' 台';
   // Physical unlock execution is not available; selection must never imply readiness.
-  submit.disabled=true;
+  submit.disabled=!serialTestEnabled||n!==1;
  };
  function renderDevices(){
   const query=manual.value.trim().toLocaleLowerCase();
@@ -57,7 +57,16 @@
   }catch(e){if(sequence===loadSequence){project.replaceChildren(new Option('專案資料載入失敗',''));setStatus('無法取得專案資料：'+e.message)}}
   finally{if(sequence===loadSequence){loading=false;update()}}
  }
- $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices();loadAdminRegistration()});
+ async function refreshSerialTest(){
+  serialTestEnabled=false;update();
+  try{
+   const r=await fetch('/api/serial-test/config',{credentials:'same-origin',cache:'no-store'});
+   const data=await r.json();
+   serialTestEnabled=r.ok&&data.enabled===true;
+  }catch{}
+  update();
+ }
+ $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices();loadAdminRegistration();refreshSerialTest()});
  project.addEventListener('change',changeProject);
  manual.addEventListener('input',renderDevices);
  $('quick-device-select-all').addEventListener('click',()=>{
@@ -80,7 +89,29 @@
    };
   }catch(e){setStatus('NFC 無法啟動：'+e.message)}
  });
- submit.addEventListener('click',()=>setStatus('實體開鎖服務尚未啟用，未發送控制指令。'));
+ submit.addEventListener('click',async()=>{
+  if(!serialTestEnabled||chosen().length!==1)return;
+  const d=chosen()[0];
+  submit.disabled=true;
+  setStatus('正在建立純序列文字測試指令（不會驅動電子鎖）…');
+  try{
+   const r=await fetch('/api/serial-test/commands',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:d.project_id,device_id:d.device_id})});
+   const data=await r.json();
+   if(!r.ok||!data.success)throw Error(data.code||'建立失敗');
+   const id=data.command_id;
+   setStatus('已建立測試指令，等待 ESP32 印字回報…');
+   for(let i=0;i<16;i++){
+    await new Promise(resolve=>setTimeout(resolve,2500));
+    const sr=await fetch('/api/serial-test/commands/'+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store'});
+    const state=await sr.json();
+    if(!sr.ok)throw Error(state.code||'查詢失敗');
+    if(state.status==='completed'){setStatus('ESP32 已回報 TEST_UNLOCK_SUCCESS（僅印字，未通電）');return;}
+    if(state.status==='expired'){setStatus('測試指令逾時，ESP32 未完成回報');return;}
+   }
+   setStatus('等待回報逾時，請查看 ESP32 序列監控視窗');
+  }catch(e){setStatus('測試失敗：'+e.message);}
+  finally{update();}
+ });
  const renameProject=$('quick-rename-project'),renameDevice=$('quick-rename-device'),renameName=$('quick-rename-name'),renameStatus=$('quick-rename-status');
  function renderRenameDevices(){
   renameDevice.replaceChildren(new Option('請選擇 iBOX',''));
