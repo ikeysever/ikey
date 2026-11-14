@@ -181,8 +181,14 @@ void saveWiFi() {
   return;
  }
  prefs.begin("ikey-wifi",false);
- prefs.putString("ssid",ssid); prefs.putString("pass",password);
+ size_t savedSsid=prefs.putString("ssid",ssid);
+ size_t savedPass=prefs.putString("pass",password);
  prefs.end();
+ if(savedSsid!=ssid.length() || savedPass!=password.length()){
+  noCache();portal.send(500,"text/plain; charset=utf-8","Wi-Fi 儲存失敗，請重新嘗試");
+  Serial.println("[WIFI] NVS persistence failed");
+  return;
+ }
  wifiSsid=ssid;wifiPass=password;hasSavedWiFi=true;
  noCache();
  portal.send(200,"text/html; charset=utf-8","<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><body style='font-family:system-ui;background:#0b1220;color:#63d8e8;padding:32px'><h1>Wi-Fi 設定成功</h1><p>已儲存設定，iBOX 即將恢復正常模式。</p></body>");
@@ -198,6 +204,7 @@ void enterSetup() {
  uint64_t nonce2=((uint64_t)esp_random()<<32)|esp_random();
  char nonceBuf[33];snprintf(nonceBuf,sizeof(nonceBuf),"%016llx%016llx",(unsigned long long)nonce1,(unsigned long long)nonce2);
  portalNonce=String(nonceBuf);
+ if(portalNonce.length()!=32){Serial.println("[SECURITY] Nonce generation failed");setupMode=false;return;}
  if (strlen(SETUP_AP_PASSWORD)<12 || String(SETUP_AP_PASSWORD)=="CHANGE_TO_UNIQUE_12_CHAR_SECRET") {
   Serial.println("[SECURITY] Configure a unique 12+ char AP password before flashing");
   setupMode=false;return;
