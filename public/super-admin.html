@@ -103,18 +103,27 @@ el('device-unlock-test').addEventListener('click',async()=>{
  const id=selectedDeviceId,status=el('device-detail-status'),btn=el('device-unlock-test');
  if(!id)return;
  btn.disabled=true;
- status.textContent='正在向伺服器建立開鎖指令…';
+ status.textContent='正在建立 ESP32 序列文字測試指令（不會通電）…';
  try{
-  const key='ui-'+crypto.randomUUID();
-  const response=await fetch('/api/devices/'+encodeURIComponent(id)+'/commands',{
-   method:'POST',credentials:'same-origin',
-   headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({action:'unlock',timeout_ms:15000,idempotency_key:key})
+  const response=await fetch('/api/serial-test/admin/commands',{
+   method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:id})
   });
   const data=await response.json();
   if(!response.ok||data.success!==true)throw Error(data.message||data.code||'指令建立失敗');
-  if(selectedDeviceId===id)status.textContent='指令已建立，等待 ESP32 領取與回報。指令 ID：'+(data.result?.command_id||'待查詢');
- }catch(err){if(selectedDeviceId===id)status.textContent='無法建立指令：'+(err.message||'未知錯誤')}
+  status.textContent='指令已建立，等待 ESP32 回報：'+data.command_id;
+  for(let i=0;i<18;i++){
+   await new Promise(resolve=>setTimeout(resolve,2500));
+   const r=await fetch('/api/serial-test/admin/commands/'+encodeURIComponent(data.command_id),{credentials:'same-origin',cache:'no-store'});
+   const result=await r.json();
+   if(!r.ok||result.success!==true)throw Error(result.message||result.code||'查詢失敗');
+   if(selectedDeviceId!==id)return;
+   if(result.status==='completed'){status.textContent='ESP32 已回報 TEST_UNLOCK_SUCCESS（僅印字，未通電）';return;}
+   if(result.status==='expired'){status.textContent='指令已逾時，ESP32 未完成回報';return;}
+   status.textContent=result.status==='claimed'?'ESP32 已領取指令，等待完成回報…':'指令排隊中，等待 ESP32 領取…';
+  }
+  if(selectedDeviceId===id)status.textContent='等待回報逾時，請檢查 ESP32 序列監控視窗';
+ }catch(err){if(selectedDeviceId===id)status.textContent='無法建立或完成測試：'+(err.message||'未知錯誤')}
  finally{btn.disabled=false}
 });
 el('device-delete').addEventListener('click',async()=>{
