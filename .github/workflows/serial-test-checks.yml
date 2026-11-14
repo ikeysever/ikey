@@ -1,0 +1,22 @@
+name: Serial-only command test checks
+on:
+  pull_request:
+    paths:
+      - 'lib/serial-test-router.js'
+      - 'lib/supabase-data-adapter.js'
+      - 'server.js'
+      - 'public/quick-unlock.js'
+      - 'firmware/ikey-serial-test/**'
+      - 'test/serial-test-wiring.test.js'
+      - '.github/workflows/serial-test-checks.yml'
+jobs:
+  serial-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund
+      - run: node --check server.js && node --check lib/serial-test-router.js && node --check lib/supabase-data-adapter.js && node --check public/quick-unlock.js
+      - run: node --test test/serial-test-wiring.test.js tests/device-auth-mainline.test.js
