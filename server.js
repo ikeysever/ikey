@@ -138,7 +138,7 @@ app.get(['/api/auth/status', '/api/ready'], async (req, res) => {
 });
 app.use('/api/auth', createRouter(authStore));
 // Device identity API only; physical commands remain disabled.
-require('./device-auth')(app,authStore);
+const requireDevice=require('./device-auth')(app,authStore);
 // Project operations are always scoped to the authenticated account on the server.
 const { hashToken, active } = require('./gen3-auth/core');
 const { randomUUID } = require('node:crypto');
@@ -162,6 +162,7 @@ require('./lib/project-members-router')(app,{store:authStore,requireUser:require
 const lineNotifications=require('./lib/line-notification-dispatcher').createLineNotificationDispatcher(authStore);
 require('./lib/project-access-requests-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin,lineNotifications});
 require('./lib/admin-slot-unlock-router')(app,{store:authStore,requireProjectUser,sameProjectOrigin});
+require('./lib/serial-test-router')(app,{store:authStore,requireProjectUser,requireDevice,sameProjectOrigin});
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-supabase-binding-service').createSupabaseLineBindingService(authStore);
 lineMenuService=require('./lib/line-menu-service').createLineMenuService(authStore);
