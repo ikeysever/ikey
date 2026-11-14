@@ -60,7 +60,7 @@ constexpr uint32_t POLL_MS = 2500;
 WebServer portal(80);
 DNSServer dns;
 Preferences prefs;
-String wifiSsid, wifiPass, token, apName, portalNotice;
+String wifiSsid, wifiPass, token, apName, portalNotice, portalNonce;
 uint32_t tokenAt=0,lastPoll=0,lastAuthAttempt=0,lastReconnect=0,holdStart=0,apStarted=0;
 bool setupMode=false,portalRoutesReady=false,buttonLatched=false,hasSavedWiFi=false;
 
@@ -134,7 +134,7 @@ String portalPage() {
  WiFi.scanDelete();
  String page=R"HTML(<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>iKey iBOX Wi-Fi 設定</title><style>body{font-family:system-ui;background:#0b1220;color:#f8fafc;padding:24px;max-width:560px;margin:auto}section{background:#1b3150;border:1px solid #45617a;border-radius:18px;padding:24px}h1{color:#63d8e8}label{display:block;margin:18px 0 6px}select,input,button{width:100%;box-sizing:border-box;padding:14px;border-radius:10px;font:inherit}input,select{background:#0b1220;color:white;border:1px solid #8195ab}button{margin-top:22px;background:#63d8e8;color:#07101b;border:0;font-weight:700}small{color:#a6b2c5}p{line-height:1.6}</style></head><body><section><h1>iKey · iBOX</h1><h2>Wi-Fi 網路設定</h2><p>僅支援 2.4 GHz Wi-Fi。設定期間不接收開鎖指令。</p>)HTML";
  if (portalNotice.length()) page+="<p role='status'>"+htmlEscape(portalNotice)+"</p>";
- page+="<form action='/save' method='POST'><label for='ssid'>選擇 Wi-Fi</label><select id='ssid' name='ssid' required>"+options+"</select>";
+ page+="<form action='/save' method='POST'><input type='hidden' name='nonce' value='"+htmlEscape(portalNonce)+"'><label for='ssid'>選擇 Wi-Fi</label><select id='ssid' name='ssid' required>"+options+"</select>";
  page+="<label for='password'>Wi-Fi 密碼</label><input id='password' name='password' type='password' maxlength='63' autocomplete='off'>";
  page+="<button type='submit'>測試連線並儲存</button></form><p><small>若清單沒有你的網路，重新整理此頁。連線成功後 iBOX 會自動返回正常模式。</small></p></section></body></html>";
  return page;
@@ -142,7 +142,7 @@ String portalPage() {
 void leaveSetup() {
  dns.stop(); portal.stop();
  WiFi.softAPdisconnect(true); WiFi.mode(WIFI_STA);
- setupMode=false; token=""; lastAuthAttempt=millis()-15001;
+ setupMode=false; token=""; portalNonce=""; lastAuthAttempt=millis()-15001;
  Serial.println("[WIFI] Setup portal closed; normal mode");
 }
 void saveWiFi() {
@@ -151,11 +151,11 @@ void saveWiFi() {
   noCache();portal.send(429,"text/plain","Too many attempts");return;
  }
  String origin=portal.header("Origin");
- if (origin.length() && origin!="http://192.168.4.1") {
+ if (origin!="http://192.168.4.1" || portal.arg("nonce")!=portalNonce || !portalNonce.length()) {
   noCache();portal.send(403,"text/plain","Invalid origin");return;
  }
  String ssid=portal.arg("ssid"),password=portal.arg("password");
- if (!ssid.length() || ssid.length()>32 || password.length()>63) {
+ if (!ssid.length() || ssid.length()>32 || password.length()>63 || (password.length()>0 && password.length()<8)) {
   noCache();portal.send(400,"text/plain; charset=utf-8","Wi-Fi 資料格式不正確");return;
  }
  // Keep SoftAP active while testing the new station connection.
@@ -194,6 +194,10 @@ void enterSetup() {
  if (setupMode) return;
  setupMode=true; token=""; // Stop polling immediately: no remote unlock while provisioning.
  apStarted=millis();portalNotice="";apRequestCount=0;failedProvisionAttempts=0;
+ uint64_t nonce1=((uint64_t)esp_random()<<32)|esp_random();
+ uint64_t nonce2=((uint64_t)esp_random()<<32)|esp_random();
+ char nonceBuf[33];snprintf(nonceBuf,sizeof(nonceBuf),"%016llx%016llx",(unsigned long long)nonce1,(unsigned long long)nonce2);
+ portalNonce=String(nonceBuf);
  if (strlen(SETUP_AP_PASSWORD)<12 || String(SETUP_AP_PASSWORD)=="CHANGE_TO_UNIQUE_12_CHAR_SECRET") {
   Serial.println("[SECURITY] Configure a unique 12+ char AP password before flashing");
   setupMode=false;return;
