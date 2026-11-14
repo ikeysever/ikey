@@ -249,10 +249,11 @@ void loop() {
    Serial.println("[WIFI] Setup timed out");
    leaveSetup();
    if (hasSavedWiFi) WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
-   else { Serial.println("[WIFI] No saved network; restart for setup"); ESP.restart(); }
+   else { Serial.println("[WIFI] No saved network; hold BOOT 5s to reopen setup"); }
   }
   delay(10);return;
  }
+ if (!hasSavedWiFi) {delay(50);return;}
  if (WiFi.status()!=WL_CONNECTED) {
   if (millis()-lastReconnect>20000) {
    lastReconnect=millis();WiFi.disconnect();WiFi.begin(wifiSsid.c_str(),wifiPass.c_str());
