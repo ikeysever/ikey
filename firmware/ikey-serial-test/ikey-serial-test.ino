@@ -4,6 +4,10 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <time.h>
+
+extern const uint8_t caBundleStart[] asm("_binary_x509_crt_bundle_start");
+extern const uint8_t caBundleEnd[] asm("_binary_x509_crt_bundle_end");
 const char* WIFI_SSID="YOUR_WIFI";
 const char* WIFI_PASSWORD="YOUR_WIFI_PASSWORD";
 const char* DEVICE_ID="YOUR8ID";
@@ -13,8 +17,7 @@ String token;
 unsigned long tokenAt=0,lastPoll=0,lastAuthAttempt=0;
 bool request(const String& path,const char* method,const String& body,String& response,int& code){
  WiFiClientSecure client;
- // DEVELOPMENT ONLY: replace with verified TLS trust before real deployment.
- client.setInsecure();
+ client.setCACertBundle(caBundleStart, caBundleEnd - caBundleStart);
  HTTPClient http;
  if(!http.begin(client,String(SERVER)+path))return false;
  http.setTimeout(12000);
@@ -60,6 +63,7 @@ void poll(){
 void setup(){
  Serial.begin(115200);delay(1000);
  Serial.println("iKey SERIAL-ONLY TEST; GPIO DISABLED");
+ configTime(0, 0, "pool.ntp.org", "time.google.com");
  WiFi.mode(WIFI_STA);WiFi.begin(WIFI_SSID,WIFI_PASSWORD);
 }
 void loop(){
@@ -67,6 +71,7 @@ void loop(){
   if(millis()-lastAuthAttempt>20000){lastAuthAttempt=millis();WiFi.disconnect();WiFi.begin(WIFI_SSID,WIFI_PASSWORD);}
   delay(100);return;
  }
+ if(time(nullptr)<1704067200){delay(250);return;}
  if(token.isEmpty()||millis()-tokenAt>12UL*60UL*1000UL){
   if(millis()-lastAuthAttempt>15000){lastAuthAttempt=millis();authenticate();}
   delay(100);return;

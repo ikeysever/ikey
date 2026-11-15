@@ -4,6 +4,7 @@
  if(!dialog)return;
  const project=$('quick-project'),manual=$('quick-device-input'),options=$('quick-device-options'),count=$('quick-device-count'),status=$('quick-unlock-status'),submit=$('quick-unlock-submit');
  let devices=[],projects=[],loading=false,loadSequence=0,serialTestEnabled=false;
+ let serialTestPending=false;
  const checked=new Set();
  const setStatus=s=>{status.textContent=s};
  const request=async url=>{const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});const data=await r.json();if(!r.ok||data.success!==true)throw Error(data.message||'無法取得資料');return data};
@@ -14,7 +15,7 @@
   const n=chosen().length;
   count.textContent='已選 '+n+' 台';
   // Physical unlock execution is not available; selection must never imply readiness.
-  submit.disabled=!serialTestEnabled||n!==1;
+  submit.disabled=serialTestPending||!serialTestEnabled||n!==1||chosen()[0]?.can_manage!==true;
  };
  function renderDevices(){
   const query=manual.value.trim().toLocaleLowerCase();
@@ -38,6 +39,9 @@
   setStatus(!project.value?'請先選擇專案。':'可搜尋並勾選此專案的 iBOX；目前開鎖指令服務尚未啟用。');
  }
  async function loadDevices(){
+  managedDevices=[];
+  for(const select of [registerProject,renameProject])select.replaceChildren(new Option('正在讀取可管理專案…',''));
+  renderRegisterDevices();renderRenameDevices();
   const sequence=++loadSequence;loading=true;devices=[];projects=[];checked.clear();manual.value='';project.disabled=true;
   project.replaceChildren(new Option('正在載入專案…',''));renderDevices();
   try{
@@ -50,11 +54,12 @@
     const p=projects[i],o=outcomes[i];
     if(o.status==='rejected'){errors.push(p.project_name||p.project_id);continue;}
     project.add(new Option(p.project_name||'未命名專案',p.project_id));
-    for(const d of o.value.devices||[])if(d.project_id===p.project_id)devices.push({...d,project_name:p.project_name});
+    for(const d of o.value.devices||[])if(d.project_id===p.project_id)devices.push({...d,project_name:p.project_name,can_manage:o.value.can_manage===true});
    }
+   populateAdminSelectors(projects,outcomes);
    project.disabled=project.options.length<2;changeProject();
    if(errors.length)setStatus('部分專案讀取失敗：'+errors.join('、')+'。請稍後重試。');
-  }catch(e){if(sequence===loadSequence){project.replaceChildren(new Option('專案資料載入失敗',''));setStatus('無法取得專案資料：'+e.message)}}
+  }catch(e){if(sequence===loadSequence){project.replaceChildren(new Option('專案資料載入失敗',''));populateAdminSelectors([],[]);registerMessage.textContent='無法載入管理專案：'+e.message;setStatus('無法取得專案資料：'+e.message)}}
   finally{if(sequence===loadSequence){loading=false;update()}}
  }
  async function refreshSerialTest(){
@@ -66,7 +71,7 @@
   }catch{}
   update();
  }
- $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices();loadAdminRegistration();refreshSerialTest()});
+ $('quick-unlock-open').addEventListener('click',()=>{dialog.showModal();loadDevices();refreshSerialTest()});
  project.addEventListener('change',changeProject);
  manual.addEventListener('input',renderDevices);
  $('quick-device-select-all').addEventListener('click',()=>{
@@ -90,8 +95,9 @@
   }catch(e){setStatus('NFC 無法啟動：'+e.message)}
  });
  submit.addEventListener('click',async()=>{
-  if(!serialTestEnabled||chosen().length!==1)return;
+  if(serialTestPending||!serialTestEnabled||chosen().length!==1||chosen()[0].can_manage!==true)return;
   const d=chosen()[0];
+  serialTestPending=true;
   submit.disabled=true;
   setStatus('正在建立純序列文字測試指令（不會驅動電子鎖）…');
   try{
@@ -110,7 +116,7 @@
    }
    setStatus('等待回報逾時，請查看 ESP32 序列監控視窗');
   }catch(e){setStatus('測試失敗：'+e.message);}
-  finally{update();}
+  finally{serialTestPending=false;update();}
  });
  const renameProject=$('quick-rename-project'),renameDevice=$('quick-rename-device'),renameName=$('quick-rename-name'),renameStatus=$('quick-rename-status');
  function renderRenameDevices(){
@@ -138,12 +144,7 @@
   for(const d of managedDevices.filter(x=>x.project_id===p))registerDevice.add(new Option((d.device_name||'iBOX')+' · '+d.device_id,d.device_id));
  }
  registerProject.addEventListener('change',renderRegisterDevices);
- async function loadAdminRegistration(){
-  registerProject.replaceChildren(new Option('正在讀取可管理專案…',''));registerDevice.replaceChildren(new Option('請先選擇專案',''));
-  try{
-   const data=await request('/api/projects');
-   const projects=(data.projects||[]).filter(p=>p.project_id&&p.status!=='deleted');
-   const outcomes=await Promise.allSettled(projects.map(p=>request('/api/projects/'+encodeURIComponent(p.project_id)+'/devices')));
+ function populateAdminSelectors(projects,outcomes){
    managedDevices=[];registerProject.replaceChildren(new Option('請選擇專案',''));renameProject.replaceChildren(new Option('請選擇專案',''));
    for(let i=0;i<projects.length;i++){
     const o=outcomes[i],p=projects[i];
@@ -152,7 +153,6 @@
     managedDevices.push(...(o.value.devices||[]).filter(d=>d.project_id===p.project_id));
    }
    renderRenameDevices();registerMessage.textContent=registerProject.options.length>1?'可登錄管理專案的格位。':'目前沒有可管理的專案。';
-  }catch(e){registerMessage.textContent='無法載入管理專案：'+e.message}
  }
  $('quick-slot-register').addEventListener('click',async()=>{
   const project_id=registerProject.value,device_id=registerDevice.value;
@@ -180,15 +180,15 @@
  $('quick-slot-resolve').addEventListener('click',async()=>{
   const code=slotCode();if(!/^[A-Z0-9_-]{4,40}$/.test(code)){slotMessage('請輸入 4～40 位有效格位編號。');return;}
   slotMessage('正在驗證格位與專案管理員權限…');slotOpen.disabled=true;verifiedSlot=null;
-  try{const result=await slotPost('/api/admin/slots/resolve',code);verifiedSlot=result;slotOpen.disabled=false;slotMessage('已驗證：'+result.project_name+' / '+result.device_id+' / 第 '+result.slot_number+' 格。裝置指令服務尚未啟用，無法實際開鎖。')}
+  try{const result=await slotPost('/api/admin/slots/resolve',code);if(code!==slotCode())return;verifiedSlot=result;slotOpen.disabled=result.control_ready!==true;slotMessage('已驗證：'+result.project_name+' / '+result.device_id+' / 第 '+result.slot_number+' 格。裝置指令服務尚未啟用，無法實際開鎖。')}
   catch(e){slotMessage('驗證失敗：'+e.message)}
  });
  slotOpen.addEventListener('click',async()=>{
-  if(!verifiedSlot||verifiedSlot.slot_code!==slotCode()||slotBusy)return;
+  if(verifiedSlot?.control_ready!==true||verifiedSlot.slot_code!==slotCode()||slotBusy)return;
   slotBusy=true;slotOpen.disabled=true;slotMessage('正在由伺服器重新確認管理員權限與指令狀態…');
   try{const result=await slotPost('/api/admin/slots/unlock',slotCode());slotMessage(result.execution_verified===true?'裝置已確認執行':'請求已受理，尚未收到裝置執行回報')}
   catch(e){slotMessage('未開鎖：'+e.message)}
-  finally{slotBusy=false;slotOpen.disabled=!verifiedSlot}
+  finally{slotBusy=false;slotOpen.disabled=verifiedSlot?.control_ready!==true}
  });
  $('quick-slot-scan').addEventListener('click',async()=>{
   if(!('NDEFReader' in window)){slotMessage('此瀏覽器不支援 Web NFC，請手動輸入格位編號。');return;}
