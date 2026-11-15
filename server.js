@@ -2,6 +2,7 @@
 const express = require('express');
 const path = require('node:path');
 const app = express();
+const {physicalUnlockUnavailable} = require('./lib/physical-unlock');
 app.disable('x-powered-by');
 // LINE webhook requires raw request bytes for HMAC verification.
 let lineService, lineMenuService;
@@ -452,7 +453,7 @@ app.delete('/api/projects/:projectId/devices/:deviceId/binding',requireProjectUs
 app.post('/api/projects/:projectId/devices/:deviceId/unlock',requireProjectUser,(req,res)=>{
  res.set('Cache-Control','no-store');
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
- return res.status(503).json({success:false,code:'UNLOCK_EXECUTION_NOT_READY',message:'實體開鎖回報尚未串接，未發送開鎖指令'});
+ return physicalUnlockUnavailable(res, '實體開鎖回報尚未串接，未發送開鎖指令');
 });
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.
@@ -462,8 +463,7 @@ app.post('/api/devices/:deviceId/commands',requireProjectUser,(req,res)=>{
   return res.status(403).json({success:false,code:'NOT_AUTHORIZED'});
  if(!/^[A-HJ-NP-Z2-9]{8}$/.test(String(req.params.deviceId||'')))
   return res.status(400).json({success:false,code:'INVALID_DEVICE_ID'});
- return res.status(503).json({success:false,code:'COMMAND_BACKEND_NOT_READY',
-  message:'裝置指令服務尚未啟用，未送出任何控制指令'});
+ return physicalUnlockUnavailable(res, '裝置指令服務尚未啟用，未送出任何控制指令', {}, 'COMMAND_BACKEND_NOT_READY');
 });
 // Opt-in, authenticated, non-actuating GAS signature probe. No create/claim/report.
 app.post('/api/admin/command-probe',requireProjectUser,async(req,res)=>{

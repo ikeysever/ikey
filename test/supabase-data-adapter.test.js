@@ -7,7 +7,8 @@ test('rejects missing credentials',()=>assert.throws(()=>createSupabaseDataAdapt
 test('rejects unknown tables and unsupported writes before network',async()=>{
  const store=createSupabaseDataAdapter({...options,fetchImpl:()=>{throw Error('NETWORK_CALLED')}});
  await assert.rejects(store.dbCall('db.select',{table:'Users'}),/TABLE_DENIED/);
- await assert.rejects(store.dbCall('db.update',{table:'Projects'}),/NOT_IMPLEMENTED/);
+ await assert.rejects(store.dbCall('db.update',{table:'Projects'}),/INVALID_FILTER/);
+ await assert.rejects(store.dbCall('db.truncate',{table:'Projects'}),/NOT_IMPLEMENTED/);
  await assert.rejects(store.dbCall('db.select',{table:'Projects',where:{'id=gt.0':'x'}}),/INVALID_FILTER/);
 });
 test('select uses encoded exact-match filters and secret server headers',async()=>{
