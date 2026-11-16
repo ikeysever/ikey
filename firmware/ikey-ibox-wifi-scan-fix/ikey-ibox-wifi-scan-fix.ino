@@ -172,12 +172,7 @@ void updateClock(){
   Serial.printf("[TIME] Waiting for NTP (%lu ms); IP=%s RSSI=%d dBm gateway=%s DNS=%s\n",
     (unsigned long)(millis()-ntpAt),WiFi.localIP().toString().c_str(),
     WiFi.RSSI(),WiFi.gatewayIP().toString().c_str(),WiFi.dnsIP().toString().c_str());
-  for(size_t i=0;i<3;i++){
-   IPAddress resolved;
-   if(WiFi.hostByName(NTP_HOSTS[i],resolved))
-    Serial.printf("[TIME][DNS] %s -> %s\n",NTP_HOSTS[i],resolved.toString().c_str());
-   else Serial.printf("[TIME][DNS] %s resolution FAILED\n",NTP_HOSTS[i]);
-  }
+  Serial.println("[TIME] Skipping synchronous DNS probes to avoid lwIP UDP core-lock assertion.");
   Serial.println("[TIME] HTTPS auth paused; UDP/123 may be restricted.");
  }
  if(!timeReady && millis()-ntpRetryAt>=NTP_RETRY_MS){
@@ -199,10 +194,7 @@ int request(const String& path,const String& method,const String& body,String& r
  if(code<0){
   Serial.printf("[HTTPS] %s %s failed: %d (%s)\n",
    method.c_str(),path.c_str(),code,http.errorToString(code).c_str());
-  IPAddress resolved;
-  if(WiFi.hostByName("ikey.onrender.com",resolved))
-   Serial.printf("[DNS] ikey.onrender.com -> %s\n",resolved.toString().c_str());
-  else Serial.println("[DNS] ikey.onrender.com resolution FAILED");
+  Serial.println("[HTTPS] DNS probe omitted; investigate TLS/network with the error above.");
  }
  response=code>0?http.getString():"";http.end();return code;
 }
