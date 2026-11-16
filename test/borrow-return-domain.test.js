@@ -1,0 +1,15 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {transition}=require('../lib/borrow-return-domain');
+const now='2026-11-16T02:00:00.000Z';
+const free={is_active:true,status:'available',borrower_id:null};
+const held={is_active:true,status:'borrowed',borrower_id:'u1'};
+test('borrow from available slot',()=>{assert.deepEqual(transition('borrow',free,'u1',now),{ok:true,next:{status:'borrowed',borrower_id:'u1',borrowed_at:now},event:'borrow'});assert.equal(free.status,'available')});
+test('return by borrower',()=>assert.deepEqual(transition('return',held,'u1',now).next,{status:'available',borrower_id:null,borrowed_at:null}));
+test('duplicate borrow denied',()=>assert.equal(transition('borrow',held,'u1',now).code,'SLOT_NOT_AVAILABLE'));
+test('duplicate return denied',()=>assert.equal(transition('return',free,'u1',now).code,'SLOT_NOT_BORROWED'));
+test('another user cannot return',()=>assert.equal(transition('return',held,'u2',now).code,'NOT_BORROWER'));
+test('inactive slot denied',()=>assert.equal(transition('borrow',{...free,is_active:false},'u1',now).code,'SLOT_INACTIVE'));
+test('inconsistent borrower denied',()=>assert.equal(transition('borrow',{...free,borrower_id:'u2'},'u1',now).code,'INCONSISTENT_SLOT'));
+test('invalid input denied',()=>{assert.equal(transition('open',free,'u1',now).code,'INVALID_ACTION');assert.equal(transition('borrow',free,'',now).code,'INVALID_ACTOR');assert.equal(transition('borrow',free,'u1','bad').code,'INVALID_TIMESTAMP')});

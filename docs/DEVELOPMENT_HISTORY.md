@@ -112,3 +112,18 @@
 - Formal state: Node code deployed with LINE binding explicitly OFF. Live GAS, Sheets, LINE console and existing bindings were not modified. No full formal database/GAS backup or restoration was performed because this release did not mutate those systems. Prior Render commit retained for rollback: 9b33d6ce72426e05a65f13add1a28a011e35b31b.
 - Blocker: no configured non-editor GAS credential. Real schema/secret/GAS deployment and designated-account LINE end-to-end tests remain outstanding. Do not describe this deployment as a working LINE binding launch. User requested no GAS editor use and no further per-step approval; continue only through an authenticated non-editor channel when available.
 - This follow-up is documentation only; it does not require another Render deployment.
+
+## 2026-11-16｜Borrow / Return 領域規則（staging）
+
+- 建立獨立分支 `feature/borrow-return-domain-20261116`，不修改 main 或正式資料。
+- 盤點發現管理員格位解析已存在，但實體開鎖仍刻意回覆未啟用；尚無可確認的完整借還原子交易。
+- 新增 `lib/borrow-return-domain.js`：純函式狀態轉移與 fail-closed 驗證，不進行資料庫寫入或實體開鎖。
+- 新增 `test/borrow-return-domain.test.js`：正常借還、重複操作、非借用人歸還、停用格位、不一致資料及輸入驗證。
+- 待辦：確認正式 Supabase schema、交易 RPC、併發與冪等策略、實體裝置執行回報；不得以發出開鎖指令代替借還成功。
+- 測試結果需以 CI 或實際 npm test 輸出為準，尚未取得前不宣稱通過。
+
+### 2026-11-16｜借還資料庫方案續作
+- 唯讀查核 iKey Supabase：`borrowings`、`storage_slots` 為 UUID 舊式資料結構；新版 `project_slot_codes` 以文字格位編號連接 iBOX，沒有借還欄位。
+- 新增 `docs/migrations/ikey-borrow-return-STAGING-DO-NOT-APPLY.sql`：獨立借還與事件表、行鎖、原子函式、請求冪等鍵及預設不開放 RPC 的權限設計。
+- 新增 `docs/borrow-return-transaction-contract.md`：記錄正式 API、設備回報、授權與故障注入的上線阻擋條件。
+- **未在正式 Supabase 執行 DDL 或 DML；未啟用 API、未部署、未開鎖。** SQL 尚待隔離環境實測，不能視為已驗收。
