@@ -45,3 +45,34 @@ test('schedule entry exposes tracking and aliases refresh the latest review stat
  }
  f.tables.Project_Access_Requests[0].status='approved';messages=await f.send('requests');assert(JSON.stringify(messages).includes('已核准'));assert(messages[0].contents.footer.contents.some(b=>b.action.label==='更新申請狀態'));
 });
+test('project choices look distinct from navigation',async()=>{
+ const f=fixture();const [message]=await f.send('text','排程申請');
+ const buttons=message.contents.footer.contents;
+ const project=buttons.find(b=>b.action.data.includes(':project:'));
+ const tracking=buttons.find(b=>b.action.label==='申請追蹤');
+ assert.equal(project.style,'primary');assert.equal(project.height,'md');
+ assert.equal(tracking.style,'link');assert.equal(tracking.height,'sm');
+ assert.notEqual(project.color,tracking.color);
+});
+test('direct open validates access without consuming schedule draft',async()=>{
+ const {createLineMenuService}=require('../lib/line-menu-service');
+ const f=fixture();f.tables.Gen3_Users=[{user_id:'u',account_status:'active'}];f.tables.LINE_Audit_Logs=[];
+ f.tables.Devices=[{device_id:'ABCDEFGH',status:'pre_registered'}];
+ await f.send('text','排程申請');await f.send('project','project-1');await f.send('device','ABCDEFGH');
+ const draft=structuredClone(f.binding.schedule_state),deliveries=[];
+ const menu=createLineMenuService(f.store,{LINE_MESSAGING_CHANNEL_SECRET:'test',LINE_MESSAGING_ACCESS_TOKEN:'test'},async(url,options)=>{deliveries.push(JSON.parse(options.body));return {ok:true}});
+ async function send(value){deliveries.length=0;await menu.handle({source:{type:'user',userId:lineId},replyToken:'test',type:'message',message:{type:'text',text:value}});return JSON.stringify(deliveries.at(-1).messages);}
+ assert.match(await send('打開 abcdefgh'),/開鎖資格確認完成/);assert.deepEqual(f.binding.schedule_state,draft);
+ assert.match(await send('打開 ＡＢＣＤＥＦＧＨ'),/開鎖資格確認完成/);
+ assert.match(await send('打開 BAD'),/格式不正確/);
+ f.tables.Projects[0].status='deleted';assert.match(await send('打開 ABCDEFGH'),/沒有有效開鎖權限/);
+ f.tables.Projects[0].status='active';f.tables.Devices[0].status='deleted';assert.match(await send('打開 ABCDEFGH'),/沒有有效開鎖權限/);
+ f.tables.Devices[0].status='pre_registered';f.tables.Projects[0].created_by_user_id='owner';
+ f.tables.Project_Access.push({project_id:'project-1',user_id:'u',entry_type:'member',status:'approved',role:'member'});
+ assert.match(await send('打開 ABCDEFGH'),/沒有有效開鎖權限/);
+ f.tables.Project_Access_Requests.push({project_id:'project-1',requester_user_id:'u',device_id:'ABCDEFGH',status:'approved',start_at:new Date(Date.now()-10000).toISOString(),end_at:PERMANENT_END});
+ assert.match(await send('打開 ABCDEFGH'),/開鎖資格確認完成/);
+ f.tables.Project_Access_Requests[0].end_at=new Date(Date.now()-1000).toISOString();
+ assert.match(await send('打開 ABCDEFGH'),/沒有有效開鎖權限/);
+ f.tables.LINE_Bindings=[];assert.match(await send('打開 ABCDEFGH'),/先完成 LINE 帳號綁定/);
+});
