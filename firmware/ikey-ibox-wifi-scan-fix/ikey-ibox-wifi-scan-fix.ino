@@ -215,35 +215,31 @@ void trySignedTime(){
 }
 void updateClock(){
  if(WiFi.status()!=WL_CONNECTED)return;
- if(!ntpStarted){
-  configTime(0,0,NTP_HOSTS[0],NTP_HOSTS[1],NTP_HOSTS[2]);
-  ntpStarted=true;ntpAt=millis();ntpLogAt=millis();ntpRetryAt=millis();
-  Serial.println("[TIME] NTP started; waiting for valid UTC clock");
- }
+ // Arduino-ESP32 3.3.11: avoid SNTP DNS callbacks during HTTPS bootstrap.
+ // The SNTP callback may allocate a UDP PCB outside the lwIP core lock.
+ // Bootstrap exclusively from nonce-bound, ECDSA-verified HTTPS time.
+ // Do not start configTime()/SNTP here or concurrently with HTTPClient.
  time_t now=time(nullptr);
  if(now>=MIN_VALID_EPOCH){
   if(!timeReady){
    timeReady=true;
-   struct tm utc;gmtime_r(&now,&utc);
-   Serial.printf("[TIME] NTP synchronized (UTC %04d-%02d-%02d %02d:%02d:%02d)\n",
-    utc.tm_year+1900,utc.tm_mon+1,utc.tm_mday,utc.tm_hour,utc.tm_min,utc.tm_sec);
+   Serial.println("[TIME] UTC clock valid; HTTPS enabled");
   }
- }else if(millis()-ntpLogAt>=10000){
+  return;
+ }
+ if(!ntpStarted){
+  ntpStarted=true;ntpAt=millis();ntpLogAt=millis();
+  Serial.println("[TIME] Signed HTTPS time bootstrap; SNTP disabled to avoid lwIP assertion");
+ }
+ if(millis()-ntpLogAt>=10000){
   ntpLogAt=millis();
-  Serial.printf("[TIME] Waiting for NTP (%lu ms); IP=%s RSSI=%d dBm gateway=%s DNS=%s\n",
-    (unsigned long)(millis()-ntpAt),WiFi.localIP().toString().c_str(),
-    WiFi.RSSI(),WiFi.gatewayIP().toString().c_str(),WiFi.dnsIP().toString().c_str());
-  Serial.println("[TIME] Skipping synchronous DNS probes to avoid lwIP UDP core-lock assertion.");
-  Serial.println("[TIME] HTTPS auth paused; UDP/123 may be restricted.");
+  Serial.printf("[TIME] Waiting for signed UTC (%lu ms); IP=%s RSSI=%d dBm DNS=%s\\n",
+   (unsigned long)(millis()-ntpAt),WiFi.localIP().toString().c_str(),
+   WiFi.RSSI(),WiFi.dnsIP().toString().c_str());
  }
- if(!timeReady && millis()-ntpAt>=NTP_FALLBACK_AFTER_MS &&
-    (!signedTimeAt || millis()-signedTimeAt>=SIGNED_TIME_RETRY_MS)){
-  signedTimeAt=millis();trySignedTime();
- }
- if(!timeReady && millis()-ntpRetryAt>=NTP_RETRY_MS){
-  ntpRetryAt=millis();
-  Serial.println("[TIME] Retrying NTP; TLS verification remains enabled");
-  configTime(0,0,NTP_HOSTS[0],NTP_HOSTS[1],NTP_HOSTS[2]);
+ if(!signedTimeAt || millis()-signedTimeAt>=SIGNED_TIME_RETRY_MS){
+  signedTimeAt=millis();
+  trySignedTime();
  }
 }
 int request(const String& path,const String& method,const String& body,String& response,bool authorized){
