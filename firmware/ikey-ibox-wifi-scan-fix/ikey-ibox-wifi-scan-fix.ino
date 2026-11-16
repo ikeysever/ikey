@@ -9,6 +9,11 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <time.h>
+#include <sys/time.h>
+#include <esp_system.h>
+#include <mbedtls/pk.h>
+#include <mbedtls/base64.h>
+#include <mbedtls/sha256.h>
 
 extern const uint8_t caBundleStart[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t caBundleEnd[] asm("_binary_x509_crt_bundle_end");
@@ -17,6 +22,11 @@ const char* DEVICE_ID="Y8R69EXB";
 const char* DEVICE_PASSWORD="REPLACE_WITH_DEVICE_PASSWORD";
 const char* AP_PASSWORD="REPLACE_WITH_UNIQUE_AP_PASSWORD"; // at least 8 chars
 const char* SERVER="https://ikey.onrender.com";
+// Provision with the matching Render signing key public PEM before flashing.
+// Do not embed private keys or device credentials in the repository.
+const char* TIME_PUBLIC_KEY_PEM=R"PEM(-----BEGIN PUBLIC KEY-----
+REPLACE_WITH_P256_PUBLIC_KEY
+-----END PUBLIC KEY-----)PEM";
 const unsigned long CONNECT_TIMEOUT=15000, RETRY_MS=20000, POLL_MS=2500;
 const unsigned long SCAN_TIMEOUT=18000, SCAN_QUIET=3000;
 WebServer web(80);
@@ -27,7 +37,8 @@ bool ap=false, connecting=false, scanActive=false, routes=false;
 unsigned long connectAt=0, retryAt=0, pollAt=0, authAt=0, scanAt=0, scanQuietUntil=0, bootAt=0;
 bool bootHeld=false;
 bool ntpStarted=false, timeReady=false;
-unsigned long ntpAt=0, ntpLogAt=0, ntpRetryAt=0;
+unsigned long ntpAt=0, ntpLogAt=0, ntpRetryAt=0, signedTimeAt=0;
+const unsigned long SIGNED_TIME_RETRY_MS=30000, NTP_FALLBACK_AFTER_MS=15000;
 const unsigned long NTP_RETRY_MS=60000;
 const char* NTP_HOSTS[]={"pool.ntp.org","time.google.com","time.cloudflare.com"};
 const time_t MIN_VALID_EPOCH=1700000000; // 2023-11-14 UTC; TLS certificate validation requires a valid clock
@@ -152,6 +163,50 @@ void startSTA(){
  connecting=true;connectAt=millis();retryAt=millis();
  Serial.printf("[WIFI] Connecting to %s\n",ssid.c_str());
 }
+bool verifySignedTime(const String& nonce,int64_t unix,const String& signature){
+ if(strstr(TIME_PUBLIC_KEY_PEM,"REPLACE_WITH_"))return false;
+ if(unix<1700000000LL || unix>4102444800LL || signature.length()>256)return false;
+ String msg="ikey-time-v1\\n"+nonce+"\\n"+String((long long)unix);
+ unsigned char decoded[128];size_t len=0;
+ if(mbedtls_base64_decode(decoded,sizeof(decoded),&len,
+  (const unsigned char*)signature.c_str(),signature.length())!=0)return false;
+ mbedtls_pk_context pk;mbedtls_pk_init(&pk);
+ int rc=mbedtls_pk_parse_public_key(&pk,(const unsigned char*)TIME_PUBLIC_KEY_PEM,
+  strlen(TIME_PUBLIC_KEY_PEM)+1);
+ if(rc==0){
+  unsigned char digest[32];
+  mbedtls_sha256((const unsigned char*)msg.c_str(),msg.length(),digest,0);
+  rc=mbedtls_pk_verify(&pk,MBEDTLS_MD_SHA256,digest,sizeof(digest),decoded,len);
+ }
+ mbedtls_pk_free(&pk);return rc==0;
+}
+void trySignedTime(){
+ if(strstr(TIME_PUBLIC_KEY_PEM,"REPLACE_WITH_")){
+  Serial.println("[TIME] Signed fallback not configured: public key missing");
+  return;
+ }
+ unsigned char randomBytes[16];esp_fill_random(randomBytes,sizeof(randomBytes));
+ char nonce[33];for(int i=0;i<16;i++)sprintf(nonce+i*2,"%02x",randomBytes[i]);
+ WiFiClient client;HTTPClient http;http.setTimeout(8000);
+ String url=String("http://ikey.onrender.com/api/device/signed-time?nonce=")+nonce;
+ // HTTP is only a transport; ECDSA verifies the entire time response.
+ if(!http.begin(client,url)){Serial.println("[TIME] Fallback transport init failed");return;}
+ int code=http.GET();String response=code==200?http.getString():"";http.end();
+ if(code!=200){Serial.printf("[TIME] Signed fallback HTTP %d\\n",code);return;}
+ JsonDocument doc;if(deserializeJson(doc,response)!=DeserializationError::Ok)return;
+ String gotNonce=doc["nonce"]|"";String signature=doc["signature"]|"";
+ int64_t unix=doc["unix"].as<int64_t>();
+ if(gotNonce!=nonce || (doc["version"]|0)!=1 ||
+  (doc["algorithm"]|String(""))!="ES256-DER" ||
+  !verifySignedTime(gotNonce,unix,signature)){
+  Serial.println("[TIME] Signed fallback rejected: signature/nonce invalid");return;
+ }
+ struct timeval tv={(time_t)unix,0};
+ if(settimeofday(&tv,nullptr)==0){
+  timeReady=true;
+  Serial.println("[TIME] Signed UTC fallback verified; HTTPS enabled");
+ }
+}
 void updateClock(){
  if(WiFi.status()!=WL_CONNECTED)return;
  if(!ntpStarted){
@@ -174,6 +229,10 @@ void updateClock(){
     WiFi.RSSI(),WiFi.gatewayIP().toString().c_str(),WiFi.dnsIP().toString().c_str());
   Serial.println("[TIME] Skipping synchronous DNS probes to avoid lwIP UDP core-lock assertion.");
   Serial.println("[TIME] HTTPS auth paused; UDP/123 may be restricted.");
+ }
+ if(!timeReady && millis()-ntpAt>=NTP_FALLBACK_AFTER_MS &&
+    (!signedTimeAt || millis()-signedTimeAt>=SIGNED_TIME_RETRY_MS)){
+  signedTimeAt=millis();trySignedTime();
  }
  if(!timeReady && millis()-ntpRetryAt>=NTP_RETRY_MS){
   ntpRetryAt=millis();
