@@ -27,7 +27,9 @@ bool ap=false, connecting=false, scanActive=false, routes=false;
 unsigned long connectAt=0, retryAt=0, pollAt=0, authAt=0, scanAt=0, scanQuietUntil=0, bootAt=0;
 bool bootHeld=false;
 bool ntpStarted=false, timeReady=false;
-unsigned long ntpAt=0, ntpLogAt=0;
+unsigned long ntpAt=0, ntpLogAt=0, ntpRetryAt=0;
+const unsigned long NTP_RETRY_MS=60000;
+const char* NTP_HOSTS[]={"pool.ntp.org","time.google.com","time.cloudflare.com"};
 const time_t MIN_VALID_EPOCH=1700000000; // 2023-11-14 UTC; TLS certificate validation requires a valid clock
 
 const char PAGE[] PROGMEM=R"HTML(
@@ -153,8 +155,8 @@ void startSTA(){
 void updateClock(){
  if(WiFi.status()!=WL_CONNECTED)return;
  if(!ntpStarted){
-  configTime(0,0,"pool.ntp.org","time.google.com","time.cloudflare.com");
-  ntpStarted=true;ntpAt=millis();ntpLogAt=millis();
+  configTime(0,0,NTP_HOSTS[0],NTP_HOSTS[1],NTP_HOSTS[2]);
+  ntpStarted=true;ntpAt=millis();ntpLogAt=millis();ntpRetryAt=millis();
   Serial.println("[TIME] NTP started; waiting for valid UTC clock");
  }
  time_t now=time(nullptr);
@@ -167,8 +169,21 @@ void updateClock(){
   }
  }else if(millis()-ntpLogAt>=10000){
   ntpLogAt=millis();
-  Serial.printf("[TIME] Waiting for NTP (%lu ms). Check UDP/123 or DNS if persistent.\n",
-    (unsigned long)(millis()-ntpAt));
+  Serial.printf("[TIME] Waiting for NTP (%lu ms); IP=%s RSSI=%d dBm gateway=%s DNS=%s\n",
+    (unsigned long)(millis()-ntpAt),WiFi.localIP().toString().c_str(),
+    WiFi.RSSI(),WiFi.gatewayIP().toString().c_str(),WiFi.dnsIP().toString().c_str());
+  for(size_t i=0;i<3;i++){
+   IPAddress resolved;
+   if(WiFi.hostByName(NTP_HOSTS[i],resolved))
+    Serial.printf("[TIME][DNS] %s -> %s\n",NTP_HOSTS[i],resolved.toString().c_str());
+   else Serial.printf("[TIME][DNS] %s resolution FAILED\n",NTP_HOSTS[i]);
+  }
+  Serial.println("[TIME] HTTPS auth paused; UDP/123 may be restricted.");
+ }
+ if(!timeReady && millis()-ntpRetryAt>=NTP_RETRY_MS){
+  ntpRetryAt=millis();
+  Serial.println("[TIME] Retrying NTP; TLS verification remains enabled");
+  configTime(0,0,NTP_HOSTS[0],NTP_HOSTS[1],NTP_HOSTS[2]);
  }
 }
 int request(const String& path,const String& method,const String& body,String& response,bool authorized){
