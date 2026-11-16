@@ -29,7 +29,7 @@ create or replace function public.ikey_slot_loan_transition(
 ) returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare v_slot public.project_slot_codes%rowtype; v_loan public.ikey_slot_loans%rowtype; v_event public.ikey_slot_loan_events%rowtype; v_result jsonb;
 begin
- if p_action not in ('borrow','return') or p_actor_user_id is null or length(trim(p_actor_user_id))=0 then
+ if p_request_id is null or p_slot_code is null or p_project_id is null or p_actor_user_id is null or p_action is null\n    or p_action not in ('borrow','return') or length(trim(p_actor_user_id))=0 then
   raise exception 'INVALID_INPUT';
  end if;
  select * into v_slot from public.project_slot_codes where slot_code=p_slot_code and project_id=p_project_id and is_active=true for update;
