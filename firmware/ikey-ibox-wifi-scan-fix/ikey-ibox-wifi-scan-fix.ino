@@ -168,7 +168,7 @@ bool verifySignedTime(const String& nonce,int64_t unix,const String& signature){
  if(strstr(TIME_PUBLIC_KEY_PEM,"REPLACE_WITH_"))return false;
  if(unix<1700000000LL || unix>4102444800LL || signature.length()>256)return false;
  char timestamp[24];snprintf(timestamp,sizeof(timestamp),"%lld",(long long)unix);
- String msg=String("ikey-time-v1\\n")+nonce+"\\n"+timestamp;
+ String msg=String("ikey-time-v1\n")+nonce+"\n"+timestamp;
  unsigned char decoded[128];size_t len=0;
  if(mbedtls_base64_decode(decoded,sizeof(decoded),&len,
   (const unsigned char*)signature.c_str(),signature.length())!=0)return false;
