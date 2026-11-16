@@ -52,14 +52,16 @@ process.stdin.on("data", function onData(key) {
       " updated_at = now()::text",
       "WHERE username = 'ikey' AND global_role = 'super_admin'",
       "RETURNING username, global_role, account_status;",
-      "-- Session revocation and audit must be completed using approved admin procedures.",
+      "UPDATE public.auth_sessions SET revoked_at = now()::text, revoked_reason = 'super_admin_recovery' WHERE user_id = (SELECT user_id FROM public.gen3_users WHERE username = 'ikey' AND global_role = 'super_admin') AND (revoked_at IS NULL OR revoked_at = '');",
+      "INSERT INTO public.auth_audit_logs (audit_id, user_id, event_type, result, auth_method, ip_address, user_agent, details, created_at)",
+      "SELECT gen_random_uuid()::text, user_id, 'super_admin_recovery', 'success', 'operator_sql', '', '', 'operator-verified offline recovery; old sessions revoked', now()::text FROM public.gen3_users WHERE username = 'ikey' AND global_role = 'super_admin';",
       "COMMIT;",
       ""
     ].join("\n");
     const output = path.resolve(process.cwd(), "ikey-recovery-PRIVATE.sql");
     fs.writeFileSync(output, sql, { flag: "wx", mode: 0o600 });
     console.log("Prepared local SQL:", output);
-    console.log("IMPORTANT: SQL not executed; verify ownership, revoke sessions and audit before use.");
+    console.log("IMPORTANT: SQL not executed; verify ownership and review generated SQL before use.");
     return;
   }
   if (key === "\u007f" || key === "\b") { password = password.slice(0, -1); return; }
