@@ -26,6 +26,9 @@ String ssid, pass, token;
 bool ap=false, connecting=false, scanActive=false, routes=false;
 unsigned long connectAt=0, retryAt=0, pollAt=0, authAt=0, scanAt=0, scanQuietUntil=0, bootAt=0;
 bool bootHeld=false;
+bool ntpStarted=false, timeReady=false;
+unsigned long ntpAt=0, ntpLogAt=0;
+const time_t MIN_VALID_EPOCH=1700000000; // 2023-11-14 UTC; TLS certificate validation requires a valid clock
 
 const char PAGE[] PROGMEM=R"HTML(
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
@@ -147,13 +150,45 @@ void startSTA(){
  connecting=true;connectAt=millis();retryAt=millis();
  Serial.printf("[WIFI] Connecting to %s\n",ssid.c_str());
 }
+void updateClock(){
+ if(WiFi.status()!=WL_CONNECTED)return;
+ if(!ntpStarted){
+  configTime(0,0,"pool.ntp.org","time.google.com","time.cloudflare.com");
+  ntpStarted=true;ntpAt=millis();ntpLogAt=millis();
+  Serial.println("[TIME] NTP started; waiting for valid UTC clock");
+ }
+ time_t now=time(nullptr);
+ if(now>=MIN_VALID_EPOCH){
+  if(!timeReady){
+   timeReady=true;
+   struct tm utc;gmtime_r(&now,&utc);
+   Serial.printf("[TIME] NTP synchronized (UTC %04d-%02d-%02d %02d:%02d:%02d)\\n",
+    utc.tm_year+1900,utc.tm_mon+1,utc.tm_mday,utc.tm_hour,utc.tm_min,utc.tm_sec);
+  }
+ }else if(millis()-ntpLogAt>=10000){
+  ntpLogAt=millis();
+  Serial.printf("[TIME] Waiting for NTP (%lu ms). Check UDP/123 or DNS if persistent.\\n",
+    (unsigned long)(millis()-ntpAt));
+ }
+}
 int request(const String& path,const String& method,const String& body,String& response,bool authorized){
  WiFiClientSecure client;client.setCACertBundle(caBundleStart,caBundleEnd-caBundleStart);
  HTTPClient http;http.setTimeout(10000);
- if(!http.begin(client,String(SERVER)+path))return -1;
+ if(!http.begin(client,String(SERVER)+path)){
+  Serial.printf("[HTTPS] http.begin failed path=%s\\n",path.c_str());
+  return -1;
+ }
  http.addHeader("Content-Type","application/json");
  if(authorized && !token.isEmpty())http.addHeader("Authorization","Bearer "+token);
  int code=method=="POST"?http.POST(body):http.GET();
+ if(code<0){
+  Serial.printf("[HTTPS] %s %s failed: %d (%s)\\n",
+   method.c_str(),path.c_str(),code,http.errorToString(code).c_str());
+  IPAddress resolved;
+  if(WiFi.hostByName("ikey.onrender.com",resolved))
+   Serial.printf("[DNS] ikey.onrender.com -> %s\\n",resolved.toString().c_str());
+  else Serial.println("[DNS] ikey.onrender.com resolution FAILED");
+ }
  response=code>0?http.getString():"";http.end();return code;
 }
 void authenticate(){
@@ -203,12 +238,20 @@ void loop(){
   if(!bootHeld && millis()-bootAt>=5000){bootHeld=true;beginAP();}
  }else{bootAt=0;bootHeld=false;}
  if(WiFi.status()==WL_CONNECTED){
-  if(connecting){connecting=false;token="";Serial.println("[WIFI] CONNECTED");}
+  if(connecting){
+   connecting=false;token="";ntpStarted=false;timeReady=false;
+   Serial.printf("[WIFI] CONNECTED, IP=%s, RSSI=%d dBm\\n",
+    WiFi.localIP().toString().c_str(),WiFi.RSSI());
+  }
+  updateClock();
   if(ap && !scanActive && !connecting)endAP();
-  if(token.isEmpty()){
+  if(!timeReady){
+   // Never bypass TLS certificate verification when the clock is invalid.
+  }else if(token.isEmpty()){
    if(!authAt||millis()-authAt>=15000){authAt=millis();authenticate();}
   }else if(millis()-pollAt>=POLL_MS){pollAt=millis();poll();}
  }else{
+  ntpStarted=false;timeReady=false;
   if(connecting && millis()-connectAt>=CONNECT_TIMEOUT){
    connecting=false;Serial.printf("[WIFI] Timeout, status=%d\n",(int)WiFi.status());beginAP();
   }
