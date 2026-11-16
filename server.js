@@ -140,6 +140,8 @@ app.get(['/api/auth/status', '/api/ready'], async (req, res) => {
 app.use('/api/auth', createRouter(authStore));
 // Device identity API only; physical commands remain disabled.
 const requireDevice=require('./device-auth')(app,authStore);
+// Signed UTC fallback: disabled until a P-256 signing key is provisioned.
+app.get('/api/device/signed-time',require('./lib/device-signed-time').createTimeHandler());
 // Project operations are always scoped to the authenticated account on the server.
 const { hashToken, active } = require('./gen3-auth/core');
 const { randomUUID } = require('node:crypto');
