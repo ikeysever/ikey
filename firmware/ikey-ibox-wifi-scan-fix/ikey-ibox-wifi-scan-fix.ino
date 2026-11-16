@@ -193,12 +193,17 @@ void trySignedTime(){
  // Only the public, signed clock bootstrap uses unauthenticated TLS transport.
  // Its nonce-bound ECDSA signature is mandatory before setting the clock.
  // All device authentication and command requests retain full TLS validation.
- client.setInsecure();HTTPClient http;http.setTimeout(8000);
+ client.setInsecure();HTTPClient http;http.setTimeout(15000);
  String url=String("https://ikey.onrender.com/api/device/signed-time?nonce=")+nonce;
  // Unauthenticated bootstrap TLS is transport only; ECDSA authenticates the time response.
  if(!http.begin(client,url)){Serial.println("[TIME] Fallback transport init failed");return;}
  int code=http.GET();String response=code==200?http.getString():"";http.end();
- if(code!=200){Serial.printf("[TIME] Signed fallback HTTP %d\\n",code);return;}
+ if(code!=200){
+  Serial.printf("[TIME] Signed fallback HTTP %d (%s); WiFi=%d RSSI=%d DNS=%s\n",
+   code,http.errorToString(code).c_str(),(int)WiFi.status(),WiFi.RSSI(),
+   WiFi.dnsIP().toString().c_str());
+  return;
+ }
  JsonDocument doc;if(deserializeJson(doc,response)!=DeserializationError::Ok)return;
  String gotNonce=doc["nonce"]|"";String signature=doc["signature"]|"";
  int64_t unix=doc["unix"].as<int64_t>();
@@ -233,7 +238,7 @@ void updateClock(){
  }
  if(millis()-ntpLogAt>=10000){
   ntpLogAt=millis();
-  Serial.printf("[TIME] Waiting for signed UTC (%lu ms); IP=%s RSSI=%d dBm DNS=%s\\n",
+  Serial.printf("[TIME] Waiting for signed UTC (%lu ms); IP=%s RSSI=%d dBm DNS=%s\n",
    (unsigned long)(millis()-ntpAt),WiFi.localIP().toString().c_str(),
    WiFi.RSSI(),WiFi.dnsIP().toString().c_str());
  }
