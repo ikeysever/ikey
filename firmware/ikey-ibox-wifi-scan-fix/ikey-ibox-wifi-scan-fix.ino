@@ -166,7 +166,8 @@ void startSTA(){
 bool verifySignedTime(const String& nonce,int64_t unix,const String& signature){
  if(strstr(TIME_PUBLIC_KEY_PEM,"REPLACE_WITH_"))return false;
  if(unix<1700000000LL || unix>4102444800LL || signature.length()>256)return false;
- String msg="ikey-time-v1\\n"+nonce+"\\n"+String((long long)unix);
+ char timestamp[24];snprintf(timestamp,sizeof(timestamp),"%lld",(long long)unix);
+ String msg=String("ikey-time-v1\\n")+nonce+"\\n"+timestamp;
  unsigned char decoded[128];size_t len=0;
  if(mbedtls_base64_decode(decoded,sizeof(decoded),&len,
   (const unsigned char*)signature.c_str(),signature.length())!=0)return false;
@@ -187,9 +188,13 @@ void trySignedTime(){
  }
  unsigned char randomBytes[16];esp_fill_random(randomBytes,sizeof(randomBytes));
  char nonce[33];for(int i=0;i<16;i++)sprintf(nonce+i*2,"%02x",randomBytes[i]);
- WiFiClient client;HTTPClient http;http.setTimeout(8000);
- String url=String("http://ikey.onrender.com/api/device/signed-time?nonce=")+nonce;
- // HTTP is only a transport; ECDSA verifies the entire time response.
+ WiFiClientSecure client;
+ // Only the public, signed clock bootstrap uses unauthenticated TLS transport.
+ // Its nonce-bound ECDSA signature is mandatory before setting the clock.
+ // All device authentication and command requests retain full TLS validation.
+ client.setInsecure();HTTPClient http;http.setTimeout(8000);
+ String url=String("https://ikey.onrender.com/api/device/signed-time?nonce=")+nonce;
+ // Unauthenticated bootstrap TLS is transport only; ECDSA authenticates the time response.
  if(!http.begin(client,url)){Serial.println("[TIME] Fallback transport init failed");return;}
  int code=http.GET();String response=code==200?http.getString():"";http.end();
  if(code!=200){Serial.printf("[TIME] Signed fallback HTTP %d\\n",code);return;}
