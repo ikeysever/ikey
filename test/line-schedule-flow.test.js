@@ -37,3 +37,11 @@ test('LINE menu routes entry, postback and text into the same durable flow',asyn
  const data=reply.messages[0].contents.footer.contents.find(b=>b.action.data.includes(':project:')).action.data;
  assert.equal((await menu.handle({...event,type:'postback',postback:{data}})).status,'handled');assert.equal(f.binding.schedule_state.step,'devices');
 });
+test('schedule entry exposes tracking and aliases refresh the latest review status',async()=>{
+ const f=fixture();let messages=await f.send('text','排程申請');assert(messages[0].contents.footer.contents.some(b=>b.action.label==='申請追蹤'));
+ f.tables.Project_Access_Requests.push({request_id:'r',project_id:'project-1',device_id:'ABCDEFGH',requester_user_id:'u',start_at:'2026-11-16T00:00:00Z',end_at:PERMANENT_END,status:'pending'});
+ for(const command of ['申請追蹤','確認申請','我的申請']){
+  messages=await f.send('text',command);assert(JSON.stringify(messages).includes('待審核'));
+ }
+ f.tables.Project_Access_Requests[0].status='approved';messages=await f.send('requests');assert(JSON.stringify(messages).includes('已核准'));assert(messages[0].contents.footer.contents.some(b=>b.action.label==='更新申請狀態'));
+});
