@@ -162,12 +162,12 @@ void updateClock(){
   if(!timeReady){
    timeReady=true;
    struct tm utc;gmtime_r(&now,&utc);
-   Serial.printf("[TIME] NTP synchronized (UTC %04d-%02d-%02d %02d:%02d:%02d)\\n",
+   Serial.printf("[TIME] NTP synchronized (UTC %04d-%02d-%02d %02d:%02d:%02d)\n",
     utc.tm_year+1900,utc.tm_mon+1,utc.tm_mday,utc.tm_hour,utc.tm_min,utc.tm_sec);
   }
  }else if(millis()-ntpLogAt>=10000){
   ntpLogAt=millis();
-  Serial.printf("[TIME] Waiting for NTP (%lu ms). Check UDP/123 or DNS if persistent.\\n",
+  Serial.printf("[TIME] Waiting for NTP (%lu ms). Check UDP/123 or DNS if persistent.\n",
     (unsigned long)(millis()-ntpAt));
  }
 }
@@ -175,18 +175,18 @@ int request(const String& path,const String& method,const String& body,String& r
  WiFiClientSecure client;client.setCACertBundle(caBundleStart,caBundleEnd-caBundleStart);
  HTTPClient http;http.setTimeout(10000);
  if(!http.begin(client,String(SERVER)+path)){
-  Serial.printf("[HTTPS] http.begin failed path=%s\\n",path.c_str());
+  Serial.printf("[HTTPS] http.begin failed path=%s\n",path.c_str());
   return -1;
  }
  http.addHeader("Content-Type","application/json");
  if(authorized && !token.isEmpty())http.addHeader("Authorization","Bearer "+token);
  int code=method=="POST"?http.POST(body):http.GET();
  if(code<0){
-  Serial.printf("[HTTPS] %s %s failed: %d (%s)\\n",
+  Serial.printf("[HTTPS] %s %s failed: %d (%s)\n",
    method.c_str(),path.c_str(),code,http.errorToString(code).c_str());
   IPAddress resolved;
   if(WiFi.hostByName("ikey.onrender.com",resolved))
-   Serial.printf("[DNS] ikey.onrender.com -> %s\\n",resolved.toString().c_str());
+   Serial.printf("[DNS] ikey.onrender.com -> %s\n",resolved.toString().c_str());
   else Serial.println("[DNS] ikey.onrender.com resolution FAILED");
  }
  response=code>0?http.getString():"";http.end();return code;
@@ -240,7 +240,7 @@ void loop(){
  if(WiFi.status()==WL_CONNECTED){
   if(connecting){
    connecting=false;token="";ntpStarted=false;timeReady=false;
-   Serial.printf("[WIFI] CONNECTED, IP=%s, RSSI=%d dBm\\n",
+   Serial.printf("[WIFI] CONNECTED, IP=%s, RSSI=%d dBm\n",
     WiFi.localIP().toString().c_str(),WiFi.RSSI());
   }
   updateClock();
