@@ -112,3 +112,12 @@
 - Formal state: Node code deployed with LINE binding explicitly OFF. Live GAS, Sheets, LINE console and existing bindings were not modified. No full formal database/GAS backup or restoration was performed because this release did not mutate those systems. Prior Render commit retained for rollback: 9b33d6ce72426e05a65f13add1a28a011e35b31b.
 - Blocker: no configured non-editor GAS credential. Real schema/secret/GAS deployment and designated-account LINE end-to-end tests remain outstanding. Do not describe this deployment as a working LINE binding launch. User requested no GAS editor use and no further per-step approval; continue only through an authenticated non-editor channel when available.
 - This follow-up is documentation only; it does not require another Render deployment.
+
+## 2026-11-16｜Borrow / Return 領域規則（staging）
+
+- 建立獨立分支 `feature/borrow-return-domain-20261116`，不修改 main 或正式資料。
+- 盤點發現管理員格位解析已存在，但實體開鎖仍刻意回覆未啟用；尚無可確認的完整借還原子交易。
+- 新增 `lib/borrow-return-domain.js`：純函式狀態轉移與 fail-closed 驗證，不進行資料庫寫入或實體開鎖。
+- 新增 `test/borrow-return-domain.test.js`：正常借還、重複操作、非借用人歸還、停用格位、不一致資料及輸入驗證。
+- 待辦：確認正式 Supabase schema、交易 RPC、併發與冪等策略、實體裝置執行回報；不得以發出開鎖指令代替借還成功。
+- 測試結果需以 CI 或實際 npm test 輸出為準，尚未取得前不宣稱通過。
