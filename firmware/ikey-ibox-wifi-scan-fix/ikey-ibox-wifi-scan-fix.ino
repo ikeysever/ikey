@@ -159,11 +159,30 @@ void endAP(){
 void startSTA(){
  if(ssid.isEmpty()){beginAP();return;}
  if(scanActive || (scanQuietUntil && (int32_t)(millis()-scanQuietUntil)<0))return;
- WiFi.mode(ap?WIFI_AP_STA:WIFI_STA);WiFi.setSleep(false);
+ // Stop any previous STA attempt before reconfiguring the Wi-Fi driver.
+ WiFi.disconnect(false,false);
+ delay(300);
+ WiFi.mode(ap?WIFI_AP_STA:WIFI_STA);
+ WiFi.setSleep(false);
+ Serial.printf("[WIFI] Connecting to %s\n",ssid.c_str());
  WiFi.begin(ssid.c_str(),pass.c_str());
  connecting=true;connectAt=millis();retryAt=millis();
- Serial.printf("[WIFI] Connecting to %s\n",ssid.c_str());
 }
+void diagnoseNearbyWiFi(){
+ // Run only at boot, before attempting a STA connection.
+ WiFi.mode(WIFI_STA);
+ Serial.println("[SCAN] Scanning nearby Wi-Fi...");
+ int n=WiFi.scanNetworks(false,true);
+ Serial.printf("[SCAN] Found %d networks\n",n);
+ if(n>=0){
+  for(int i=0;i<n;i++){
+   Serial.printf("[SCAN] SSID=%s RSSI=%d dBm CH=%d\n",
+    WiFi.SSID(i).c_str(),WiFi.RSSI(i),WiFi.channel(i));
+  }
+ }
+ WiFi.scanDelete();
+}
+
 bool verifySignedTime(const String& nonce,int64_t unix,const String& signature){
  if(strstr(TIME_PUBLIC_KEY_PEM,"REPLACE_WITH_"))return false;
  if(unix<1700000000LL || unix>4102444800LL || signature.length()>256)return false;
@@ -302,6 +321,7 @@ void setup(){
  prefs.begin("ikeywifi",false);
  ssid=prefs.getString("ssid","");pass=prefs.getString("password","");
  WiFi.persistent(false);WiFi.setSleep(false);
+ diagnoseNearbyWiFi();
  if(ssid.isEmpty())beginAP();else startSTA();
 }
 void loop(){
@@ -326,7 +346,11 @@ void loop(){
  }else{
   ntpStarted=false;timeReady=false;
   if(connecting && millis()-connectAt>=CONNECT_TIMEOUT){
-   connecting=false;Serial.printf("[WIFI] Timeout, status=%d\n",(int)WiFi.status());beginAP();
+   Serial.printf("[WIFI] Timeout, status=%d\n",(int)WiFi.status());
+   WiFi.disconnect(false,false);
+   connecting=false;
+   delay(300);
+   beginAP();
   }
   if(!ap && !connecting)beginAP();
   if(!ssid.isEmpty() && !connecting && !scanActive &&
