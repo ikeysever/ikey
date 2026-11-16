@@ -112,3 +112,9 @@
 - Formal state: Node code deployed with LINE binding explicitly OFF. Live GAS, Sheets, LINE console and existing bindings were not modified. No full formal database/GAS backup or restoration was performed because this release did not mutate those systems. Prior Render commit retained for rollback: 9b33d6ce72426e05a65f13add1a28a011e35b31b.
 - Blocker: no configured non-editor GAS credential. Real schema/secret/GAS deployment and designated-account LINE end-to-end tests remain outstanding. Do not describe this deployment as a working LINE binding launch. User requested no GAS editor use and no further per-step approval; continue only through an authenticated non-editor channel when available.
 - This follow-up is documentation only; it does not require another Render deployment.
+
+## 2026-11-16 LINE 排程申請完整流程
+
+延續 PR #133 與既有 LINE Webhook。新增常用專案設定、單台 iBOX 選擇、彈性時間輸入、時間確認、原因、總確認、修改、取消與本人申請查詢。每步重新讀取啟用專案與資格。既有 line_bindings 增加 JSON 對話狀態、版本及常用清單欄位，避免服務重啟遺失草稿。選單有效 30 分鐘，舊版本按鈕拒絕操作。申請以固定 UUID 與版本條件更新防重複送出，可恢復不確定的寫入結果。
+
+永久申請沿用既有起訖時間資料結構，結束值使用 9999-12-31T23:59:59Z，網站與 LINE 顯示為永久，沿用既有 pending/approved 審核。未新增服務或重建專案資料。完整本機測試 113 項通過。
