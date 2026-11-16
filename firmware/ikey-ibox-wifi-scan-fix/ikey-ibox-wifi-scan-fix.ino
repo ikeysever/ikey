@@ -25,7 +25,8 @@ const char* SERVER="https://ikey.onrender.com";
 // Provision with the matching Render signing key public PEM before flashing.
 // Do not embed private keys or device credentials in the repository.
 const char* TIME_PUBLIC_KEY_PEM=R"PEM(-----BEGIN PUBLIC KEY-----
-REPLACE_WITH_P256_PUBLIC_KEY
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZ3RiBpRjxUJ6zjMrfqGFpDAcAWAR
+gDZP2/UYbm/2mad8LdGndFpbcX5GzXi2AT3k6smnfsYC+tebf/ZFwhhKRA==
 -----END PUBLIC KEY-----)PEM";
 const unsigned long CONNECT_TIMEOUT=15000, RETRY_MS=20000, POLL_MS=2500;
 const unsigned long SCAN_TIMEOUT=18000, SCAN_QUIET=3000;
