@@ -162,6 +162,7 @@ function sameProjectOrigin(req){
 require('./lib/project-members-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
 const lineNotifications=require('./lib/line-notification-dispatcher').createLineNotificationDispatcher(authStore);
 require('./lib/project-access-requests-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin,lineNotifications});
+require('./lib/project-basic-settings-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin});
 require('./lib/admin-slot-unlock-router')(app,{store:authStore,requireProjectUser,sameProjectOrigin});
 require('./lib/serial-test-router')(app,{store:authStore,requireProjectUser,requireDevice,sameProjectOrigin});
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
