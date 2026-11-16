@@ -31,9 +31,9 @@ test('old postbacks and six digit verification codes do not change draft',async(
 });
 test('LINE menu routes entry, postback and text into the same durable flow',async()=>{
  const {createLineMenuService}=require('../lib/line-menu-service');const f=fixture();f.tables.Gen3_Users=[{user_id:'u',account_status:'active'}];f.tables.LINE_Audit_Logs=[];
- let reply;const menu=createLineMenuService(f.store,{LINE_MESSAGING_CHANNEL_SECRET:'test',LINE_MESSAGING_ACCESS_TOKEN:'test'},async(url,options)=>{reply=JSON.parse(options.body);return {ok:true}});
+ const deliveries=[];let reply;const menu=createLineMenuService(f.store,{LINE_MESSAGING_CHANNEL_SECRET:'test',LINE_MESSAGING_ACCESS_TOKEN:'test'},async(url,options)=>{reply=JSON.parse(options.body);deliveries.push({url,body:reply});return {ok:true}});
  const event={source:{type:'user',userId:lineId},replyToken:'test',type:'message',message:{type:'text',text:'排程申請'}};
- assert.equal((await menu.handle(event)).status,'handled');assert.equal(reply.messages[0].type,'flex');assert.equal(f.binding.schedule_state.step,'projects');
+ assert.equal((await menu.handle(event)).status,'handled');assert.equal(deliveries[0].body.messages[0].type,'text');assert.match(deliveries[0].body.messages[0].text,/正在讀取/);assert.match(deliveries[0].url,/message\/reply$/);assert.match(deliveries[1].url,/message\/push$/);assert.equal(deliveries[1].body.to,lineId);assert.equal(reply.messages[0].type,'flex');assert.equal(f.binding.schedule_state.step,'projects');
  const data=reply.messages[0].contents.footer.contents.find(b=>b.action.data.includes(':project:')).action.data;
  assert.equal((await menu.handle({...event,type:'postback',postback:{data}})).status,'handled');assert.equal(f.binding.schedule_state.step,'devices');
 });
