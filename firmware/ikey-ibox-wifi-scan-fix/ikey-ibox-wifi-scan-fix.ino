@@ -35,6 +35,7 @@ DNSServer dns;
 Preferences prefs;
 String ssid, pass, token;
 bool ap=false, connecting=false, scanActive=false, routes=false;
+bool provisioningRequested=false, savedCredentialsPending=false;
 unsigned long connectAt=0, retryAt=0, pollAt=0, authAt=0, scanAt=0, scanQuietUntil=0, bootAt=0;
 bool bootHeld=false;
 bool ntpStarted=false, timeReady=false;
@@ -134,8 +135,11 @@ void registerRoutes(){
   if(s.isEmpty()){web.send(400,"text/plain","SSID required");return;}
   prefs.putString("ssid",s);prefs.putString("password",p);
   ssid=s;pass=p;token="";
+  // Disconnect the old network before trying the newly saved credentials.
+  WiFi.disconnect(false,false);
+  connecting=false;savedCredentialsPending=true;provisioningRequested=true;
   scanActive=false;WiFi.scanDelete();scanQuietUntil=millis()+1500;
-  retryAt=0;connecting=false;
+  retryAt=0;
   web.send(200,"text/plain; charset=utf-8","已儲存設定，正在連線；請觀察序列監控。");
   Serial.printf("[WIFI] saved SSID=%s\n",ssid.c_str());
  });
@@ -328,16 +332,24 @@ void loop(){
  if(ap){dns.processNextRequest();web.handleClient();}
  if(digitalRead(0)==LOW){
   if(!bootAt)bootAt=millis();
-  if(!bootHeld && millis()-bootAt>=5000){bootHeld=true;beginAP();}
+  if(!bootHeld && millis()-bootAt>=5000){
+   bootHeld=true;provisioningRequested=true;
+   Serial.println("[PORTAL] Manual Wi-Fi configuration requested; holding portal open");
+   beginAP();
+  }
  }else{bootAt=0;bootHeld=false;}
  if(WiFi.status()==WL_CONNECTED){
   if(connecting){
    connecting=false;token="";ntpStarted=false;timeReady=false;
+   if(savedCredentialsPending){
+    savedCredentialsPending=false;provisioningRequested=false;
+    Serial.println("[PORTAL] New Wi-Fi connected; configuration complete");
+   }
    Serial.printf("[WIFI] CONNECTED, IP=%s, RSSI=%d dBm\n",
     WiFi.localIP().toString().c_str(),WiFi.RSSI());
   }
   updateClock();
-  if(ap && !scanActive && !connecting)endAP();
+  if(ap && !provisioningRequested && !scanActive && !connecting)endAP();
   if(!timeReady){
    // Never bypass TLS certificate verification when the clock is invalid.
   }else if(token.isEmpty()){
@@ -353,7 +365,9 @@ void loop(){
    beginAP();
   }
   if(!ap && !connecting)beginAP();
+  // Do not interrupt manual setup with automatic reconnection.
   if(!ssid.isEmpty() && !connecting && !scanActive &&
+     (!provisioningRequested || savedCredentialsPending) &&
      (!retryAt||millis()-retryAt>=RETRY_MS))startSTA();
   if(ap && WiFi.softAPIP()==IPAddress(0,0,0,0)){ap=false;beginAP();}
  }
