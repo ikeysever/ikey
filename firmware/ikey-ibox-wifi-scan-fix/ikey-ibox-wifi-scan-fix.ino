@@ -173,7 +173,10 @@ void poll(){
  if(code==401||code==403){token="";Serial.printf("[POLL] HTTP %d\n",code);return;}
  if(code!=200){Serial.printf("[POLL] HTTP %d\n",code);return;}
  JsonDocument d;if(deserializeJson(d,response)!=DeserializationError::Ok)return;
- JsonVariant cmd=d["command"].is<JsonObject>()?d["command"]:d.as<JsonVariant>();
+ JsonVariant cmd = d.as<JsonVariant>();
+ if(d["command"].is<JsonObject>()) {
+  cmd = d["command"].as<JsonVariant>();
+ }
  String id=cmd["command_id"]|"";String action=cmd["action"]|"";
  if(id.isEmpty()||action!="SERIAL_TEST_UNLOCK")return;
  Serial.println("===== iKey SERIAL ONLY COMMAND =====");
