@@ -25,6 +25,9 @@
    const permissionsData=await permissionsResponse.json();
    if(!permissionsResponse.ok||permissionsData.success!==true||!permissionsData.permissions)throw Error('無法驗證專案設定權限');
    const permissions=permissionsData.permissions;
+   const unlockLink=byId('project-unlock-link');
+   unlockLink.href='/project-unlock.html?id='+encodeURIComponent(id);
+   unlockLink.hidden=false;
    for(const card of document.querySelectorAll('#pc-menu [data-pc-open]')){
     const section=card.getAttribute('data-pc-open');
     card.hidden=permissions[section]!==true;

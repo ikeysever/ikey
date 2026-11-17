@@ -76,3 +76,27 @@ test('direct open validates access without consuming schedule draft',async()=>{
  assert.match(await send('打開 ABCDEFGH'),/沒有有效開鎖權限/);
  f.tables.LINE_Bindings=[];assert.match(await send('打開 ABCDEFGH'),/先完成 LINE 帳號綁定/);
 });
+
+test('LINE unlock submit rechecks the selected target and rejects stale menus',async()=>{
+ const {createLineMenuService}=require('../lib/line-menu-service');
+ const f=fixture();
+ f.tables.Gen3_Users=[{user_id:'u',account_status:'active'}];
+ f.tables.LINE_Audit_Logs=[];
+ f.tables.Devices=[{device_id:'ABCDEFGH',status:'pre_registered'}];
+ const deliveries=[];
+ const menu=createLineMenuService(f.store,{LINE_MESSAGING_CHANNEL_SECRET:'test',LINE_MESSAGING_ACCESS_TOKEN:'test'},async(url,options)=>{
+  deliveries.push(JSON.parse(options.body));return {ok:true};
+ });
+ async function send(payload){
+  await menu.handle({source:{type:'user',userId:lineId},replyToken:'test',...payload});
+  return deliveries.at(-1).messages[0];
+ }
+ const open=await send({type:'message',message:{type:'text',text:'開鎖'}});
+ const click=data=>send({type:'postback',postback:{data}});
+ const chosen=await click(open.contents.footer.contents[0].action.data);
+ const submit=chosen.contents.footer.contents.at(-1).action.data;
+ assert.match((await click(submit)).text,/ABCDEFGH.*開鎖資格確認完成/);
+ f.tables.Project_Devices[0].device_id='BCDEFGHJ';
+ f.tables.Devices[0].device_id='BCDEFGHJ';
+ assert.match((await click(submit)).text,/選單已更新/);
+});

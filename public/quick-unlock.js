@@ -4,7 +4,8 @@
  if(!dialog)return;
  const project=$('quick-project'),manual=$('quick-device-input'),options=$('quick-device-options'),count=$('quick-device-count'),status=$('quick-unlock-status'),submit=$('quick-unlock-submit');
  let devices=[],projects=[],loading=false,loadSequence=0,serialTestEnabled=false;
- let serialTestPending=false;
+ let serialTestPending=false,unlockPending=false;
+ const unlock=$('quick-request-unlock');
  const checked=new Set();
  const setStatus=s=>{status.textContent=s};
  const request=async url=>{const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});const data=await r.json();if(!r.ok||data.success!==true)throw Error(data.message||'無法取得資料');return data};
@@ -13,6 +14,7 @@
  const chosen=()=>scoped().filter(d=>checked.has(key(d)));
  const update=()=>{
   const n=chosen().length;
+  unlock.disabled=unlockPending||!n;
   count.textContent='已選 '+n+' 台';
   // Physical unlock execution is not available; selection must never imply readiness.
   submit.disabled=serialTestPending||!serialTestEnabled||n!==1||chosen()[0]?.can_manage!==true;
@@ -93,6 +95,23 @@
     checked.add(key(d));manual.value='';renderDevices();setStatus('已勾選 '+d.device_id+'；實體開鎖服務尚未啟用。');
    };
   }catch(e){setStatus('NFC 無法啟動：'+e.message)}
+ });
+ unlock.addEventListener('click',async()=>{
+  const targets=chosen();
+  if(unlockPending||!targets.length)return;
+  unlockPending=true;update();
+  const messages=[];
+  try{
+   for(const d of targets){
+    setStatus('正在確認 '+d.device_id+' 的開鎖請求…');
+    try{
+     const response=await fetch('/api/projects/'+encodeURIComponent(d.project_id)+'/devices/'+encodeURIComponent(d.device_id)+'/unlock',{method:'POST',credentials:'same-origin'});
+     const result=await response.json();
+     messages.push(d.device_id+'：'+(result.message||result.code||'尚未取得執行回報'));
+    }catch{messages.push(d.device_id+'：無法確認請求結果');}
+   }
+   setStatus(messages.join(' ｜ '));
+  }finally{unlockPending=false;update();}
  });
  submit.addEventListener('click',async()=>{
   if(serialTestPending||!serialTestEnabled||chosen().length!==1||chosen()[0].can_manage!==true)return;
@@ -180,15 +199,15 @@
  $('quick-slot-resolve').addEventListener('click',async()=>{
   const code=slotCode();if(!/^[A-Z0-9_-]{4,40}$/.test(code)){slotMessage('請輸入 4～40 位有效格位編號。');return;}
   slotMessage('正在驗證格位與專案管理員權限…');slotOpen.disabled=true;verifiedSlot=null;
-  try{const result=await slotPost('/api/admin/slots/resolve',code);if(code!==slotCode())return;verifiedSlot=result;slotOpen.disabled=result.control_ready!==true;slotMessage('已驗證：'+result.project_name+' / '+result.device_id+' / 第 '+result.slot_number+' 格。裝置指令服務尚未啟用，無法實際開鎖。')}
+  try{const result=await slotPost('/api/admin/slots/resolve',code);if(code!==slotCode())return;verifiedSlot=result;slotOpen.disabled=slotBusy||result.admin_authorized!==true;slotMessage('已驗證：'+result.project_name+' / '+result.device_id+' / 第 '+result.slot_number+' 格。裝置指令服務尚未啟用，無法實際開鎖。')}
   catch(e){slotMessage('驗證失敗：'+e.message)}
  });
  slotOpen.addEventListener('click',async()=>{
-  if(verifiedSlot?.control_ready!==true||verifiedSlot.slot_code!==slotCode()||slotBusy)return;
+  if(verifiedSlot?.admin_authorized!==true||verifiedSlot.slot_code!==slotCode()||slotBusy)return;
   slotBusy=true;slotOpen.disabled=true;slotMessage('正在由伺服器重新確認管理員權限與指令狀態…');
   try{const result=await slotPost('/api/admin/slots/unlock',slotCode());slotMessage(result.execution_verified===true?'裝置已確認執行':'請求已受理，尚未收到裝置執行回報')}
   catch(e){slotMessage('未開鎖：'+e.message)}
-  finally{slotBusy=false;slotOpen.disabled=verifiedSlot?.control_ready!==true}
+  finally{slotBusy=false;slotOpen.disabled=verifiedSlot?.admin_authorized!==true}
  });
  $('quick-slot-scan').addEventListener('click',async()=>{
   if(!('NDEFReader' in window)){slotMessage('此瀏覽器不支援 Web NFC，請手動輸入格位編號。');return;}

@@ -2,6 +2,7 @@
 const express = require('express');
 const path = require('node:path');
 const app = express();
+const {requestProjectUnlock} = require('./lib/project-unlock-action');
 const {physicalUnlockUnavailable} = require('./lib/physical-unlock');
 app.disable('x-powered-by');
 // LINE webhook requires raw request bytes for HMAC verification.
@@ -452,10 +453,13 @@ app.delete('/api/projects/:projectId/devices/:deviceId/binding',requireProjectUs
  }catch(e){return res.status(503).json({success:false,code:'UNBIND_UNAVAILABLE'});}
 });
 // Fail closed: never acknowledge an unlock until device execution receipts are verified.
-app.post('/api/projects/:projectId/devices/:deviceId/unlock',requireProjectUser,(req,res)=>{
+app.post('/api/projects/:projectId/devices/:deviceId/unlock',requireProjectUser,async(req,res)=>{
  res.set('Cache-Control','no-store');
  if(!sameProjectOrigin(req))return res.status(403).json({success:false,code:'INVALID_ORIGIN'});
- return physicalUnlockUnavailable(res, '實體開鎖回報尚未串接，未發送開鎖指令');
+ const {projectId,deviceId}=req.params;
+ if(!validProjectDeviceId(projectId)||!/^[A-HJ-NP-Z2-9]{8}$/.test(deviceId))return res.status(400).json({success:false,message:'專案或裝置編號格式錯誤'});
+ const outcome=await requestProjectUnlock(authStore,req.projectUser.user_id,projectId,deviceId);
+ return res.status(outcome.status).json(outcome.body);
 });
 // Reserved authenticated device command API. No physical action is possible
 // until durable GAS command storage, device authentication and replay safety pass.

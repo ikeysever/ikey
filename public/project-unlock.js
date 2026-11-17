@@ -1,1 +1,38 @@
-'use strict';(()=>{const $=id=>document.getElementById(id);const id=new URLSearchParams(location.search).get('id');const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;if(!id||!uuid.test(id)){$('status').textContent='專案連結無效。';return;}$('back').href='/project.html?id='+encodeURIComponent(id);async function get(url){const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});const data=await r.json();if(!r.ok||data.success!==true)throw Error(data.message||data.code||'資料讀取失敗');return data;}async function load(){try{const data=await get('/api/projects');const project=(data.projects||[]).find(p=>p.project_id===id&&p.status!=='deleted');if(!project)throw Error('找不到專案或無存取權限');$('project-name').textContent=project.project_name;const readiness=await get('/api/projects/'+encodeURIComponent(id)+'/unlock-readiness');if(readiness.physical_unlock_enabled!==false||readiness.command_api_ready!==false)throw Error('開鎖功能狀態不符合安全預期，已停止操作');const gate=document.getElementById('unlock-gate');if(gate)gate.textContent='實體開鎖：未啟用｜指令 API：尚未驗證｜裝置授權：尚未驗證｜防重複執行：尚未驗證';const inventory=await get('/api/projects/'+encodeURIComponent(id)+'/devices');if(!Array.isArray(inventory.devices))throw Error('裝置清單格式不正確');const root=$('devices');root.replaceChildren();for(const d of inventory.devices){const card=document.createElement('article');const name=document.createElement('h3');name.textContent=d.device_name||'iBOX';const detail=document.createElement('p');detail.textContent='裝置 ID：'+String(d.device_id||'');const state=document.createElement('p');state.textContent='連線狀態：未驗證｜開鎖：停用';card.append(name,detail,state);root.append(card);}if(!inventory.devices.length){const empty=document.createElement('p');empty.textContent='目前沒有已綁定的 iBOX 裝置。';root.append(empty);}$('status').textContent='專案與裝置清單已驗證。實體開鎖尚未啟用。';}catch(e){$('status').textContent='無法驗證專案或裝置資料：'+(e.message||'請稍後重試');}}load();})();
+'use strict';
+(async()=>{
+ const el=id=>document.getElementById(id);
+ const id=new URLSearchParams(location.search).get('id');
+ const status=el('status');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)){
+  status.textContent='專案連結無效。';return;
+ }
+ const project='/project.html?id='+encodeURIComponent(id);
+ el('back').href=project;
+ el('schedule').href=project+'&pane=auth';
+ const api='/api/projects/'+encodeURIComponent(id);
+ async function request(url,method='GET'){
+  const response=await fetch(url,{method,credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||!data.success)throw Error(data.message||data.code||'操作失敗');
+  return data;
+ }
+ try{
+  const [inventory,access]=await Promise.all([request(api+'/devices'),request(api+'/unlock-eligibility')]);
+  el('project-name').textContent=inventory.project_name||'專案裝置';
+  el('unlock-gate').textContent=access.command_ready?'實體指令服務已啟用':'實體指令服務尚未啟用。送出請求後可查看伺服器的驗證結果。';
+  for(const device of inventory.devices){
+   const button=document.createElement('button');
+   const eligible=access.devices.some(d=>d.device_id===device.device_id&&d.eligible);
+   button.textContent=(device.device_name||'iBOX')+' · '+device.device_id+(eligible?'｜立即開鎖':'｜尚無有效時段');
+   button.disabled=!eligible;
+   button.onclick=async()=>{
+    button.disabled=true;status.textContent='正在驗證 '+device.device_id+' 的開鎖請求…';
+    try{const result=await request(api+'/devices/'+encodeURIComponent(device.device_id)+'/unlock','POST');status.textContent=result.message||'尚未取得執行回報';}
+    catch(error){status.textContent=device.device_id+'：'+error.message;}
+    finally{button.disabled=!eligible;}
+   };
+   el('devices').append(button);
+  }
+  status.textContent=inventory.devices.length?'請選擇裝置或申請使用時段。':'目前沒有已綁定的 iBOX。';
+ }catch(error){status.textContent='無法載入專案裝置：'+error.message;}
+})();
