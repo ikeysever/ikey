@@ -1,0 +1,21 @@
+name: iKey isolated unlock safety audit
+on:
+  pull_request:
+    paths:
+      - 'lib/project-unlock-action.js'
+      - 'test/unlock-safety-audit.test.js'
+      - '.github/workflows/unlock-safety-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unlock-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated authorization and fail-closed tests
+        run: node --test test/unlock-safety-audit.test.js
