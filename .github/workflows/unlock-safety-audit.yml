@@ -11,11 +11,18 @@ permissions:
 jobs:
   unlock-safety:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
+    env:
+      IKEY_STORAGE_BACKEND: test-disabled
+      IKEY_SERIAL_TEST_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install dependencies without lifecycle scripts
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Run complete repository test suite (offline mocks only)
+        run: npm test
       - name: Run isolated authorization and fail-closed tests
         run: node --test test/unlock-safety-audit.test.js
