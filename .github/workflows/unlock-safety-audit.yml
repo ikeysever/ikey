@@ -4,6 +4,8 @@ on:
     paths:
       - 'lib/project-unlock-action.js'
       - 'test/unlock-safety-audit.test.js'
+      - 'test/serial-test-router-audit.test.js'
+      - 'lib/serial-test-router.js'
       - '.github/workflows/unlock-safety-audit.yml'
   workflow_dispatch:
 permissions:
