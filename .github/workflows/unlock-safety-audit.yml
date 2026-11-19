@@ -6,6 +6,8 @@ on:
       - 'test/unlock-safety-audit.test.js'
       - 'test/serial-test-router-audit.test.js'
       - 'lib/serial-test-router.js'
+      - 'test/line-unlock-integration-audit.test.js'
+      - 'lib/line-menu-service.js'
       - '.github/workflows/unlock-safety-audit.yml'
   workflow_dispatch:
 permissions:
