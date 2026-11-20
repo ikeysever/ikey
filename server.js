@@ -167,6 +167,7 @@ const lineNotifications=require('./lib/line-notification-dispatcher').createLine
 require('./lib/project-access-requests-router')(app,{store:authStore,requireUser:requireProjectUser,sameOrigin:sameProjectOrigin,lineNotifications});
 require('./lib/admin-slot-unlock-router')(app,{store:authStore,requireProjectUser,sameProjectOrigin});
 require('./lib/serial-test-router')(app,{store:authStore,requireProjectUser,requireDevice,sameProjectOrigin});
+require('./lib/device-heartbeat-router')(app,{store:authStore,requireDevice,requireProjectUser});
 // LINE is opt-in and fails closed until matching GAS v2 schema and trust are ready.
 lineService=require('./lib/line-supabase-binding-service').createSupabaseLineBindingService(authStore);
 lineMenuService=require('./lib/line-menu-service').createLineMenuService(authStore);
