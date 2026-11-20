@@ -5,4 +5,6 @@ create table if not exists public.device_heartbeats (
 );
 alter table public.device_heartbeats enable row level security;
 revoke all on public.device_heartbeats from anon, authenticated;
+-- The backend uses the secret-key REST adapter. It needs explicit table grants.
+grant select, insert, update on public.device_heartbeats to service_role;
 -- Server-side secret-key adapter only; never expose this table to browser clients.
