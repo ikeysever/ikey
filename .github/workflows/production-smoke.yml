@@ -1,0 +1,17 @@
+name: Production non-actuating API smoke
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/unlock-command-staging-20261121
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify live public health and anonymous access denial
+        run: node scripts/production-smoke.js
