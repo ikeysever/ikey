@@ -138,7 +138,10 @@ function createRouter(store) {
       res.cookie(COOKIE,session.raw,cookieOptions(req));
       return res.json({success:true,user:safeUser(updated)});
     } catch(err) {
-      console.error("Gen3 login error",err.code||err.name||err.message);
+      // Report only server-controlled error categories; never log credentials, request bodies or database error details.
+      const category = typeof err?.message === "string" && /^(?:SUPABASE_[A-Z0-9_]+|INVALID_[A-Z0-9_]+|GEN3_[A-Z0-9_]+)$/.test(err.message)
+        ? err.message : (typeof err?.code === "string" && /^(?:[A-Z][A-Z0-9_]{2,60}|[0-9A-Z]{5})$/.test(err.code) ? err.code : "UNCLASSIFIED");
+      console.error("Gen3 login error",category);
       return res.status(503).json({success:false,message:"登入服務暫時無法使用"});
     }
   });
